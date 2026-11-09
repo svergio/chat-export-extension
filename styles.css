@@ -1,0 +1,422 @@
+.chat-export-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.chat-export-bar--grok {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 0;
+  gap: 0;
+  white-space: nowrap;
+  max-width: none;
+  position: relative;
+  z-index: 6;
+  height: 32px;
+}
+
+/* Match Grok model chip (Быстрый): compact 24px text control */
+.chat-export-bar--grok > button[aria-label='Export format'] {
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  padding: 0 4px !important;
+  gap: 4px !important;
+}
+
+.chat-export-bar--grok .chat-export-format-text {
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: 24px !important;
+}
+
+.chat-export-bar--grok .chat-export-chevron {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+/* Match Grok icon buttons (mic/attach): exact 32x32 hit target */
+.chat-export-bar--grok .chat-export-dl {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+}
+
+.chat-export-bar--grok .chat-export-dl > span {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-export-bar--grok .chat-export-dl svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* X Grok full page + GrokDrawer — same compact chip sizing */
+.chat-export-bar--grok-x {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 0;
+  gap: 0;
+  white-space: nowrap;
+  max-width: none;
+  position: relative;
+  z-index: 6;
+  height: 32px;
+}
+
+/* Match X Grok Fast chip: transparent on composer shell — never white blob */
+.chat-export-bar--grok-x > button[aria-label='Export format'] {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  min-width: 22px !important;
+  width: max-content !important;
+  padding: 0 8px 0 12px !important;
+  gap: 4px !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 9999px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: rgb(231, 233, 234) !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s, box-shadow 0.2s !important;
+}
+
+.chat-export-bar--grok-x > button[aria-label='Export format']:hover,
+.chat-export-bar--grok-x > button[aria-label='Export format'].is-open {
+  background-color: rgba(231, 233, 234, 0.1) !important;
+}
+
+/* X css-g5y9jx is column flex — without row + min-size, label collapses to h=0 */
+.chat-export-bar--grok-x .chat-export-format-text {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  min-height: 1em !important;
+  height: auto !important;
+  max-height: none !important;
+  font-family: TwitterChirp, -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 34px !important;
+  letter-spacing: normal !important;
+  color: rgb(231, 233, 234) !important;
+  opacity: 1 !important;
+}
+
+.chat-export-bar--grok-x .chat-export-chevron {
+  flex: 0 0 auto !important;
+  width: 15px !important;
+  height: 15px !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+  opacity: 0.85 !important;
+}
+
+.chat-export-bar--grok-x .chat-export-dl {
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.chat-export-bar--grok-x .chat-export-dl > span {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-export-bar--grok-x .chat-export-dl svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.chat-export-bar--chatgpt {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 2px 4px;
+  gap: 0;
+  white-space: nowrap;
+  max-width: none;
+  height: 36px;
+}
+
+/* Format: Thinking chip shell, neutral (no accent blue / no Times) */
+.chat-export-bar--chatgpt > button[aria-label='Export format'] {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border-radius: 9999px !important;
+  border: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: rgb(237, 237, 237) !important;
+  font-family: -apple-system-body, ui-sans-serif, -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  padding: 0 14px 0 12px !important;
+}
+
+.chat-export-bar--chatgpt > button[aria-label='Export format']:hover,
+.chat-export-bar--chatgpt > button[aria-label='Export format'].is-open {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.chat-export-bar--chatgpt .chat-export-format-text {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  height: auto !important;
+  min-height: 1em !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 36px !important;
+  color: inherit !important;
+}
+
+.chat-export-bar--chatgpt .chat-export-chevron {
+  flex: 0 0 auto !important;
+  width: 16px !important;
+  height: 16px !important;
+  opacity: 0.75 !important;
+  color: inherit !important;
+}
+
+/* Download: outline attach size/color, never voice primary fill */
+.chat-export-bar--chatgpt .chat-export-dl {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 9999px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: rgb(237, 237, 237) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.chat-export-bar--chatgpt .chat-export-dl > span {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-export-bar--chatgpt .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--chatgpt > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.chat-export-bar--chatgpt > button.bg-composer-primary {
+  background-color: transparent !important;
+  color: rgb(175, 175, 175) !important;
+}
+
+.chat-export-bar button {
+  cursor: pointer;
+}
+
+.chat-export-bar button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.chat-export-format-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.chat-export-chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.chat-export-bar button.is-open .chat-export-chevron {
+  transform: rotate(180deg);
+}
+
+.chat-export-menu {
+  min-width: 196px;
+  padding: 8px;
+  border-radius: 16px;
+  background: #2a2a2a;
+  color: #f2f2f2;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.chat-export-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-export-menu-item:hover,
+.chat-export-menu-item.is-active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chat-export-check {
+  opacity: 0.85;
+  font-size: 13px;
+}
+
+.chat-export-menu-sep {
+  height: 1px;
+  margin: 8px 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-export-pack {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.chat-export-pack-btn {
+  flex: 1;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-export-pack-btn:hover,
+.chat-export-pack-btn.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chat-export-dl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.chat-export-dl.is-super,
+.chat-export-dl.is-super:hover,
+.chat-export-dl.is-super:active {
+  background-color: rgba(220, 64, 64, 0.28) !important;
+}
+
+.chat-export-dl svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.chat-export-dl[aria-busy='true'] {
+  opacity: 0.55;
+}
+
+.chat-export-bar:not(:has(button[class])) button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.chat-export-bar:not(:has(button[class])) .chat-export-dl {
+  padding: 0;
+  width: 32px;
+}

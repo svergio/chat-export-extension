@@ -1,0 +1,80 @@
+{
+  "manifest_version": 3,
+  "name": "Chat Export",
+  "version": "1.4.0",
+  "description": "Export Grok (grok.com + X), and ChatGPT conversations to Markdown, YAML, JSON, HTML, and PDF.",
+  "permissions": ["downloads", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Chat Export",
+    "default_icon": {
+      "16": "icons/toolbar-idle-16.png",
+      "48": "icons/toolbar-idle-48.png",
+      "128": "icons/toolbar-idle-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "host_permissions": [
+    "https://grok.com/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/NotoSans-Regular.ttf"],
+      "matches": [
+        "https://grok.com/*",
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://grok.com/*",
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": ["content/page-harvest.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://grok.com/*"],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "shared.js", "content/grok.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "shared.js", "content/chatgpt.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "shared.js", "content/grok-x.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <filter id="markGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#FFFFFF" flood-opacity="0.55"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="sticker" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#FFFFFF" flood-opacity="0.9"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <!-- Full-bleed X mark -->
+  <g transform="translate(4,4) scale(5)" fill="#111111" fill-rule="evenodd" filter="url(#markGlow)">
+    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
+  </g>
+  <!-- BR pencil-share sticker -->
+  <g transform="translate(62,62) scale(2.55)" fill="none" stroke="#FFFFFF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" filter="url(#sticker)">
+    <path d="M4 20h4l10.5-10.5a2.828 2.828 0 1 0-4-4L4 16v4"/>
+    <path d="M13.5 6.5l4 4"/>
+    <path d="M16 22l5-5"/>
+    <path d="M21 21.5V17h-4.5"/>
+  </g>
+</svg>

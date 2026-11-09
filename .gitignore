@@ -1,0 +1,5 @@
+.DS_Store
+scripts/node_modules/
+.serena/cache/
+.serena/project.local.yml
+*.log
