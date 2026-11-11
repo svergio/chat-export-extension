@@ -180,6 +180,21 @@
     "chats.ask_selection": true,
     "chats.side_ask": true
   };
+  var CREATE_OPS = {
+    "chats.create": true,
+    "chats.send": true,
+    "chats.ask_selection": true,
+    "chats.side_ask": true
+  };
+  var DESTRUCTIVE_OPS = {
+    "chats.delete": true,
+    "containers.delete": true
+  };
+  var PROJECT_OPS = {
+    "containers.create": true,
+    "containers.delete": true,
+    "containers.move_chat": true
+  };
   var PROTOCOL_V = 1;
   var PLATFORM_START = {
     chatgpt: "https://chatgpt.com/",
@@ -203,6 +218,7 @@
   var currentSettings = normalizeSettings({});
   var browserId = "";
   var started = false;
+  var tabsSyncTimer = null;
   var KEEPALIVE_ALARM = "ce-bridge-keepalive";
   var KEEPALIVE_MS = 2e4;
   function sleep(ms) {
@@ -241,6 +257,62 @@
     }
     return false;
   }
+  function platformFromUrl(url) {
+    for (let i = 0; i < Object.keys(PLATFORM_START).length; i++) {
+      const platform = Object.keys(PLATFORM_START)[i];
+      if (matchPlatform(platform, url)) return platform;
+    }
+    return "";
+  }
+  function extractChatId(platform, url) {
+    if (!url) return "";
+    let u;
+    try {
+      u = new URL(url);
+    } catch (e) {
+      return "";
+    }
+    const path = u.pathname || "";
+    if (platform === "chatgpt") {
+      let m = path.match(/\/c\/([^/?#]+)/);
+      if (m) return m[1];
+      m = path.match(/\/g\/[^/]+\/c\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "claude") {
+      const m = path.match(/\/chat\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "grok" || platform === "grok-x") {
+      const fromQuery = u.searchParams.get("conversationId") || u.searchParams.get("chatId");
+      if (fromQuery) return fromQuery;
+      const m = path.match(/\/(?:c|chat|conversations?)\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "copilot") {
+      const m = path.match(/\/(?:chat|copilot\/c)\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    return "";
+  }
+  async function collectTabsSnapshot() {
+    const tabs = await chrome.tabs.query({});
+    const out = [];
+    for (let i = 0; i < tabs.length; i++) {
+      const tab = tabs[i];
+      const platform = platformFromUrl(tab.url || "");
+      if (!platform) continue;
+      out.push({
+        tabId: tab.id,
+        platform,
+        url: tab.url || "",
+        chatId: extractChatId(platform, tab.url || ""),
+        title: tab.title || "",
+        active: !!tab.active
+      });
+    }
+    return out;
+  }
   function publishStatus(state, detail) {
     return setBridgeStatus({ state, detail: detail || "", at: Date.now() });
   }
@@ -249,16 +321,19 @@
     socket.send(JSON.stringify(obj));
     return true;
   }
-  function helloPayload() {
+  async function helloPayload() {
     return {
       type: "hello",
-      v: PROTOCOL_V,
+      protocolVersion: PROTOCOL_V,
       key: String(currentSettings.apiKey || ""),
       browserId,
       browserLabel: currentSettings.browserLabel || "Chrome",
       extVersion: EXT_VERSION,
       platformsEnabled: platformsEnabledList(currentSettings),
-      allowDestructive: !!currentSettings.allowDestructive
+      allowCreate: currentSettings.allowCreate !== false,
+      allowDestructive: !!currentSettings.allowDestructive,
+      allowProjects: currentSettings.allowProjects !== false,
+      tabs: await collectTabsSnapshot()
     };
   }
   async function ensureLocalKey() {
@@ -278,13 +353,16 @@
     const bid = id || browserId;
     if (!s.apiKey.trim()) throw new Error("api key required");
     if (!bid) throw new Error("browserId required");
-    const res = await fetch(enrollUrl(s.port), {
+    const res = await fetch(enrollUrl(s.host, s.port), {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         key: s.apiKey.trim(),
         browserId: bid,
-        browserLabel: s.browserLabel || "Chrome"
+        browserLabel: s.browserLabel || "Chrome",
+        allowCreate: s.allowCreate !== false,
+        allowDestructive: !!s.allowDestructive,
+        allowProjects: s.allowProjects !== false
       })
     });
     let body = null;
@@ -302,9 +380,27 @@
     return {
       type: "settings",
       platformsEnabled: platformsEnabledList(currentSettings),
+      allowCreate: currentSettings.allowCreate !== false,
       allowDestructive: !!currentSettings.allowDestructive,
+      allowProjects: currentSettings.allowProjects !== false,
       browserLabel: currentSettings.browserLabel || "Chrome"
     };
+  }
+  async function pushTabsIfConnected() {
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    return sendJson({
+      type: "tabs",
+      browserId,
+      tabs: await collectTabsSnapshot()
+    });
+  }
+  function scheduleTabsSync() {
+    if (tabsSyncTimer) clearTimeout(tabsSyncTimer);
+    tabsSyncTimer = setTimeout(function() {
+      tabsSyncTimer = null;
+      pushTabsIfConnected().catch(function() {
+      });
+    }, 500);
   }
   function rpcResult(id, body) {
     if (body && body.ok === true) {
@@ -486,7 +582,19 @@
         error: { code: "PLATFORM_DISABLED", message: "platform " + platform + " is disabled" }
       });
     }
-    if (op === "chats.delete" && !currentSettings.allowDestructive) {
+    if (CREATE_OPS[op] && currentSettings.allowCreate === false) {
+      return rpcResult(id, {
+        ok: false,
+        error: { code: "CREATE_DISABLED", message: "allowCreate is off" }
+      });
+    }
+    if (PROJECT_OPS[op] && currentSettings.allowProjects === false) {
+      return rpcResult(id, {
+        ok: false,
+        error: { code: "PROJECTS_DISABLED", message: "allowProjects is off" }
+      });
+    }
+    if (DESTRUCTIVE_OPS[op] && !currentSettings.allowDestructive) {
       return rpcResult(id, {
         ok: false,
         error: { code: "DESTRUCTIVE_DISABLED", message: "allowDestructive is off" }
@@ -582,6 +690,7 @@
       reconnectAttempt = 0;
       startKeepalive();
       publishStatus("connected", frame.serverVersion ? "server " + frame.serverVersion : "");
+      scheduleTabsSync();
       return;
     }
     if (frame.type === "error") {
@@ -612,7 +721,7 @@
       }
       socket = null;
     }
-    const url = wsUrl(currentSettings.port);
+    const url = wsUrl(currentSettings.host, currentSettings.port);
     let ws;
     try {
       ws = new WebSocket(url);
@@ -623,7 +732,11 @@
     }
     socket = ws;
     ws.onopen = function() {
-      sendJson(helloPayload());
+      helloPayload().then(function(payload) {
+        sendJson(payload);
+      }).catch(function() {
+        publishStatus("offline", "hello failed");
+      });
     };
     ws.onmessage = function(ev) {
       handleServerMessage(ev.data);
@@ -687,6 +800,10 @@
   function disconnect(reason) {
     clearReconnect();
     clearKeepalive();
+    if (tabsSyncTimer) {
+      clearTimeout(tabsSyncTimer);
+      tabsSyncTimer = null;
+    }
     intentionalClose = true;
     if (socket) {
       try {
@@ -705,13 +822,17 @@
     }
     if (socket && socket.readyState === WebSocket.OPEN) {
       sendJson(settingsPayload());
+      scheduleTabsSync();
       return;
     }
     reconnectAttempt = 0;
     connect();
   }
   function pushSettingsIfConnected() {
-    if (socket && socket.readyState === WebSocket.OPEN) sendJson(settingsPayload());
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      sendJson(settingsPayload());
+      scheduleTabsSync();
+    }
   }
   function getRuntimeState() {
     return {
@@ -728,7 +849,7 @@
         return { ok: false, state: "offline", detail: "faq consent required" };
       }
       await enrollKeyToServer(settings, ensured.browserId);
-      const url = wsUrl(settings.port);
+      const url = wsUrl(settings.host, settings.port);
       return await new Promise(function(resolve) {
         let settled = false;
         let ws;
@@ -752,18 +873,25 @@
           return;
         }
         ws.onopen = function() {
-          ws.send(
-            JSON.stringify({
-              type: "hello",
-              v: PROTOCOL_V,
-              key: settings.apiKey,
-              browserId: ensured.browserId,
-              browserLabel: settings.browserLabel || "Chrome",
-              extVersion: EXT_VERSION,
-              platformsEnabled: platformsEnabledList(settings),
-              allowDestructive: !!settings.allowDestructive
-            })
-          );
+          collectTabsSnapshot().then(function(tabs) {
+            ws.send(
+              JSON.stringify({
+                type: "hello",
+                protocolVersion: PROTOCOL_V,
+                key: settings.apiKey,
+                browserId: ensured.browserId,
+                browserLabel: settings.browserLabel || "Chrome",
+                extVersion: EXT_VERSION,
+                platformsEnabled: platformsEnabledList(settings),
+                allowCreate: settings.allowCreate !== false,
+                allowDestructive: !!settings.allowDestructive,
+                allowProjects: settings.allowProjects !== false,
+                tabs
+              })
+            );
+          }).catch(function() {
+            finish({ ok: false, state: "offline", detail: "hello failed" });
+          });
         };
         ws.onmessage = function(ev) {
           let frame;
@@ -822,6 +950,17 @@
       if (changes[STORAGE_KEYS.settings]) {
         applySettings(changes[STORAGE_KEYS.settings].newValue);
       }
+    });
+    chrome.tabs.onUpdated.addListener(function(_tabId, changeInfo) {
+      if (changeInfo.url || changeInfo.status === "complete" || changeInfo.title) {
+        scheduleTabsSync();
+      }
+    });
+    chrome.tabs.onRemoved.addListener(function() {
+      scheduleTabsSync();
+    });
+    chrome.tabs.onActivated.addListener(function() {
+      scheduleTabsSync();
     });
     try {
       if (chrome.alarms && chrome.alarms.onAlarm) {
