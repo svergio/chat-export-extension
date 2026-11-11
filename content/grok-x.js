@@ -513,5 +513,87 @@
     });
   }
 
+  function projectsGuard() {
+    throw new CE.RpcError('OPTION_NOT_FOUND', 'Projects are not supported on ' + PLATFORM, { supported: false });
+  }
+
+  function platformGetData() {
+    var root = activeRoot();
+    if (!root) {
+      return Promise.resolve({
+        title: 'grok-x',
+        chatId: chatIdFromUrl(),
+        model: '',
+        userName: '',
+        userHandle: '',
+        userEmail: '',
+        messages: []
+      });
+    }
+    var u = findUserMeta();
+    var model = findModel(root);
+    var scroller = liveScroller(root);
+    var assistantTag = CE.modelFenceTag(model, 'grok');
+    return CE.hydrateTranscript({
+      scroller: scroller,
+      fromEl: scroller,
+      maxSteps: 40,
+      nodes: function () {
+        return turnNodes(root);
+      },
+      keyOf: turnKey,
+      capture: function (el) {
+        return messageFromTurn(el, assistantTag);
+      }
+    }).then(function (res) {
+      return {
+        title: findTitle(root),
+        chatId: chatIdFromUrl(),
+        model: model,
+        userName: u.userName,
+        userHandle: u.userHandle,
+        userEmail: u.userEmail,
+        messages: messagesFromHydrate(res, model, root)
+      };
+    });
+  }
+
+  if (!CE.platforms[PLATFORM]) {
+    CE.platforms[PLATFORM] = {
+      id: PLATFORM,
+      chatId: chatIdFromUrl,
+      getData: platformGetData,
+      ops: {
+        capabilities: async function () {
+          return {
+            platform: PLATFORM,
+            projectsSupported: false,
+            models: [],
+            modes: [],
+            toggles: [],
+            tools: [],
+            current: {},
+            detectedAt: new Date().toISOString()
+          };
+        },
+        containers: async function () {
+          return { items: [], nextCursor: null };
+        },
+        containerChats: async function () {
+          projectsGuard();
+        },
+        containerCreate: async function () {
+          projectsGuard();
+        },
+        containerDelete: async function () {
+          projectsGuard();
+        },
+        containerMoveChat: async function () {
+          projectsGuard();
+        }
+      }
+    };
+  }
+
   CE.observe(mount);
 })();
