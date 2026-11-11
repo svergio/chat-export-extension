@@ -3,11 +3,12 @@
   "name": "Chat Export",
   "version": "1.4.0",
   "description": "Export Grok (grok.com + X), ChatGPT, Claude, and GitHub Copilot chats to Markdown, YAML, JSON, HTML, and PDF.",
-  "permissions": ["downloads", "tabs"],
+  "permissions": ["downloads", "tabs", "storage", "alarms", "scripting"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
+    "default_popup": "popup.html",
     "default_title": "Chat Export",
     "default_icon": {
       "16": "icons/toolbar-idle-16.png",
@@ -56,6 +57,7 @@
         "https://twitter.com/*",
         "https://claude.ai/*",
         "https://github.com/copilot",
+        "https://github.com/copilot?*",
         "https://github.com/copilot/*"
       ],
       "js": ["content/page-harvest.js"],
@@ -95,6 +97,7 @@
     {
       "matches": [
         "https://github.com/copilot",
+        "https://github.com/copilot?*",
         "https://github.com/copilot/*"
       ],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/copilot.js"],
