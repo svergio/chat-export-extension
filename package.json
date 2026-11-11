@@ -4,7 +4,10 @@
   "description": "Export Grok, X, ChatGPT, Claude, and GitHub Copilot chats to MD/YAML/JSON/HTML/PDF.",
   "private": true,
   "scripts": {
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "test:unit": "node --test test/options.test.js test/files.test.js",
+    "test:dom": "node --test test/menu.test.js test/busy.test.js",
+    "test": "npm run test:unit && npm run test:dom"
   },
   "repository": {
     "type": "git",
