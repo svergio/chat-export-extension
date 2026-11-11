@@ -47,6 +47,42 @@ flowchart LR
 
 Wiki walkthrough: [Installation and quickstart](https://github.com/svergio/chat-export-extension/wiki).
 
+## Configuration
+
+This repo controls the **browser bridge** only. MCP keys and the data directory live on [chat-export-server](https://github.com/svergio/chat-export-server).
+
+### Popup and options (`src/settings.js`)
+
+Settings persist in `chrome.storage.local` under `ce.settings`.
+
+| Setting | Default | Role |
+|---------|---------|------|
+| `serverOn` | `false` | Turn WebSocket bridge on |
+| `host` | `127.0.0.1` | Server host (keep loopback unless you know the risk) |
+| `port` | `8765` | Server HTTP/WS port |
+| `apiKey` | empty | Browser gateway token `ceb_…` from server or dashboard |
+| `browserLabel` | `Chrome` | Label in dashboard / `browsers_list` |
+| `platforms.*` | all enabled | Per-site toggles: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude` |
+| `allowCreate` | `true` | Allow MCP create/send |
+| `allowDestructive` | `false` | Allow MCP delete (server must agree) |
+| `allowProjects` | `true` | Project tools where supported |
+| `rpcTimeoutS` | `60` | Extension RPC timeout (seconds) |
+
+**Basic** mode: export formats and bridge on/off. **Advanced**: host, port, `ceb_` token, platform matrix, permission gates.
+
+### Connect to the local server
+
+1. Start [chat-export-server](https://github.com/svergio/chat-export-server) on `http://127.0.0.1:8765`.
+2. Create or copy a **`ceb_`** token (`chat-export-server browser enroll` or dashboard **Browsers**).
+3. Popup → Advanced → paste token, set host/port, enable **serverOn**, save.
+4. Open provider tabs logged in; status should show a live WebSocket (`/ws`).
+
+### Browser slots (two profiles)
+
+Up to **two** Chrome profiles may hold active `ceb_` connections (separate job lanes). Install this extension in the second profile, enroll another `ceb_` key in the [dashboard](https://github.com/svergio/chat-export-dashboard) **Browsers** page, keep both windows open.
+
+Server MCP setup: [server README — Configuration](https://github.com/svergio/chat-export-server#configuration). Dashboard login: [dashboard README](https://github.com/svergio/chat-export-dashboard#configuration).
+
 ## Export bar (no server required)
 
 1. Open [grok.com](https://grok.com), [chatgpt.com](https://chatgpt.com), [claude.ai](https://claude.ai), [x.com/i/grok](https://x.com/i/grok), or [github.com/copilot](https://github.com/copilot) and refresh after extension updates.
@@ -79,9 +115,12 @@ Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer
 Chat Export is free and open source. If it saves you time:
 
 - **Tip (fiat):** [DonationAlerts — svwergio_mel](https://www.donationalerts.com/r/svwergio_mel)
-- **Crypto (optional):** maintainers document public addresses in [crypto-donations.md](https://github.com/svergio/chat-export-server/blob/main/README.md#support-the-project) — verify the network before sending.
 
 Tips are voluntary and non-refundable. They do not buy private support SLAs.
+
+## Contributing
+
+Platform and locale checklists (concrete paths across extension, server, dashboard): [CONTRIBUTING.md](CONTRIBUTING.md) and [wiki Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing).
 
 ## License
 
