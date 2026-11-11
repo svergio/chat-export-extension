@@ -5,8 +5,26 @@
   var DEFAULT_HOST = "127.0.0.1";
   var DEFAULT_PORT = 8765;
   var WS_PATH = "/ws";
-  var PLATFORMS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
-  var UI_SKINS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
+  var PLATFORMS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
+  var UI_SKINS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
   var STORAGE_KEYS = Object.freeze({
@@ -25,7 +43,10 @@
       grok: true,
       "grok-x": true,
       copilot: true,
-      claude: true
+      claude: true,
+      qwen: true,
+      deepseek: true,
+      perplexity: true
     }),
     allowCreate: true,
     allowDestructive: false,

@@ -496,6 +496,12 @@ function App() {
               />
             </label>
 
+            <label class="ce-field">
+              <span>{t('label.browserId')}</span>
+              <input type="text" readOnly spellcheck={false} value={browserId || '—'} />
+              <p class="ce-hint">{t('browser.hint')}</p>
+            </label>
+
             <div class="ce-field">
               <span>{t('label.gatewayToken')}</span>
               <input
@@ -608,7 +614,6 @@ function App() {
               </ul>
             </details>
 
-            <p class="ce-meta">browserId: {browserId || '—'}</p>
           </div>
         ) : null}
       </section>
