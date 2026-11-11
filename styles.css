@@ -413,6 +413,77 @@
   }
 }
 
+.chat-export-bar--deepseek {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 6px 0 0 !important;
+}
+
+.chat-export-bar--deepseek > button[aria-label='Export format'] {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(77, 107, 254, 0.35) !important;
+  background: rgba(77, 107, 254, 0.12) !important;
+  color: rgb(77, 107, 254) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+}
+
+.chat-export-bar--deepseek > button[aria-label='Export format']:hover,
+.chat-export-bar--deepseek > button[aria-label='Export format'].is-open {
+  background: rgba(77, 107, 254, 0.2) !important;
+}
+
+.chat-export-bar--deepseek .chat-export-format-text {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.chat-export-bar--deepseek .chat-export-chevron {
+  width: 12px !important;
+  height: 12px !important;
+  opacity: 0.85;
+}
+
+.chat-export-bar--deepseek .chat-export-dl {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(77, 107, 254, 0.25) !important;
+  background: transparent !important;
+  color: rgb(77, 107, 254) !important;
+}
+
+.chat-export-bar--deepseek .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--deepseek .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
 .chat-export-bar--qwen {
   flex: 0 0 auto;
   align-self: center;

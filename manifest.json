@@ -37,7 +37,8 @@
     "https://api.enterprise.githubcopilot.com/*",
     "https://chat.qwen.ai/*",
     "https://www.perplexity.ai/*",
-    "https://perplexity.ai/*"
+    "https://perplexity.ai/*",
+    "https://chat.deepseek.com/*"
   ],
   "web_accessible_resources": [
     {
@@ -52,7 +53,8 @@
         "https://github.com/*",
         "https://chat.qwen.ai/*",
         "https://www.perplexity.ai/*",
-        "https://perplexity.ai/*"
+        "https://perplexity.ai/*",
+        "https://chat.deepseek.com/*"
       ]
     }
   ],
@@ -122,6 +124,12 @@
     {
       "matches": ["https://www.perplexity.ai/*", "https://perplexity.ai/*"],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/perplexity.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://chat.deepseek.com/*"],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/deepseek.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     }
