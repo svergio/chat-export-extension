@@ -149,7 +149,20 @@
     return res.json();
   }
 
+  function composerInputVisible(el) {
+    if (!el) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 20 && r.height > 10;
+  }
+
   function findComposerInput() {
+    var nodes = document.querySelectorAll(
+      '.ProseMirror[contenteditable="true"], [contenteditable="true"][role="textbox"]'
+    );
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      if (composerInputVisible(nodes[i])) return nodes[i];
+    }
     var form =
       document.querySelector('form[data-type="unified-composer"]') ||
       document.querySelector('form[data-chatgpt-composer]') ||
@@ -160,18 +173,37 @@
         form.querySelector('[contenteditable="true"][role="textbox"]');
       if (el) return el;
     }
-    return (
-      document.querySelector('.ProseMirror[contenteditable="true"]') ||
-      document.querySelector('[contenteditable="true"][role="textbox"]')
+    return nodes[0] || null;
+  }
+
+  function pickSendIn(root) {
+    if (!root || !root.querySelector) return null;
+    var candidates = root.querySelectorAll(
+      'button[data-testid="send-button"], button[aria-label*="Send" i], button[aria-label*="Отправ" i]'
     );
+    var i;
+    var b;
+    var r;
+    var first = null;
+    for (i = 0; i < candidates.length; i++) {
+      b = candidates[i];
+      if (b.getAttribute('data-composer-voice-start') === 'true') continue;
+      if (/голос|voice/i.test(b.getAttribute('aria-label') || '')) continue;
+      if (!first) first = b;
+      r = b.getBoundingClientRect();
+      if (r.width > 8 && r.height > 8) return b;
+    }
+    return first;
   }
 
   function findSendButton() {
-    return (
-      document.querySelector('button[data-testid="send-button"]') ||
-      document.querySelector('form button[aria-label*="Send" i]') ||
-      document.querySelector('form button[aria-label*="Отправ" i]')
-    );
+    var b = pickSendIn(findComposerFooter());
+    if (b) return b;
+    var input = findComposerInput();
+    var form = input && input.closest ? input.closest('form') : null;
+    b = pickSendIn(form);
+    if (b) return b;
+    return pickSendIn(document);
   }
 
   function stopButtonVisible() {
@@ -210,15 +242,18 @@
   }
 
   async function waitComposerIdle() {
-    await Ops.waitFor(
-      function () {
-        if (stopButtonVisible()) return null;
-        var send = findSendButton();
-        if (!send || send.disabled || send.getAttribute('aria-disabled') === 'true') return null;
-        return true;
-      },
-      { timeoutMs: 120000, message: 'ChatGPT composer busy' }
-    ).catch(function () {});
+    try {
+      await Ops.waitFor(
+        function () {
+          if (stopButtonVisible()) return null;
+          return findComposerInput() || null;
+        },
+        { timeoutMs: 120000, message: 'ChatGPT composer busy' }
+      );
+    } catch (e) {
+      if (stopButtonVisible()) rpcErr('PLATFORM_BUSY', 'ChatGPT still generating');
+      throw e;
+    }
   }
 
   async function submitComposerText(text) {
@@ -229,23 +264,31 @@
       timeoutMs: 15000,
       message: 'ChatGPT composer timeout'
     });
+    var turnsBefore = turnNodes().length;
     var fill = Ops.fillRichComposer || Ops.fillEditable;
     fill(input, body);
     await Ops.sleep(200);
+    if (stopButtonVisible() || turnNodes().length > turnsBefore) {
+      return turnsBefore;
+    }
     var send = await Ops.waitFor(
       function () {
+        if (stopButtonVisible() || turnNodes().length > turnsBefore) return true;
         var b = findSendButton();
         if (!b || b.disabled || b.getAttribute('aria-disabled') === 'true') return null;
         return b;
       },
       { timeoutMs: 60000, message: 'ChatGPT send button not found' }
     );
-    var turnsBefore = turnNodes().length;
+    if (send === true || stopButtonVisible() || turnNodes().length > turnsBefore) {
+      return turnsBefore;
+    }
     if (Ops.ensureComposerSubmitted) {
       await Ops.ensureComposerSubmitted({
         send: send,
         input: input,
         message: 'ChatGPT submit failed',
+        timeoutMs: 8000,
         isDone: function () {
           return stopButtonVisible() || turnNodes().length > turnsBefore ? true : null;
         }

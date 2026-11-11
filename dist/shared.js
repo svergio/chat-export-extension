@@ -4124,8 +4124,7 @@
     var cur = String(el && (el.innerText || el.textContent) || "").replace(/\u00a0/g, " ").trim();
     var want = String(value || "").replace(/\u00a0/g, " ").trim();
     if (!want) return !!cur;
-    if (cur === want) return true;
-    return cur.indexOf(want.slice(0, Math.min(24, want.length))) >= 0;
+    return cur === want;
   }
   function fillRichComposer(el, text) {
     if (!el) throw new Error("composer not found");
@@ -4157,26 +4156,6 @@
     } catch (e22) {
     }
     if (editableHasText(el, value)) return "paste";
-    try {
-      el.dispatchEvent(
-        new view.InputEvent("beforeinput", {
-          bubbles: true,
-          cancelable: true,
-          data: value,
-          inputType: "insertFromPaste"
-        })
-      );
-      el.dispatchEvent(
-        new view.InputEvent("input", {
-          bubbles: true,
-          cancelable: true,
-          data: value,
-          inputType: "insertFromPaste"
-        })
-      );
-    } catch (e3) {
-    }
-    if (editableHasText(el, value)) return "beforeinput";
     try {
       selectEditableContents(el);
       if (el.ownerDocument.execCommand("insertText", false, value) && editableHasText(el, value)) {
@@ -4257,9 +4236,34 @@
     var timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : 5e3;
     if (send) clickEl(send);
     try {
-      await waitFor(isDone, { timeoutMs: 1200, intervalMs: 100, message: "click submit pending" });
+      await waitFor(isDone, { timeoutMs: 2e3, intervalMs: 100, message: "click submit pending" });
       return "click";
     } catch (e1) {
+    }
+    try {
+      if (isDone()) return "click-late";
+    } catch (eLate) {
+    }
+    if (send && (send.disabled || send.getAttribute("aria-disabled") === "true")) {
+      await waitFor(isDone, {
+        timeoutMs,
+        intervalMs: 150,
+        message: opts.message || "composer submit failed"
+      });
+      return "click-disabled";
+    }
+    var emptied = false;
+    try {
+      emptied = !!(input && !String(input.innerText || input.textContent || "").trim());
+    } catch (eEmpty) {
+    }
+    if (emptied) {
+      await waitFor(isDone, {
+        timeoutMs,
+        intervalMs: 150,
+        message: opts.message || "composer submit failed"
+      });
+      return "cleared";
     }
     if (input) dispatchEnter(input);
     if (send && !(send.disabled || send.getAttribute("aria-disabled") === "true")) {
