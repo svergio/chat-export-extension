@@ -2,7 +2,7 @@
   'use strict';
 
   var CE = window.ChatExport;
-  if (!CE) return;
+  if (!CE || !CE.definePlatform) return;
 
   function chatIdFromUrl() {
     var m = location.pathname.match(/\/c\/([0-9a-fA-F-]{8,})/);
@@ -288,29 +288,6 @@
     }
   }
 
-  function parseMessages(modelName, root) {
-    var assistantTag = CE.modelFenceTag(modelName, 'chatgpt');
-    var turns = turnNodes(root);
-    var messages = [];
-    for (var i = 0; i < turns.length; i++) {
-      var msg = messageFromTurn(turns[i], assistantTag);
-      if (msg) messages.push(msg);
-    }
-    return messages;
-  }
-
-  function messagesFromHydrate(res, modelName, root) {
-    var live = parseMessages(modelName, root);
-    if (!res || !res.items) return live;
-    var captured = [];
-    var order = res.order || [];
-    for (var i = 0; i < order.length; i++) {
-      var row = res.items[order[i]];
-      if (row && row.payload && row.payload.role) captured.push(row.payload);
-    }
-    return captured.length > live.length ? captured : live;
-  }
-
   function btnBlob(btn) {
     return (
       (btn.getAttribute('aria-label') || '') +
@@ -407,67 +384,502 @@
     };
   }
 
-  function mount() {
-    var found = findComposerToolbar();
-    if (!found || !found.el) return;
+  var Ops = CE.Ops || {};
+  var SIDEBAR_PAGE_GUARD = 20;
+  var PROJECT_ID_RE = /\/g\/(g-p-[A-Za-z0-9]+)/;
+  var tokenCache = '';
 
-    var existing = document.querySelector('[data-chat-export-bar="chatgpt"]');
-    var sameVer = existing && existing.getAttribute('data-chat-export-v') === CE.EXT_VERSION;
-    var existingOk =
-      existing &&
-      existing.isConnected &&
-      sameVer &&
-      found.el.contains(existing) &&
-      existing.getBoundingClientRect().width > 0;
-    if (existingOk) return;
-    if (existing) existing.remove();
+  function rpcErr(code, message, details) {
+    throw new CE.RpcError(code, message, details);
+  }
 
-    CE.injectBar(found.el, {
-      platform: 'chatgpt',
-      modifier: 'chatgpt',
-      insertAfter: found.insertAfter,
-      beforeChild: found.beforeChild,
-      nativeFrom: found.nativeFrom,
-      nativeClass: found.nativeFrom ? String(found.nativeFrom.className || '').trim() : '',
-      nativeIconFrom: found.nativeIconFrom,
-      nativeIconClass: found.nativeIconFrom ? String(found.nativeIconFrom.className || '').trim() : '',
-      downloadSvg: function () {
-        // Match ChatGPT sprite codex-icon-arrow-down-line-horizontal-light-16
-        return (
-          '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" class="text-default" fill="currentColor">' +
-          '<path d="M13.166 12.808a.526.526 0 0 1 0 1.05H2.833a.526.526 0 0 1 0-1.05zM8 2.141c.29 0 .526.236.526.526V8.73l2.436-2.436a.525.525 0 0 1 .742.743l-2.98 2.98c-.4.4-1.05.4-1.45 0l-2.979-2.98a.525.525 0 0 1 .742-.743l2.438 2.438V2.667c0-.29.235-.526.525-.526"/>' +
-          '</svg>'
-        );
-      },
-      getData: function () {
-        var u = findUserMeta();
-        var model = findModel();
-        var scroller = liveThread();
-        var assistantTag = CE.modelFenceTag(model, 'chatgpt');
-        return CE.hydrateTranscript({
-          scroller: scroller,
-          fromEl: scroller,
-          nodes: function () {
-            return turnNodes(scroller);
-          },
-          keyOf: turnKey,
-          capture: function (el) {
-            return messageFromTurn(el, assistantTag);
-          }
-        }).then(function (res) {
-          return {
-            title: findTitle(),
-            chatId: chatIdFromUrl(),
-            model: model,
-            userName: u.userName,
-            userHandle: u.userHandle,
-            userEmail: u.userEmail,
-            messages: messagesFromHydrate(res, model, (res && res.scroller) || scroller)
-          };
-        });
+  function hostErr(err) {
+    if (err && err.code && CE.RpcError && err instanceof CE.RpcError) throw err;
+    rpcErr('HOST_ERROR', (err && err.message) || String(err || 'host error'));
+  }
+
+  function labelOf(el) {
+    return ((el.getAttribute('aria-label') || '') + ' ' + (el.textContent || '')).replace(/\s+/g, ' ').trim();
+  }
+
+  function visible(el) {
+    if (!el || !el.isConnected) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+
+  function findByLabel(selector, re, root) {
+    var list = (root || document).querySelectorAll(selector);
+    for (var i = 0; i < list.length; i++) {
+      if (!visible(list[i])) continue;
+      if (re.test(labelOf(list[i]))) return list[i];
+    }
+    return null;
+  }
+
+  async function accessToken(force) {
+    if (tokenCache && !force) return tokenCache;
+    var res = await fetch('/api/auth/session', { credentials: 'include' });
+    if (!res.ok) rpcErr('UNAUTHORIZED', 'session ' + res.status);
+    var data = await res.json();
+    if (!data || !data.accessToken) rpcErr('UNAUTHORIZED', 'not signed in');
+    tokenCache = data.accessToken;
+    return tokenCache;
+  }
+
+  async function apiFetch(path, opts) {
+    opts = opts || {};
+    var refreshed = false;
+    for (;;) {
+      var token = await accessToken(refreshed);
+      var res = await fetch('/backend-api' + path, {
+        method: opts.method || 'GET',
+        credentials: 'include',
+        headers: Object.assign({ Accept: 'application/json', Authorization: 'Bearer ' + token }, opts.headers || {}),
+        body: opts.body
+      });
+      if (res.status === 401 && !refreshed) {
+        refreshed = true;
+        continue;
       }
+      return res;
+    }
+  }
+
+  async function failFromResponse(res, what) {
+    if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', what + ' ' + res.status);
+    if (res.status === 404) rpcErr('NOT_FOUND', what + ' not found');
+    if (res.status === 429) rpcErr('RATE_LIMIT', what + ' rate limited');
+    var body = '';
+    try {
+      body = (await res.text()).slice(0, 160);
+    } catch (e) {}
+    rpcErr('HOST_ERROR', what + ' ' + res.status + ' ' + body);
+  }
+
+  function chatUrl(chatId, containerId) {
+    return location.origin + (containerId ? '/g/' + containerId : '') + '/c/' + chatId;
+  }
+
+  function projectUrl(id) {
+    return location.origin + '/g/' + id + '/project';
+  }
+
+  function toContainer(g) {
+    var id = g && g.id;
+    if (!id) return null;
+    var display = g.display || {};
+    return {
+      platform: 'chatgpt',
+      containerId: String(id),
+      containerType: 'project',
+      title: display.name || String(id),
+      url: projectUrl(id),
+      updatedAt: Ops.toIso(g.updated_at || g.last_interacted_at)
+    };
+  }
+
+  function toChat(row, container) {
+    var cid = (container && container.containerId) || row.gizmo_id || row.conversation_template_id || '';
+    var chat = {
+      platform: 'chatgpt',
+      chatId: String(row.id),
+      title: row.title || '',
+      url: chatUrl(row.id, cid),
+      updatedAt: Ops.toIso(row.update_time),
+      createdAt: Ops.toIso(row.create_time)
+    };
+    if (cid) {
+      chat.containerType = 'project';
+      chat.containerId = String(cid);
+      if (container && container.title) chat.containerTitle = container.title;
+    }
+    return chat;
+  }
+
+  async function apiProjects() {
+    var items = [];
+    var cursor = null;
+    for (var page = 0; page < SIDEBAR_PAGE_GUARD; page++) {
+      var path =
+        '/gizmos/snorlax/sidebar?conversations_per_gizmo=1&owned_only=true' +
+        (cursor ? '&cursor=' + encodeURIComponent(cursor) : '');
+      var res = await apiFetch(path);
+      if (!res.ok) await failFromResponse(res, 'projects');
+      var data = await res.json();
+      var rows = (data && data.items) || [];
+      for (var i = 0; i < rows.length; i++) {
+        var g = rows[i] && rows[i].gizmo && rows[i].gizmo.gizmo;
+        var c = toContainer(g);
+        if (c) items.push(c);
+      }
+      cursor = data && data.cursor ? String(data.cursor) : null;
+      if (!cursor) break;
+    }
+    return items;
+  }
+
+  function domProjects() {
+    var byId = {};
+    var order = [];
+    var anchors = document.querySelectorAll('a[href*="/g/g-p-"]');
+    for (var i = 0; i < anchors.length; i++) {
+      var href = anchors[i].getAttribute('href') || '';
+      var m = href.match(PROJECT_ID_RE);
+      if (!m) continue;
+      var id = m[1];
+      if (!byId[id]) {
+        byId[id] = { containerId: id, title: '' };
+        order.push(id);
+      }
+      if (/\/g\/g-p-[A-Za-z0-9]+\/project/.test(href)) {
+        byId[id].title = (anchors[i].getAttribute('aria-label') || anchors[i].textContent || '').replace(/\s+/g, ' ').trim();
+      }
+    }
+    return order.map(function (id) {
+      var row = byId[id];
+      return {
+        platform: 'chatgpt',
+        containerId: id,
+        containerType: 'project',
+        title: row.title || id,
+        url: projectUrl(id),
+        updatedAt: null
+      };
     });
   }
 
-  CE.observe(mount);
+  async function listProjects() {
+    var items = [];
+    try {
+      items = await apiProjects();
+    } catch (err) {
+      if (err && (err.code === 'UNAUTHORIZED' || err.code === 'RATE_LIMIT')) throw err;
+    }
+    var seen = {};
+    items.forEach(function (c) {
+      seen[c.containerId] = true;
+    });
+    domProjects().forEach(function (c) {
+      if (!seen[c.containerId]) items.push(c);
+    });
+    return items;
+  }
+
+  async function findProject(containerId) {
+    var all = await listProjects();
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].containerId === containerId) return all[i];
+    }
+    return null;
+  }
+
+  function domProjectChats(container) {
+    var out = [];
+    var seen = {};
+    var anchors = document.querySelectorAll('a[href*="/g/' + container.containerId + '/c/"]');
+    for (var i = 0; i < anchors.length; i++) {
+      var m = (anchors[i].getAttribute('href') || '').match(/\/c\/([0-9a-fA-F-]{8,})/);
+      if (!m || seen[m[1]]) continue;
+      seen[m[1]] = true;
+      out.push(
+        toChat(
+          { id: m[1], title: (anchors[i].getAttribute('aria-label') || anchors[i].textContent || '').trim() },
+          container
+        )
+      );
+    }
+    return out;
+  }
+
+  async function projectChats(container, args) {
+    var limit = Ops.clampLimit(args && args.limit);
+    var cursor = args && args.cursor != null && String(args.cursor) !== '' ? String(args.cursor) : '0';
+    var items = [];
+    var next = null;
+    for (var page = 0; page < SIDEBAR_PAGE_GUARD; page++) {
+      var res = await apiFetch(
+        '/gizmos/' + encodeURIComponent(container.containerId) + '/conversations?cursor=' + encodeURIComponent(cursor)
+      );
+      if (!res.ok) await failFromResponse(res, 'project chats');
+      var data = await res.json();
+      var rows = (data && data.items) || [];
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i] && rows[i].id) items.push(toChat(rows[i], container));
+      }
+      next = data && data.cursor != null && data.cursor !== '' ? String(data.cursor) : null;
+      if (!next || items.length >= limit) break;
+      cursor = next;
+    }
+    return { items: items, nextCursor: next };
+  }
+
+  function projectIdFromUrl() {
+    var m = location.pathname.match(PROJECT_ID_RE);
+    return m ? m[1] : '';
+  }
+
+  async function createViaDom(name) {
+    var before = {};
+    (await listProjects()).forEach(function (c) {
+      before[c.containerId] = true;
+    });
+    var addBtn = findByLabel(
+      'button, a, [role="button"]',
+      /добавить новый проект|новый проект|создать проект|new project|create project|add new project/i
+    );
+    if (!addBtn) rpcErr('HOST_ERROR', 'new project button not found');
+    Ops.clickEl(addBtn);
+    var dialog = await Ops.waitFor(
+      function () {
+        var list = document.querySelectorAll('[role="dialog"]');
+        for (var i = 0; i < list.length; i++) {
+          if (visible(list[i]) && list[i].querySelector('input:not([type="hidden"]), textarea')) return list[i];
+        }
+        return null;
+      },
+      { timeoutMs: 10000, message: 'new project dialog did not open' }
+    );
+    Ops.setNativeValue(dialog.querySelector('input:not([type="hidden"]), textarea'), name);
+    var confirm = await Ops.waitFor(
+      function () {
+        var btns = dialog.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+          if (btns[i].disabled || btns[i].getAttribute('aria-disabled') === 'true') continue;
+          var t = (btns[i].textContent || '').replace(/\s+/g, ' ').trim();
+          if (/^(создать( проект)?|create( project)?)$/i.test(t)) return btns[i];
+        }
+        return null;
+      },
+      { timeoutMs: 8000, message: 'create project button not enabled' }
+    );
+    Ops.clickEl(confirm);
+    var created = await Ops.waitFor(
+      function () {
+        var fromUrl = projectIdFromUrl();
+        return fromUrl && !before[fromUrl] ? fromUrl : null;
+      },
+      { timeoutMs: 15000, message: 'project was not created' }
+    ).catch(function () {
+      return '';
+    });
+    if (created) return created;
+    var after = await listProjects();
+    for (var i = 0; i < after.length; i++) {
+      if (!before[after[i].containerId] && after[i].title === name) return after[i].containerId;
+    }
+    rpcErr('HOST_ERROR', 'project created but id not found');
+  }
+
+  async function menuAction(trigger, itemRe, message) {
+    var menu = await Ops.openMenu(trigger, { message: message });
+    var picked = Ops.pickMenuItem(menu, itemRe);
+    if (!picked) {
+      Ops.closeMenu(document);
+      rpcErr('OPTION_NOT_FOUND', message);
+    }
+    return picked;
+  }
+
+  async function confirmDialog(re, message) {
+    var btn = await Ops.waitFor(
+      function () {
+        var list = document.querySelectorAll('[role="dialog"], [role="alertdialog"]');
+        for (var i = 0; i < list.length; i++) {
+          if (!visible(list[i])) continue;
+          var btns = list[i].querySelectorAll('button');
+          for (var j = 0; j < btns.length; j++) {
+            var t = (btns[j].textContent || '').replace(/\s+/g, ' ').trim();
+            if (re.test(t) && !btns[j].disabled) return btns[j];
+          }
+        }
+        return null;
+      },
+      { timeoutMs: 8000, message: message }
+    );
+    Ops.clickEl(btn);
+  }
+
+  async function deleteViaDom(container) {
+    var name = container.title;
+    var trigger = null;
+    var buttons = document.querySelectorAll('button[aria-label]');
+    for (var i = 0; i < buttons.length; i++) {
+      var aria = buttons[i].getAttribute('aria-label') || '';
+      if (/^(действия проекта|project actions|project options)\s/i.test(aria) && aria.slice(-name.length) === name) {
+        trigger = buttons[i];
+        break;
+      }
+    }
+    if (!trigger) rpcErr('NOT_FOUND', 'project row not found in sidebar: ' + name);
+    await menuAction(trigger, /удалить проект|delete project|^удалить$|^delete$/i, 'delete project menu item not found');
+    await confirmDialog(/^(удалить|delete)$/i, 'delete confirmation not found');
+    await Ops.waitFor(
+      function () {
+        return !document.querySelector('a[href*="/g/' + container.containerId + '/"]') ? true : null;
+      },
+      { timeoutMs: 10000, message: 'project row still present after delete' }
+    );
+  }
+
+  async function moveViaDom(chatId, target) {
+    var link = document.querySelector('a[href*="/c/' + chatId + '"]');
+    if (!link) rpcErr('NOT_FOUND', 'chat not visible in sidebar: ' + chatId);
+    var row = link.closest('[data-testid], li, div[class*="group"]') || link.parentElement;
+    var trigger = null;
+    for (var depth = 0; row && depth < 5 && !trigger; depth++) {
+      trigger =
+        row.querySelector('button[data-testid$="options"]') ||
+        row.querySelector('button[aria-label*="меню разговора" i], button[aria-label*="Действия" i], button[aria-label*="options" i]');
+      row = row.parentElement;
+    }
+    if (!trigger) rpcErr('HOST_ERROR', 'chat options button not found');
+    var item = await menuAction(
+      trigger,
+      target ? /переместить в проект|move to project/i : /удалить из проекта|remove from project/i,
+      'move menu item not found'
+    );
+    if (!target) return;
+    var re = new RegExp('^\\s*' + target.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$', 'i');
+    var sub = await Ops.waitFor(
+      function () {
+        var items = Ops.readMenuItems(Ops.locateMenuRoot(document, item.el) || document.body);
+        for (var i = 0; i < items.length; i++) {
+          if (re.test(items[i].label)) return items[i];
+        }
+        return null;
+      },
+      { timeoutMs: 8000, message: 'target project not found in move menu' }
+    );
+    Ops.clickEl(sub.el);
+  }
+
+  async function chatSummary(chatId, container) {
+    var res = await apiFetch('/conversation/' + encodeURIComponent(chatId));
+    if (res.ok) {
+      var row = await res.json();
+      row.id = chatId;
+      return toChat(row, container);
+    }
+    return toChat({ id: chatId, title: '' }, container);
+  }
+
+  CE.definePlatform({
+    id: 'chatgpt',
+    modifier: 'chatgpt',
+    fenceTag: 'chatgpt',
+    composer: findComposerToolbar,
+    chatId: chatIdFromUrl,
+    title: findTitle,
+    model: findModel,
+    user: findUserMeta,
+    scroller: liveThread,
+    turns: turnNodes,
+    turnKey: turnKey,
+    capture: messageFromTurn,
+    downloadSvg: function () {
+      // Match ChatGPT sprite codex-icon-arrow-down-line-horizontal-light-16
+      return (
+        '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" class="text-default" fill="currentColor">' +
+        '<path d="M13.166 12.808a.526.526 0 0 1 0 1.05H2.833a.526.526 0 0 1 0-1.05zM8 2.141c.29 0 .526.236.526.526V8.73l2.436-2.436a.525.525 0 0 1 .742.743l-2.98 2.98c-.4.4-1.05.4-1.45 0l-2.979-2.98a.525.525 0 0 1 .742-.743l2.438 2.438V2.667c0-.29.235-.526.525-.526"/>' +
+        '</svg>'
+      );
+    },
+    ops: {
+      containers: async function (args) {
+        try {
+          var limit = Ops.clampLimit(args && args.limit);
+          var items = (await listProjects()).filter(function (c) {
+            return Ops.matchQuery(c.title, args && args.query);
+          });
+          return { items: items.slice(0, limit), nextCursor: null };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      containerChats: async function (args) {
+        try {
+          var containerId = args && args.containerId ? String(args.containerId) : '';
+          if (!containerId) rpcErr('BAD_REQUEST', 'containerId required');
+          var container = (await findProject(containerId)) || {
+            platform: 'chatgpt',
+            containerId: containerId,
+            containerType: 'project',
+            title: ''
+          };
+          try {
+            return await projectChats(container, args);
+          } catch (err) {
+            if (err && (err.code === 'UNAUTHORIZED' || err.code === 'RATE_LIMIT' || err.code === 'NOT_FOUND')) throw err;
+            return { items: domProjectChats(container), nextCursor: null };
+          }
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      containerCreate: async function (args) {
+        try {
+          var name = String((args && args.name) || '').trim();
+          if (!name) rpcErr('BAD_REQUEST', 'name required');
+          var id = await createViaDom(name);
+          var found = await findProject(id);
+          return (
+            found || {
+              platform: 'chatgpt',
+              containerId: id,
+              containerType: 'project',
+              title: name,
+              url: projectUrl(id),
+              updatedAt: new Date().toISOString()
+            }
+          );
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      containerDelete: async function (args) {
+        try {
+          var containerId = args && args.containerId ? String(args.containerId) : '';
+          if (!containerId) rpcErr('BAD_REQUEST', 'containerId required');
+          var container = await findProject(containerId);
+          if (!container) rpcErr('NOT_FOUND', 'project not found: ' + containerId);
+          if (args && args.name && String(args.name).trim() !== container.title) {
+            rpcErr('BAD_REQUEST', 'name does not match project title');
+          }
+          var res = await apiFetch('/gizmos/' + encodeURIComponent(containerId), { method: 'DELETE' });
+          if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'delete project ' + res.status);
+          if (res.status === 429) rpcErr('RATE_LIMIT', 'delete project rate limited');
+          if (res.ok) return { deleted: true, containerId: containerId };
+          await deleteViaDom(container);
+          return { deleted: true, containerId: containerId };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      containerMoveChat: async function (args) {
+        try {
+          var chatId = args && args.chatId ? String(args.chatId) : '';
+          if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+          var containerId = args && args.containerId ? String(args.containerId) : '';
+          var target = null;
+          if (containerId) {
+            target = await findProject(containerId);
+            if (!target) rpcErr('NOT_FOUND', 'project not found: ' + containerId);
+          }
+          var res = await apiFetch('/conversation/' + encodeURIComponent(chatId), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gizmo_id: containerId || null })
+          });
+          if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'move chat ' + res.status);
+          if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+          if (res.status === 429) rpcErr('RATE_LIMIT', 'move chat rate limited');
+          if (!res.ok) await moveViaDom(chatId, target);
+          return await chatSummary(chatId, target);
+        } catch (err) {
+          hostErr(err);
+        }
+      }
+    }
+  });
 })();
