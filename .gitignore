@@ -4,3 +4,4 @@ scripts/node_modules/
 *.log
 test/
 *.test.js
+node_modules/

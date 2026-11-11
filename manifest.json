@@ -54,7 +54,7 @@
     },
     {
       "matches": ["https://grok.com/*"],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "shared.js", "content/grok.js"],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     },
@@ -63,7 +63,7 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*"
       ],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "shared.js", "content/chatgpt.js"],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/chatgpt.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     },
@@ -72,7 +72,7 @@
         "https://x.com/*",
         "https://twitter.com/*"
       ],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "shared.js", "content/grok-x.js"],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok-x.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     }
