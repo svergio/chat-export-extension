@@ -2,7 +2,15 @@
 
 # Chat Export — Chrome extension
 
+<!-- demo.gif pending -->
+
 Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so coding agents (Cursor and others) can list, export, create, and ask in those UIs **without vendor API keys**.
+
+**Vs official ChatGPT export:** OpenAI’s data export is one zip of *all* chats as JSON after a request/wait cycle. This extension exports the *current* chat to Markdown or PDF (and YAML/JSON/HTML) in one click — no account dump, no waiting for a bulk archive. Same one-chat, local download pattern on the other seven providers.
+
+**No network, no analytics, local-only.** Export and the optional MCP bridge stay on your machine (`chrome.downloads` + `127.0.0.1`). The extension does not phone home and does not include telemetry.
+
+**Install zip:** [chat-export-extension-2.0.1.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.1/chat-export-extension-2.0.1.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.1](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.1).
 
 ## The problem
 
@@ -103,6 +111,12 @@ Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer
 - Browser bridge uses `ceb_` tokens; MCP uses `cem_`/`cek_`. Do not commit keys. Rotate if leaked.
 - Destructive automation (`chats_delete`, etc.) is **gated** in extension settings and on the server (`allowDestructive`, `confirm: true`).
 - Threat model and audit expectations: server [SECURITY.md](https://github.com/svergio/chat-export-server/blob/main/SECURITY.md) and project [security audit](https://github.com/svergio/chat-export-server#security).
+
+## Honesty: ToS and fragility
+
+**Provider ToS.** The optional MCP server drives provider web UIs the same way you would (tabs, clicks, DOM). That can conflict with some providers’ terms if you automate at scale. Chat Export keeps **create** and especially **delete** conservative by default: extension `allowDestructive` defaults to `false`, the server matches that, and delete still requires `confirm: true`. Treat those gates as a feature — turn them on only when you intend to automate writes.
+
+**Fragility.** Export and automation read the live DOM (and sometimes in-page APIs). A provider UI redesign can break a content script overnight. Prefer filing [issues](https://github.com/svergio/chat-export-extension/issues); platform and locale checklists live in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Related repositories
 
