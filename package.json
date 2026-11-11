@@ -4,7 +4,8 @@
   "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, and Perplexity chats to MD/YAML/JSON/HTML/PDF.",
   "private": true,
   "scripts": {
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "pack": "node scripts/pack.mjs"
   },
   "repository": {
     "type": "git",
