@@ -297,3 +297,28 @@
       detectedAt: new Date().toISOString()
     };
   }
+
+  async function getChatPayload(chatId) {
+    var conv = await fetchConversation(chatId);
+    var user = await sessionUser();
+    var meta = findUserMeta();
+    return {
+      title: conv.title || findTitle(),
+      chatId: chatId,
+      model: conv.default_model_slug || findModel(),
+      userName: meta.userName || user.name || '',
+      userHandle: meta.userHandle || '',
+      userEmail: meta.userEmail || user.email || '',
+      messages: mappingToMessages(conv)
+    };
+  }
+
+  async function exportDataFromApi() {
+    var chatId = currentChatId();
+    if (!chatId) return null;
+    try {
+      return await getChatPayload(chatId);
+    } catch (e) {
+      return null;
+    }
+  }

@@ -31,43 +31,47 @@
         try {
           var chatId = args && args.chatId ? String(args.chatId) : '';
           if (!chatId) {
+            var exported = await exportDataFromApi();
+            if (exported && exported.messages && exported.messages.length) {
+              return Object.assign({ platform: 'chatgpt', url: location.href }, exported);
+            }
             if (ctx && typeof ctx.getData === 'function') {
               var live = await ctx.getData();
               return Object.assign({ platform: 'chatgpt', url: location.href }, live || {});
             }
             rpcErr('BAD_REQUEST', 'chatId required');
           }
-          if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
-            var same = await ctx.getData();
-            var u = findUserMeta();
+          try {
+            var payload = await getChatPayload(chatId);
             return Object.assign(
               {
                 platform: 'chatgpt',
-                url: location.href,
-                chatId: chatId,
-                title: findTitle(),
-                model: findModel(),
-                userName: u.userName,
-                userHandle: u.userHandle,
-                userEmail: u.userEmail
+                url: chatId === currentChatId() ? location.href : location.origin + '/c/' + chatId
               },
-              same || {}
+              payload
             );
+          } catch (apiErr) {
+            if (apiErr && apiErr.code === 'NOT_FOUND') throw apiErr;
+            if (apiErr && apiErr.code === 'UNAUTHORIZED') throw apiErr;
+            if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
+              var onPage = await ctx.getData();
+              var u = findUserMeta();
+              return Object.assign(
+                {
+                  platform: 'chatgpt',
+                  url: location.href,
+                  chatId: chatId,
+                  title: findTitle(),
+                  model: findModel(),
+                  userName: u.userName,
+                  userHandle: u.userHandle,
+                  userEmail: u.userEmail
+                },
+                onPage || {}
+              );
+            }
+            throw apiErr;
           }
-          var conv = await fetchConversation(chatId);
-          var user = await sessionUser();
-          var meta = findUserMeta();
-          return {
-            platform: 'chatgpt',
-            url: location.origin + '/c/' + chatId,
-            title: conv.title || '',
-            chatId: chatId,
-            model: conv.default_model_slug || '',
-            userName: meta.userName || user.name || '',
-            userHandle: meta.userHandle || '',
-            userEmail: meta.userEmail || user.email || '',
-            messages: mappingToMessages(conv)
-          };
         } catch (err) {
           hostErr(err);
         }
