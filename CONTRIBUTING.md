@@ -99,11 +99,40 @@ Dashboard **scheme** (`SchemePref`: `dark` | `light` | `auto`) and **skin** (`Sk
 
 Keep key names identical across languages so `createTranslator` and dashboard `t(key)` stay aligned.
 
+## Tests (`test` branch)
+
+Unit and DOM harness tests live on the **`test`** branch (not always present on `main`). Feature PRs still target `main`; open test-only PRs against `test`, or sync `main` into `test` after merge.
+
+### Extension
+
+```bash
+git fetch origin test
+git checkout test
+npm test                 # test:unit + test:dom
+npm run test:unit        # options / files
+npm run test:dom         # menu / busy via test/dom-harness.js
+```
+
+Current `test/` coverage: settings/options, file helpers, export-bar menu, busy overlay. Gaps such as `htmlToMarkdown` / `DOMParser` string paths in `src/core.js` are welcome first contributions.
+
+### Server (related)
+
+On `chat-export-server` branch `test`:
+
+```bash
+npm test                 # unit + protocol
+npm run test:contract    # contract suite
+npm run test:all         # unit + contract + protocol
+```
+
+Protocol capability fixtures for shipped platforms live under `packages/protocol/fixtures/`. Extension content-script contract polish for newer providers (qwen / deepseek / perplexity) may still need work — see open issues.
+
 ## Development pointers
 
 - **Build extension:** `npm run build` (popup + shared bundles).
 - **Server:** Node 22.13+, `npm run build`, `chat-export-server start`.
 - **Dashboard dev:** `npm run dev` (proxies `/dashboard/api`).
+- **Platform roadmap:** extension [`docs/platforms.md`](docs/platforms.md) and workspace `projects/Chat Export/docs/platforms.md`.
 - **Configuration:** see README **Configuration** sections and wiki [Installation and quickstart](https://github.com/svergio/chat-export-extension/wiki/Installation-and-Quickstart).
 
 Questions: GitHub Issues on the repo you touch; security: `SECURITY.md` on server/dashboard.
