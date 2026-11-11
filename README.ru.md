@@ -47,6 +47,42 @@ flowchart LR
 
 Подробнее в [вики](https://github.com/svergio/chat-export-extension/wiki).
 
+## Настройка
+
+Мост браузера настраивается здесь; MCP-ключи и каталог данных — в [chat-export-server](https://github.com/svergio/chat-export-server).
+
+### Попап и параметры (`src/settings.js`)
+
+Хранение: `chrome.storage.local`, ключ `ce.settings`.
+
+| Параметр | По умолчанию | Назначение |
+|----------|--------------|------------|
+| `serverOn` | `false` | Включить WebSocket-мост |
+| `host` | `127.0.0.1` | Хост сервера |
+| `port` | `8765` | Порт сервера |
+| `apiKey` | пусто | Токен шлюза `ceb_…` с сервера или дашборда |
+| `browserLabel` | `Chrome` | Подпись в дашборде / `browsers_list` |
+| `platforms.*` | все вкл. | Платформы: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude` |
+| `allowCreate` | `true` | Создание/отправка через MCP |
+| `allowDestructive` | `false` | Удаление (нужно и на сервере) |
+| `allowProjects` | `true` | Инструменты проектов |
+| `rpcTimeoutS` | `60` | Таймаут RPC (сек.) |
+
+**Базовый** режим: форматы и мост. **Дополнительно**: хост, порт, `ceb_`, матрица платформ, права.
+
+### Подключение к серверу
+
+1. Запустите сервер на `http://127.0.0.1:8765`.
+2. Получите **`ceb_`** (`chat-export-server browser enroll` или дашборд **Браузеры**).
+3. Попап → Дополнительно → токен, хост/порт, включите мост.
+4. Откройте вкладки провайдеров под своей учёткой.
+
+### Два профиля Chrome
+
+До **двух** профилей с отдельными `ceb_` и очередями. Второй профиль: то же расширение, новый `ceb_` в [дашборде](https://github.com/svergio/chat-export-dashboard).
+
+MCP и `~/.chat-export`: [README сервера — Configuration](https://github.com/svergio/chat-export-server#configuration).
+
 ## Панель экспорта (без сервера)
 
 1. Откройте сайт провайдера и обновите вкладку после обновления расширения.
@@ -75,9 +111,12 @@ flowchart LR
 Проект бесплатный и с открытым кодом:
 
 - **Донат (фиат):** [DonationAlerts — svwergio_mel](https://www.donationalerts.com/r/svwergio_mel)
-- **Крипто (по желанию):** публичные адреса — в разделе Support в README сервера; проверяйте сеть перед переводом.
 
 Донаты добровольны и без возврата; не покупают приватную поддержку.
+
+## Участие в разработке
+
+Новые платформы и языки UI: [CONTRIBUTING.md](CONTRIBUTING.md), [вики](https://github.com/svergio/chat-export-extension/wiki/Contributing-RU).
 
 ## Лицензия
 
