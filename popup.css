@@ -595,6 +595,18 @@ h2 {
   margin: 8px 0;
 }
 
+.ce-platform-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ce-platform-label svg {
+  flex: 0 0 auto;
+  opacity: 0.92;
+}
+
 .ce-field {
   display: grid;
   gap: 4px;
@@ -829,4 +841,22 @@ h2 {
 
 [data-skin='copilot'] .ce-card {
   border-radius: 12px;
+}
+
+[data-skin='qwen'] .ce-card {
+  border-radius: 14px;
+}
+
+[data-skin='deepseek'] .ce-card,
+[data-skin='deepseek'] .ce-btn,
+[data-skin='deepseek'] .ce-field input {
+  border-radius: 16px;
+}
+
+[data-skin='deepseek'] .ce-btn--primary {
+  border-radius: 16px;
+}
+
+[data-skin='perplexity'] .ce-card {
+  border-radius: 14px;
 }

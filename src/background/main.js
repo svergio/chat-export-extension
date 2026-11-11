@@ -9,6 +9,7 @@ import {
   reconnectBridge
 } from './bridge.js';
 import { getBridgeStatus, loadStored, saveSettings, normalizeSettings, hasFaqConsent } from '../settings.js';
+import { toolbarKindFromUrl } from '../hostSkin.js';
 
 function bytesToBase64(bytes) {
   var chunk = 0x8000;
@@ -20,31 +21,7 @@ function bytesToBase64(bytes) {
 }
 
 function iconKindFromUrl(url) {
-  if (!url) return 'idle';
-  try {
-    var u = new URL(url);
-    var host = (u.hostname || '').toLowerCase();
-    var path = u.pathname || '';
-    if (host === 'grok.com' || host.endsWith('.grok.com')) return 'grok';
-    if (host === 'chatgpt.com' || host === 'chat.openai.com' || host.endsWith('.chatgpt.com')) {
-      return 'chatgpt';
-    }
-    if (host === 'github.com' || host.endsWith('.github.com')) {
-      if (path === '/' || /^\/copilot(?:\/|$)/i.test(path)) return 'copilot';
-      return 'idle';
-    }
-    if (host === 'x.com' || host === 'twitter.com' || host.endsWith('.x.com') || host.endsWith('.twitter.com')) {
-      if (/^\/i\/grok(?:\/|$)/i.test(path)) return 'x';
-      return 'idle';
-    }
-    if (host === 'claude.ai' || host.endsWith('.claude.ai')) return 'claude';
-    if (host === 'chat.qwen.ai' || host.endsWith('.qwen.ai')) return 'qwen';
-    if (host === 'chat.deepseek.com' || host.endsWith('.deepseek.com')) return 'deepseek';
-    if (host === 'perplexity.ai' || host === 'www.perplexity.ai' || host.endsWith('.perplexity.ai')) {
-      return 'perplexity';
-    }
-  } catch (e) {}
-  return 'idle';
+  return toolbarKindFromUrl(url);
 }
 
 function iconPaths(kind) {
