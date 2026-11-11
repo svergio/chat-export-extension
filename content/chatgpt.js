@@ -754,6 +754,306 @@
     Ops.clickEl(sub.el);
   }
 
+  function currentChatId() {
+    return chatIdFromUrl();
+  }
+
+  function isPlaceholderAssistantText(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return true;
+    if (/^(thinking|размышл|\.{3,}|…)/i.test(t)) return true;
+    return t.length < 2;
+  }
+
+  function toListChat(item) {
+    var chat = {
+      platform: 'chatgpt',
+      chatId: String(item.id),
+      title: item.title || '',
+      url: location.origin + '/c/' + item.id,
+      updatedAt: Ops.toIso(item.update_time),
+      createdAt: Ops.toIso(item.create_time)
+    };
+    var gizmo = item.gizmo_id || item.conversation_template_id;
+    if (gizmo) {
+      chat.containerType = 'project';
+      chat.containerId = String(gizmo);
+    }
+    return chat;
+  }
+
+  function partsToText(parts) {
+    var out = [];
+    var i;
+    for (i = 0; i < (parts || []).length; i++) {
+      var p = parts[i];
+      if (typeof p === 'string') {
+        if (p.trim()) out.push(p);
+      } else if (p && typeof p.text === 'string' && p.text.trim()) {
+        out.push(p.text);
+      } else if (p && (p.content_type === 'image_asset_pointer' || p.asset_pointer)) {
+        out.push('[image]');
+      }
+    }
+    return out.join('\n\n').trim();
+  }
+
+  function collectApiSources(meta) {
+    var seen = {};
+    var out = [];
+    function add(title, url) {
+      if (!url || !/^https?:\/\//i.test(url)) return;
+      if (/chatgpt\.com|openai\.com|oaistatic|gstatic/i.test(url)) return;
+      if (seen[url]) return;
+      seen[url] = true;
+      out.push({
+        title: String(title || url).replace(/\s+/g, ' ').trim() || url,
+        url: url
+      });
+    }
+    var groups = (meta && meta.search_result_groups) || [];
+    var g;
+    for (g = 0; g < groups.length; g++) {
+      var entries = groups[g].entries || groups[g].results || groups[g].items || [];
+      var e;
+      for (e = 0; e < entries.length; e++) {
+        add(entries[e].title || entries[e].attribution || groups[g].domain, entries[e].url);
+      }
+    }
+    var refs = (meta && meta.content_references) || [];
+    var r;
+    for (r = 0; r < refs.length; r++) {
+      var ref = refs[r];
+      if (ref.url) add(ref.title, ref.url);
+      var sources = ref.sources || ref.safe_urls || [];
+      var s;
+      for (s = 0; s < sources.length; s++) {
+        if (typeof sources[s] === 'string') add(sources[s], sources[s]);
+        else if (sources[s] && sources[s].url) add(sources[s].title || sources[s].url, sources[s].url);
+      }
+    }
+    return out;
+  }
+
+  function roleTagFor(role, model) {
+    if (role === 'user') return 'user';
+    if (CE.modelFenceTag) return CE.modelFenceTag(model, 'chatgpt');
+    return 'chatgpt';
+  }
+
+  function nodeToMessage(node) {
+    var m = node && node.message;
+    if (!m || !m.author) return null;
+    var role = m.author.role;
+    if (role !== 'user' && role !== 'assistant') return null;
+    var text = partsToText((m.content && m.content.parts) || []);
+    if (!text) return null;
+    var meta = m.metadata || {};
+    var model = meta.model_slug || meta.resolved_model_slug || meta.default_model_slug || '';
+    var msg = {
+      role: role,
+      roleTag: roleTagFor(role, model),
+      text: text,
+      links: []
+    };
+    if (role === 'assistant') {
+      var sources = collectApiSources(meta);
+      if (sources.length) msg.sources = sources;
+    }
+    return msg;
+  }
+
+  function mappingToMessages(conv) {
+    var mapping = (conv && conv.mapping) || {};
+    var cur = conv && conv.current_node;
+    var chain = [];
+    while (cur && mapping[cur]) {
+      chain.push(cur);
+      cur = mapping[cur].parent;
+      if (chain.length > 5000) break;
+    }
+    chain.reverse();
+    var out = [];
+    var i;
+    for (i = 0; i < chain.length; i++) {
+      var msg = nodeToMessage(mapping[chain[i]]);
+      if (msg) out.push(msg);
+    }
+    return out;
+  }
+
+  async function sessionUser() {
+    try {
+      var res = await fetch('/api/auth/session', { credentials: 'include' });
+      if (!res.ok) return { name: '', email: '' };
+      var data = await res.json();
+      var u = (data && data.user) || {};
+      return {
+        name: u.name || '',
+        email: u.email || ''
+      };
+    } catch (e) {
+      return { name: '', email: '' };
+    }
+  }
+
+  async function fetchConversation(chatId) {
+    var res = await apiFetch('/conversation/' + encodeURIComponent(chatId));
+    if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+    if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'get ' + res.status);
+    if (!res.ok) await failFromResponse(res, 'conversation');
+    return res.json();
+  }
+
+  function findComposerInput() {
+    var form =
+      document.querySelector('form[data-type="unified-composer"]') ||
+      document.querySelector('form[data-chatgpt-composer]') ||
+      document.querySelector('[data-composer-placement] form');
+    if (form) {
+      var el =
+        form.querySelector('.ProseMirror[contenteditable="true"]') ||
+        form.querySelector('[contenteditable="true"][role="textbox"]');
+      if (el) return el;
+    }
+    return (
+      document.querySelector('.ProseMirror[contenteditable="true"]') ||
+      document.querySelector('[contenteditable="true"][role="textbox"]')
+    );
+  }
+
+  function findSendButton() {
+    return (
+      document.querySelector('button[data-testid="send-button"]') ||
+      document.querySelector('form button[aria-label*="Send" i]') ||
+      document.querySelector('form button[aria-label*="Отправ" i]')
+    );
+  }
+
+  function stopButtonVisible() {
+    return !!(Ops.findStopControl && Ops.findStopControl(document));
+  }
+
+  async function ensureNewChat() {
+    if (!currentChatId() && findComposerInput()) return;
+    if (Ops.softNavigate) Ops.softNavigate('/');
+    else {
+      history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    await Ops.waitFor(
+      function () {
+        return !currentChatId() && findComposerInput();
+      },
+      { timeoutMs: 25000, message: 'ChatGPT new chat timeout' }
+    );
+  }
+
+  async function navigateToChat(chatId) {
+    if (currentChatId() === chatId) return;
+    var path = '/c/' + chatId;
+    if (Ops.softNavigate) Ops.softNavigate(path);
+    else {
+      history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    await Ops.waitFor(
+      function () {
+        return currentChatId() === chatId;
+      },
+      { timeoutMs: 25000, message: 'ChatGPT navigate timeout' }
+    );
+  }
+
+  async function waitComposerIdle() {
+    await Ops.waitFor(
+      function () {
+        if (stopButtonVisible()) return null;
+        var send = findSendButton();
+        if (!send || send.disabled || send.getAttribute('aria-disabled') === 'true') return null;
+        return true;
+      },
+      { timeoutMs: 120000, message: 'ChatGPT composer busy' }
+    ).catch(function () {});
+  }
+
+  async function submitComposerText(text) {
+    var body = String(text || '').trim();
+    if (!body) rpcErr('BAD_REQUEST', 'text is required');
+    await waitComposerIdle();
+    var input = await Ops.waitFor(findComposerInput, {
+      timeoutMs: 15000,
+      message: 'ChatGPT composer timeout'
+    });
+    var fill = Ops.fillRichComposer || Ops.fillEditable;
+    fill(input, body);
+    await Ops.sleep(200);
+    var send = await Ops.waitFor(
+      function () {
+        var b = findSendButton();
+        if (!b || b.disabled || b.getAttribute('aria-disabled') === 'true') return null;
+        return b;
+      },
+      { timeoutMs: 60000, message: 'ChatGPT send button not found' }
+    );
+    var turnsBefore = turnNodes().length;
+    if (Ops.ensureComposerSubmitted) {
+      await Ops.ensureComposerSubmitted({
+        send: send,
+        input: input,
+        message: 'ChatGPT submit failed',
+        isDone: function () {
+          return stopButtonVisible() || turnNodes().length > turnsBefore ? true : null;
+        }
+      });
+    } else {
+      Ops.clickEl(send);
+    }
+    return turnsBefore;
+  }
+
+  async function waitAssistantTurn(turnsBefore, opts) {
+    opts = opts || {};
+    var timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : 180000;
+    await Ops.waitFor(
+      function () {
+        if (turnNodes().length > turnsBefore && !stopButtonVisible()) return true;
+        if (stopButtonVisible()) return null;
+        return turnNodes().length > turnsBefore ? true : null;
+      },
+      { timeoutMs: timeoutMs, message: 'ChatGPT reply timeout' }
+    );
+  }
+
+  async function patchTitle(chatId, title) {
+    if (!title) return;
+    await apiFetch('/conversation/' + encodeURIComponent(chatId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title })
+    });
+  }
+
+  async function detectChatCapabilities() {
+    var model = findModel();
+    var models = [];
+    if (model) models.push({ id: Ops.normalizeId(model), label: model, kind: 'model' });
+    var toggles = [];
+    var thinking = findByLabel('button', /размышл|thinking/i);
+    if (thinking) toggles.push({ id: 'thinking', label: labelOf(thinking), kind: 'toggle' });
+    return {
+      platform: 'chatgpt',
+      projectsSupported: true,
+      models: models,
+      modes: [],
+      toggles: toggles,
+      tools: [],
+      attach: { supported: true, multiple: true, accept: [] },
+      current: { model: model ? Ops.normalizeId(model) : undefined, toggles: [] },
+      detectedAt: new Date().toISOString()
+    };
+  }
+
   async function chatSummary(chatId, container) {
     var res = await apiFetch('/conversation/' + encodeURIComponent(chatId));
     if (res.ok) {
@@ -786,6 +1086,208 @@
       );
     },
     ops: {
+      list: async function (args) {
+        try {
+          var limit = Ops.clampLimit(args && args.limit);
+          var offset = 0;
+          if (args && args.cursor != null && String(args.cursor) !== '') {
+            offset = Math.max(0, parseInt(String(args.cursor), 10) || 0);
+          }
+          var path =
+            '/conversations?offset=' + encodeURIComponent(String(offset)) + '&limit=' + encodeURIComponent(String(limit)) + '&order=updated';
+          var res = await apiFetch(path);
+          if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'ChatGPT list ' + res.status);
+          if (!res.ok) await failFromResponse(res, 'list');
+          var data = await res.json();
+          var raw = data.items || [];
+          var items = [];
+          var i;
+          for (i = 0; i < raw.length; i++) {
+            if (!raw[i] || !raw[i].id) continue;
+            var chat = toListChat(raw[i]);
+            if (args && args.containerId && String(chat.containerId || '') !== String(args.containerId)) continue;
+            if (Ops.matchQuery && !Ops.matchQuery(chat.title, args && args.query)) continue;
+            items.push(chat);
+          }
+          var nextCursor = raw.length >= limit ? String(offset + raw.length) : null;
+          return { items: items, nextCursor: nextCursor };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      get: async function (args, ctx) {
+        try {
+          var chatId = args && args.chatId ? String(args.chatId) : '';
+          if (!chatId) {
+            if (ctx && typeof ctx.getData === 'function') {
+              var live = await ctx.getData();
+              return Object.assign({ platform: 'chatgpt', url: location.href }, live || {});
+            }
+            rpcErr('BAD_REQUEST', 'chatId required');
+          }
+          if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
+            var same = await ctx.getData();
+            var u = findUserMeta();
+            return Object.assign(
+              {
+                platform: 'chatgpt',
+                url: location.href,
+                chatId: chatId,
+                title: findTitle(),
+                model: findModel(),
+                userName: u.userName,
+                userHandle: u.userHandle,
+                userEmail: u.userEmail
+              },
+              same || {}
+            );
+          }
+          var conv = await fetchConversation(chatId);
+          var user = await sessionUser();
+          var meta = findUserMeta();
+          return {
+            platform: 'chatgpt',
+            url: location.origin + '/c/' + chatId,
+            title: conv.title || '',
+            chatId: chatId,
+            model: conv.default_model_slug || '',
+            userName: meta.userName || user.name || '',
+            userHandle: meta.userHandle || '',
+            userEmail: meta.userEmail || user.email || '',
+            messages: mappingToMessages(conv)
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      capabilities: async function () {
+        try {
+          return await detectChatCapabilities();
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      hostState: function () {
+        var input = findComposerInput();
+        return {
+          generating: stopButtonVisible(),
+          composerReady: !!input && (Ops.composerReady ? Ops.composerReady(input) : true)
+        };
+      },
+      send: async function (args) {
+        try {
+          var chatId = args && args.chatId ? String(args.chatId) : '';
+          if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+          if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
+          await navigateToChat(chatId);
+          var turnsBefore = await submitComposerText(args.text);
+          await waitAssistantTurn(turnsBefore, { timeoutMs: 180000 });
+          return {
+            platform: 'chatgpt',
+            chatId: chatId,
+            title: findTitle(),
+            url: location.origin + '/c/' + chatId,
+            updatedAt: new Date().toISOString()
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      create: async function (args) {
+        try {
+          var text = String((args && args.text) || '').trim();
+          if (!text) rpcErr('BAD_REQUEST', 'text is required');
+          var title = Ops.testTitle ? Ops.testTitle(args && args.title) : '[ce-test] chat';
+          await ensureNewChat();
+          await submitComposerText(text);
+          var chatId = await Ops.waitFor(
+            function () {
+              return currentChatId() || null;
+            },
+            { timeoutMs: 90000, message: 'ChatGPT chatId timeout' }
+          );
+          await patchTitle(chatId, title);
+          return {
+            platform: 'chatgpt',
+            chatId: chatId,
+            title: title,
+            url: location.origin + '/c/' + chatId,
+            updatedAt: new Date().toISOString()
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      delete: async function (args) {
+        try {
+          var chatId = args && args.chatId ? String(args.chatId) : '';
+          if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+          var res = await apiFetch('/conversation/' + encodeURIComponent(chatId), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_visible: false })
+          });
+          if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+          if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'delete ' + res.status);
+          if (!res.ok) await failFromResponse(res, 'delete');
+          return { deleted: true, chatId: chatId };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      askSelection: async function (args, ctx) {
+        try {
+          var chatId = args && args.chatId ? String(args.chatId) : '';
+          var selection = String((args && args.selection) || '').trim();
+          var prompt = String((args && args.prompt) || '').trim();
+          if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+          if (!selection) rpcErr('BAD_REQUEST', 'selection required');
+          if (!prompt) rpcErr('BAD_REQUEST', 'prompt required');
+          var before = await CE.platforms.chatgpt.ops.get({ chatId: chatId, branch: 'active' }, ctx);
+          var beforeLen = ((before && before.messages) || []).length;
+          var text = Ops.quoteSelectionPrompt
+            ? Ops.quoteSelectionPrompt(selection, prompt)
+            : '> ' + selection + '\n\n' + prompt;
+          await CE.platforms.chatgpt.ops.send({ chatId: chatId, text: text });
+          var got = null;
+          var deadline = Date.now() + 180000;
+          while (Date.now() < deadline) {
+            var cur = await CE.platforms.chatgpt.ops.get({ chatId: chatId, branch: 'active' }, ctx);
+            var msgs = (cur && cur.messages) || [];
+            if (msgs.length > beforeLen) {
+              var last = msgs[msgs.length - 1];
+              if (last && last.role === 'assistant' && !isPlaceholderAssistantText(last.text)) {
+                got = cur;
+                break;
+              }
+            }
+            await Ops.sleep(400);
+          }
+          if (!got) rpcErr('TIMEOUT', 'ChatGPT ask_selection reply timeout');
+          var messages = (got && got.messages) || [];
+          var reply = null;
+          var after = null;
+          var i;
+          for (i = messages.length - 1; i >= 0; i--) {
+            if (messages[i] && messages[i].role === 'assistant' && !isPlaceholderAssistantText(messages[i].text)) {
+              reply = messages[i];
+              after = i;
+              break;
+            }
+          }
+          return {
+            status: 'done',
+            platform: 'chatgpt',
+            chatId: chatId,
+            selection: selection,
+            reply: reply,
+            after: after,
+            total: messages.length
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
       containers: async function (args) {
         try {
           var limit = Ops.clampLimit(args && args.limit);
