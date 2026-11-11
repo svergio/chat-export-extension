@@ -3,3 +3,4 @@ scripts/node_modules/
 .serena/
 *.log
 node_modules/
+dist-pack/

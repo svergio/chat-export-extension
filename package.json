@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
+    "pack": "node scripts/pack.mjs",
     "test:unit": "node --test test/options.test.js test/files.test.js",
     "test:dom": "node --test test/menu.test.js test/busy.test.js",
     "test": "npm run test:unit && npm run test:dom"
