@@ -271,6 +271,62 @@
   color: rgb(175, 175, 175) !important;
 }
 
+/* Copilot: bar dissolves so MD + download are flex siblings of native 32px icon chips */
+.chat-export-bar--copilot {
+  display: contents !important;
+}
+
+.chat-export-bar--copilot > button {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chat-export-bar--copilot > .chat-export-fmt {
+  width: auto !important;
+}
+
+.chat-export-bar--copilot .chat-export-format-text {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+}
+
+.chat-export-bar--copilot .chat-export-chevron {
+  flex: 0 0 auto !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.chat-export-bar--copilot .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--copilot .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
 .chat-export-bar button {
   cursor: pointer;
 }

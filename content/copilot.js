@@ -1009,21 +1009,22 @@
         (ask && ask.parentElement) ||
         form;
       var extra = toolbar.querySelector('[class*="extra"]');
-      // Square Primer icon chips live in extra (repos / attach). Sit with them,
-      // not as a toolbar sibling before Auto.
+      // Square Primer icon chips live in extra (repos / attach); our chips join the
+      // same flex row and copy the attach chip class (32x32). Layout in styles.css.
       if (extra) {
+        var iconChip = attach || extra.querySelector('button[class*="IconButton"]') || ask;
         var afterChip =
-          wrapChildOf(extra, attach) ||
+          wrapChildOf(extra, iconChip) ||
           (function () {
             var btns = extra.querySelectorAll('button');
-            return btns.length ? btns[btns.length - 1] : null;
+            return btns.length ? wrapChildOf(extra, btns[btns.length - 1]) : null;
           })();
         return {
           el: extra,
           insertAfter: afterChip,
           beforeChild: null,
-          nativeFrom: attach || ask,
-          nativeIconFrom: attach || ask
+          nativeFrom: iconChip,
+          nativeIconFrom: iconChip
         };
       }
       var actions = toolbar.querySelector('[class*="actions"]');
