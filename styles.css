@@ -330,7 +330,8 @@
 .chat-export-bar--qwen {
   flex: 0 0 auto;
   align-self: center;
-  margin-inline: 4px;
+  order: 0;
+  margin-inline: 2px 6px;
   gap: 2px;
   height: 32px;
 }

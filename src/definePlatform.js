@@ -55,7 +55,7 @@ export function definePlatform(spec) {
     return (typeof spec.chatId === 'function' && spec.chatId()) || '';
   }
 
-  function getData() {
+  function getDataFromDom() {
     const user = (typeof spec.user === 'function' && spec.user()) || {};
     const model = (typeof spec.model === 'function' && spec.model()) || '';
     const scroller = (typeof spec.scroller === 'function' && spec.scroller()) || null;
@@ -96,6 +96,38 @@ export function definePlatform(spec) {
         messages: messagesFromHydrate(res, model, (res && res.scroller) || scroller)
       };
     });
+  }
+
+  function getData() {
+    if (typeof spec.exportData === 'function') {
+      return Promise.resolve()
+        .then(function () {
+          return spec.exportData();
+        })
+        .then(function (fromApi) {
+          const apiOnly = spec.exportDomFallback === false;
+          if (fromApi && Array.isArray(fromApi.messages) && (fromApi.messages.length || apiOnly)) {
+            const user = (typeof spec.user === 'function' && spec.user()) || {};
+            return Object.assign(
+              {
+                title: (typeof spec.title === 'function' && spec.title()) || 'chat',
+                chatId: currentChatId(),
+                model: (typeof spec.model === 'function' && spec.model()) || '',
+                userName: user.userName || '',
+                userHandle: user.userHandle || '',
+                userEmail: user.userEmail || ''
+              },
+              fromApi
+            );
+          }
+          return getDataFromDom();
+        })
+        .catch(function (err) {
+          if (spec.exportDomFallback === false) throw err;
+          return getDataFromDom();
+        });
+    }
+    return getDataFromDom();
   }
 
   const ops = {};
