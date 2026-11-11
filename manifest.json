@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Chat Export",
-  "version": "1.4.0",
-  "description": "Export Grok (grok.com + X), ChatGPT, Claude, and GitHub Copilot chats to Markdown, YAML, JSON, HTML, and PDF.",
+  "version": "2.0.0",
+  "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, and Perplexity chats to Markdown, YAML, JSON, HTML, and PDF.",
   "permissions": ["downloads", "tabs", "storage", "alarms", "scripting"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"

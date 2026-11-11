@@ -1,7 +1,7 @@
 {
   "name": "chat-export-extension",
-  "version": "1.8.3",
-  "description": "Export Grok, X, ChatGPT, Claude, and GitHub Copilot chats to MD/YAML/JSON/HTML/PDF.",
+  "version": "2.0.0",
+  "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, and Perplexity chats to MD/YAML/JSON/HTML/PDF.",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs"

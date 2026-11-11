@@ -2,11 +2,11 @@
 
 # Chat Export — расширение Chrome
 
-Экспорт и управление **веб-чатами** ChatGPT, Grok, X Grok, Claude и GitHub Copilot — в вашем браузере, под вашими правилами. Расширение добавляет панель экспорта на сайтах провайдеров, скачивает **Markdown, YAML, JSON, HTML и PDF** локально и подключается к [локальному MCP-серверу](https://github.com/svergio/chat-export-server), чтобы агенты (Cursor и др.) могли листать, экспортировать, создавать чаты и задавать вопросы **без API-ключей** вендоров.
+Экспорт и управление **веб-чатами** на восьми площадках (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — в вашем браузере, под вашими правилами. Расширение добавляет панель экспорта на сайтах провайдеров, скачивает **Markdown, YAML, JSON, HTML и PDF** локально и подключается к [локальному MCP-серверу](https://github.com/svergio/chat-export-server), чтобы агенты (Cursor и др.) могли листать, экспортировать, создавать чаты и задавать вопросы **без API-ключей** вендоров.
 
 ## Проблема
 
-Официальные интерфейсы удобны для диалога, но слабы для **архивации**, **пакетного экспорта** и **оркестрации агентами**. Копипаста не масштабируется на пять платформ; облачные API — отдельная оплата и комплаенс.
+Официальные интерфейсы удобны для диалога, но слабы для **архивации**, **пакетного экспорта** и **оркестрации агентами**. Копипаста не масштабируется на восемь платформ; облачные API — отдельная оплата и комплаенс.
 
 ## Что вы получаете
 
@@ -17,6 +17,9 @@
 | X Grok | `x.com/i/grok` | Да | Да |
 | Claude | `claude.ai` | Да | Да |
 | GitHub Copilot Chat | `github.com/copilot*` | Да | Да |
+| Qwen | `chat.qwen.ai` | Да | Да |
+| DeepSeek | `chat.deepseek.com` | Да | Да |
+| Perplexity | `perplexity.ai` | Да | Да |
 
 Разбор DOM — в расширении; автоматизация и MCP — в [локальном сервере](https://github.com/svergio/chat-export-server). Опционально — [дашборд](https://github.com/svergio/chat-export-dashboard).
 
@@ -62,7 +65,7 @@ flowchart LR
 | `port` | `8765` | Порт сервера |
 | `apiKey` | пусто | Токен шлюза `ceb_…` с сервера или дашборда |
 | `browserLabel` | `Chrome` | Подпись в дашборде / `browsers_list` |
-| `platforms.*` | все вкл. | Платформы: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude` |
+| `platforms.*` | все вкл. | Платформы: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude`, `qwen`, `deepseek`, `perplexity` |
 | `allowCreate` | `true` | Создание/отправка через MCP |
 | `allowDestructive` | `false` | Удаление (нужно и на сервере) |
 | `allowProjects` | `true` | Инструменты проектов |

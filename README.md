@@ -2,11 +2,11 @@
 
 # Chat Export — Chrome extension
 
-Export and control your **web** chats on ChatGPT, Grok, X Grok, Claude, and GitHub Copilot — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so coding agents (Cursor and others) can list, export, create, and ask in those UIs **without vendor API keys**.
+Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so coding agents (Cursor and others) can list, export, create, and ask in those UIs **without vendor API keys**.
 
 ## The problem
 
-Official UIs are great for chatting but weak for **archiving**, **batch export**, and **agent orchestration**. Copy-paste does not scale across five providers, and cloud APIs are a separate billing and compliance story.
+Official UIs are great for chatting but weak for **archiving**, **batch export**, and **agent orchestration**. Copy-paste does not scale across eight providers, and cloud APIs are a separate billing and compliance story.
 
 ## What you get
 
@@ -17,6 +17,9 @@ Official UIs are great for chatting but weak for **archiving**, **batch export**
 | X Grok | `x.com/i/grok` | Yes | Yes |
 | Claude | `claude.ai` | Yes | Yes |
 | GitHub Copilot Chat | `github.com/copilot*` | Yes | Yes |
+| Qwen | `chat.qwen.ai` | Yes | Yes |
+| DeepSeek | `chat.deepseek.com` | Yes | Yes |
+| Perplexity | `perplexity.ai` | Yes | Yes |
 
 Dom parsing stays in the extension; automation and MCP live in the [local server](https://github.com/svergio/chat-export-server). Optional [dashboard](https://github.com/svergio/chat-export-dashboard) for operators.
 
@@ -62,7 +65,7 @@ Settings persist in `chrome.storage.local` under `ce.settings`.
 | `port` | `8765` | Server HTTP/WS port |
 | `apiKey` | empty | Browser gateway token `ceb_…` from server or dashboard |
 | `browserLabel` | `Chrome` | Label in dashboard / `browsers_list` |
-| `platforms.*` | all enabled | Per-site toggles: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude` |
+| `platforms.*` | all enabled | Per-site toggles: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude`, `qwen`, `deepseek`, `perplexity` |
 | `allowCreate` | `true` | Allow MCP create/send |
 | `allowDestructive` | `false` | Allow MCP delete (server must agree) |
 | `allowProjects` | `true` | Project tools where supported |
@@ -85,7 +88,7 @@ Server MCP setup: [server README — Configuration](https://github.com/svergio/c
 
 ## Export bar (no server required)
 
-1. Open [grok.com](https://grok.com), [chatgpt.com](https://chatgpt.com), [claude.ai](https://claude.ai), [x.com/i/grok](https://x.com/i/grok), or [github.com/copilot](https://github.com/copilot) and refresh after extension updates.
+1. Open a supported host (e.g. [chatgpt.com](https://chatgpt.com), [grok.com](https://grok.com), [claude.ai](https://claude.ai), [chat.qwen.ai](https://chat.qwen.ai), [chat.deepseek.com](https://chat.deepseek.com), [perplexity.ai](https://perplexity.ai)) and refresh after extension updates.
 2. Choose formats (MD / YAML / JSON / HTML / PDF). Multi-format: **Folder** or **Zip** toggle.
 3. Download icon — silent save to Downloads (Shift/Cmd = Save As). Names: `{platform}-{title}-{date}.{ext}`.
 
