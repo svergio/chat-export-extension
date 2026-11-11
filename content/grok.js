@@ -910,10 +910,34 @@
     return toChat({ conversationId: chatId, title: '' }, container);
   }
 
+  function exportDataFromApi() {
+    var chatId = currentChatId();
+    if (!chatId) return Promise.resolve(null);
+    return loadConversationMessages(chatId).then(function (messages) {
+      if (!messages.length) return null;
+      var out = { messages: messages, title: findTitle(), model: findModel() };
+      return apiFetch('/rest/app-chat/conversations/' + encodeURIComponent(chatId))
+        .then(function (res) {
+          if (!res.ok) return out;
+          return res.json().then(function (data) {
+            var row = (data && (data.conversation || data)) || {};
+            if (row.title) out.title = String(row.title).trim() || out.title;
+            var apiModel = row.model || row.modelId || (row.properties && row.properties.model);
+            if (apiModel && !out.model) out.model = String(apiModel);
+            return out;
+          });
+        })
+        .catch(function () {
+          return out;
+        });
+    });
+  }
+
   CE.definePlatform({
     id: 'grok',
     modifier: 'grok',
     fenceTag: 'grok',
+    exportData: exportDataFromApi,
     composer: findComposerToolbar,
     chatId: chatIdFromUrl,
     title: findTitle,
