@@ -8,6 +8,7 @@
     "service_worker": "background.js"
   },
   "action": {
+    "default_popup": "popup.html",
     "default_title": "Chat Export",
     "default_icon": {
       "16": "icons/toolbar-idle-16.png",
