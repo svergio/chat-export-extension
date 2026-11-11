@@ -5,3 +5,4 @@ scripts/node_modules/
 test/
 *.test.js
 node_modules/
+dist-pack/
