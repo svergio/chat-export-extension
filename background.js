@@ -257,6 +257,29 @@
     }
     return false;
   }
+  var COPILOT_AUTH_MESSAGE = "GitHub Copilot requires login at github.com/copilot";
+  function isCopilotLanding(url, marketingOnly) {
+    if (!url) return false;
+    let u;
+    try {
+      u = new URL(url);
+    } catch (e) {
+      return false;
+    }
+    if (!(u.hostname === "github.com" || u.hostname.endsWith(".github.com"))) return false;
+    const re = marketingOnly ? /^\/features\/copilot(?:\/|$)/i : /^\/(?:features\/copilot|login|session|sessions)(?:\/|$)/i;
+    return re.test(u.pathname || "");
+  }
+  function copilotAuthError() {
+    return Object.assign(new Error(COPILOT_AUTH_MESSAGE), {
+      code: "UNAUTHORIZED",
+      details: { reason: "AUTH_REQUIRED" }
+    });
+  }
+  async function assertCopilotSession(tabId) {
+    const tab = await chrome.tabs.get(tabId);
+    if (isCopilotLanding(tab && (tab.url || tab.pendingUrl))) throw copilotAuthError();
+  }
   function platformFromUrl(url) {
     for (let i = 0; i < Object.keys(PLATFORM_START).length; i++) {
       const platform = Object.keys(PLATFORM_START)[i];
@@ -459,7 +482,9 @@
     const tabs = await chrome.tabs.query({});
     let best = null;
     let bestScore = -1;
+    let landing = null;
     for (let i = 0; i < tabs.length; i++) {
+      if (platform === "copilot" && !landing && isCopilotLanding(tabs[i].url, true)) landing = tabs[i];
       if (!matchPlatform(platform, tabs[i].url)) continue;
       const score = tabScore(tabs[i], chatId);
       if (score > bestScore) {
@@ -476,16 +501,18 @@
     }
     const start = PLATFORM_START[platform];
     if (!start) throw Object.assign(new Error("unknown platform"), { code: "BAD_REQUEST" });
+    if (landing) {
+      await navigateTab(landing.id, start);
+      await assertCopilotSession(landing.id);
+      return landing.id;
+    }
     const tab = await chrome.tabs.create({ url: start, active: false });
     await waitTabComplete(tab.id);
     await sleep(400);
+    if (platform === "copilot") await assertCopilotSession(tab.id);
     return tab.id;
   }
-  async function resetTabToStart(tabId, platform) {
-    const start = PLATFORM_START[platform];
-    if (!start) return;
-    const tab = await chrome.tabs.get(tabId);
-    if (tab && tab.url === start && tab.status === "complete") return;
+  function runTabLoad(tabId, start) {
     const loaded = new Promise(function(resolve) {
       let sawLoading = false;
       const timer = setTimeout(done, 2e4);
@@ -501,9 +528,29 @@
       }
       chrome.tabs.onUpdated.addListener(onUpdated);
     });
-    await chrome.tabs.update(tabId, { url: start });
-    await loaded;
+    return start().then(function() {
+      return loaded;
+    });
+  }
+  async function navigateTab(tabId, url) {
+    await runTabLoad(tabId, function() {
+      return chrome.tabs.update(tabId, { url });
+    });
     await sleep(400);
+  }
+  async function reloadTab(tabId) {
+    await runTabLoad(tabId, function() {
+      return chrome.tabs.reload(tabId);
+    });
+    await sleep(400);
+  }
+  async function resetTabToStart(tabId, platform) {
+    const start = PLATFORM_START[platform];
+    if (!start) return;
+    const tab = await chrome.tabs.get(tabId);
+    if (tab && tab.url === start && tab.status === "complete") return;
+    await navigateTab(tabId, start);
+    if (platform === "copilot") await assertCopilotSession(tabId);
   }
   function sendMessageAsync(tabId, msg) {
     return new Promise(function(resolve) {
@@ -527,10 +574,22 @@
     const res = await sendMessageAsync(tabId, { type: CONTENT_PING_TYPE });
     return !!(res && res.ok && Array.isArray(res.platforms) && res.platforms.indexOf(platform) >= 0);
   }
+  async function reloadForDeclarativeInject(tabId, platform) {
+    try {
+      await reloadTab(tabId);
+    } catch (e) {
+      return "chrome.scripting unavailable; tab reload failed: " + (e && e.message || e);
+    }
+    for (let i = 0; i < 10; i++) {
+      if (await pingPlatform(tabId, platform)) return "";
+      await sleep(300);
+    }
+    return "chrome.scripting unavailable; content script not attached after tab reload";
+  }
   async function injectPlatformContent(tabId, platform) {
     const files = PLATFORM_CONTENT[platform];
     if (!files) return "no content files for " + platform;
-    if (!chrome.scripting || !chrome.scripting.executeScript) return "chrome.scripting unavailable";
+    if (!chrome.scripting || !chrome.scripting.executeScript) return reloadForDeclarativeInject(tabId, platform);
     try {
       await chrome.scripting.executeScript({
         target: { tabId },
@@ -628,7 +687,7 @@
     } catch (e) {
       return rpcResult(id, {
         ok: false,
-        error: { code: e.code || "HOST_ERROR", message: e.message || String(e) }
+        error: { code: e.code || "HOST_ERROR", message: e.message || String(e), details: e.details }
       });
     }
     if (last && last.error) delete last.error.transport;

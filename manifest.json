@@ -57,6 +57,7 @@
         "https://twitter.com/*",
         "https://claude.ai/*",
         "https://github.com/copilot",
+        "https://github.com/copilot?*",
         "https://github.com/copilot/*"
       ],
       "js": ["content/page-harvest.js"],
@@ -96,6 +97,7 @@
     {
       "matches": [
         "https://github.com/copilot",
+        "https://github.com/copilot?*",
         "https://github.com/copilot/*"
       ],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/copilot.js"],
