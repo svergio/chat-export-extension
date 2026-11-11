@@ -577,9 +577,17 @@
   }
 
   async function deleteViaDom(container) {
-    var trigger = document.querySelector(
-      'button[aria-label="Действия для ' + container.title.replace(/"/g, '\\"') + '"], button[aria-label="Actions for ' + container.title.replace(/"/g, '\\"') + '"]'
-    );
+    var wantRu = 'Действия для ' + (container.title || '');
+    var wantEn = 'Actions for ' + (container.title || '');
+    var trigger = null;
+    var buttons = document.querySelectorAll('button[aria-label]');
+    for (var bi = 0; bi < buttons.length; bi++) {
+      var al = buttons[bi].getAttribute('aria-label') || '';
+      if (al === wantRu || al === wantEn) {
+        trigger = buttons[bi];
+        break;
+      }
+    }
     if (!trigger) rpcErr('NOT_FOUND', 'project row not found in sidebar: ' + container.title);
     await menuAction(trigger, /удалить|delete/i, 'delete project menu item not found');
     await confirmDialog(/^(удалить|delete)$/i, 'delete confirmation not found');

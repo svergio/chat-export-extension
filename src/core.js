@@ -510,7 +510,7 @@
       }
 
       if (tag === 'code' && el.parentElement && el.parentElement.tagName.toLowerCase() !== 'pre') {
-        return '`' + el.textContent.replace(/`/g, '\\`') + '`';
+        return '`' + el.textContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`') + '`';
       }
 
       if (tag === 'pre') {
@@ -597,7 +597,7 @@
         var cells = trs[r].querySelectorAll('th,td');
         var cols = [];
         for (var c = 0; c < cells.length; c++) {
-          cols.push(blockChildren(cells[c], {}).replace(/\|/g, '\\|').replace(/\n+/g, ' ').trim());
+          cols.push(blockChildren(cells[c], {}).replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\n+/g, ' ').trim());
         }
         if (cols.length) rows.push(cols);
       }

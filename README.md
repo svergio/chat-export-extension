@@ -12,7 +12,7 @@ Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok,
 
 **No network, no analytics, local-only.** Export and the optional MCP bridge stay on your machine (`chrome.downloads` + `127.0.0.1`). The extension does not phone home and does not include telemetry.
 
-**Install zip:** [chat-export-extension-2.0.1.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.1/chat-export-extension-2.0.1.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.1](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.1).
+**Install zip:** [chat-export-extension-2.0.2.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.2/chat-export-extension-2.0.2.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.2](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.2).
 
 ## The problem
 
