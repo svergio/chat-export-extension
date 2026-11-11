@@ -375,34 +375,83 @@
     );
   }
 
+  function mergeMessagesById(existing, incoming) {
+    var seen = {};
+    var out = [];
+    var i;
+    for (i = 0; i < existing.length; i++) {
+      var row = existing[i];
+      var key = row.id || row.turn_id || 'e' + i;
+      if (seen[key]) continue;
+      seen[key] = 1;
+      out.push(row);
+    }
+    for (i = 0; i < incoming.length; i++) {
+      var msg = incoming[i];
+      var id = (msg && (msg.id || msg.message_id || msg.turn_id)) || 'n' + i;
+      if (seen[id]) continue;
+      seen[id] = 1;
+      out.push(msg);
+    }
+    out.sort(function (a, b) {
+      return (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0);
+    });
+    return out;
+  }
+
   async function loadChatFromApi(chatId) {
     var lim = 80;
-    var res = await apiFetch(
-      '/api/v2/chats/' + encodeURIComponent(chatId) + '?direction=up&limit=' + encodeURIComponent(String(lim))
-    );
-    if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
-    if (!res.ok) await failFromResponse(res, 'get');
-    var data = await parseJson(res);
-    var msgs =
-      (data && data.chat && data.chat.messages) ||
-      (data && data.messages) ||
-      [];
-    var model =
-      (data && data.chat && data.chat.models && data.chat.models[0]) ||
-      (msgs.length && msgs[msgs.length - 1] && msgs[msgs.length - 1].model) ||
-      '';
+    var title = '';
+    var model = '';
+    var merged = [];
+    var lastId = '';
+    var page = 0;
+    while (page < 50) {
+      page += 1;
+      var path =
+        '/api/v2/chats/' +
+        encodeURIComponent(chatId) +
+        '?direction=up&limit=' +
+        encodeURIComponent(String(lim));
+      if (lastId) path += '&last_id=' + encodeURIComponent(lastId);
+      var res = await apiFetch(path);
+      if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+      if (!res.ok) await failFromResponse(res, 'get');
+      var data = await parseJson(res);
+      if (!title && data && data.title) title = data.title;
+      var chat = (data && data.chat) || {};
+      var batch = chat.messages || (data && data.messages) || [];
+      merged = mergeMessagesById(merged, batch);
+      if (!model) {
+        model =
+          (chat.models && chat.models[0]) ||
+          (data.models && data.models[0]) ||
+          (merged.length && merged[merged.length - 1] && merged[merged.length - 1].model) ||
+          '';
+      }
+      var pag = chat.history && chat.history.pagination;
+      if (!pag || !pag.has_more_older) break;
+      if (!pag.oldest_id || pag.oldest_id === lastId) break;
+      lastId = pag.oldest_id;
+    }
     var user = sessionUser();
     return {
       platform: 'qwen',
       url: chatUrl(chatId),
-      title: (data && data.title) || '',
+      title: title || '',
       chatId: chatId,
       model: model || findModel(),
       userName: user.userName || '',
       userHandle: user.userHandle || '',
       userEmail: user.userEmail || '',
-      messages: mapApiMessages(msgs, model)
+      messages: mapApiMessages(merged, model)
     };
+  }
+
+  function exportDataFromApi() {
+    var chatId = currentChatId();
+    if (!chatId) return Promise.resolve(null);
+    return loadChatFromApi(chatId);
   }
 
   async function detectCapabilities(refresh) {
@@ -449,6 +498,8 @@
     id: 'qwen',
     modifier: 'qwen',
     fenceTag: 'qwen',
+    exportData: exportDataFromApi,
+    exportDomFallback: false,
     active: function () {
       return visible(findComposerInput());
     },
@@ -504,34 +555,14 @@
           return { items: domItems, nextCursor: null };
         }
       },
-      get: async function (args, ctx) {
+      get: async function (args) {
         try {
           var chatId = args && args.chatId ? String(args.chatId) : '';
           if (!chatId) {
-            if (ctx && typeof ctx.getData === 'function') {
-              var live = await ctx.getData();
-              return Object.assign({ platform: 'qwen', url: location.href }, live || {});
-            }
-            rpcErr('BAD_REQUEST', 'chatId required');
-          }
-          if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
-            var onPage = await ctx.getData();
-            if (onPage && onPage.messages && onPage.messages.length) {
-              var u = sessionUser();
-              return Object.assign(
-                {
-                  platform: 'qwen',
-                  url: location.href,
-                  chatId: chatId,
-                  title: findTitle(),
-                  model: findModel(),
-                  userName: u.userName,
-                  userHandle: u.userHandle,
-                  userEmail: u.userEmail
-                },
-                onPage
-              );
-            }
+            chatId = currentChatId();
+            if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+            var current = await loadChatFromApi(chatId);
+            return Object.assign({ url: location.href }, current);
           }
           return await loadChatFromApi(chatId);
         } catch (err) {
