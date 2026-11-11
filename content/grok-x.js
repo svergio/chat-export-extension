@@ -440,6 +440,13 @@
 
   var Ops = CE.Ops || {};
   var GROK_PATH = '/i/grok';
+  var X_BEARER =
+    'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+  var GQL = {
+    history: { id: '9Hyh5D4-WXLnExZkONSkZg', name: 'GrokHistory' },
+    items: { id: 'D6gpGuW0DQAET6sglLYyfA', name: 'GrokConversationItemsByRestId' },
+    delete: { id: 'TlKHSWVMVeaa-i7dqQqFQA', name: 'ConversationItem_DeleteConversationMutation' }
+  };
   var DELETE_RE = /удалить|delete/i;
   var HISTORY_RE = /^(История|History)/i;
   var SEND_RE = /send|отправ|submit|grok something|спросить/i;
@@ -457,6 +464,236 @@
 
   function projectsGuard() {
     rpcErr('OPTION_NOT_FOUND', 'Projects are not supported on ' + PLATFORM, { supported: false });
+  }
+
+  function cookieValue(name) {
+    try {
+      var m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function xAuthHeaders() {
+    var ct0 = cookieValue('ct0');
+    if (!ct0) rpcErr('UNAUTHORIZED', 'X session cookie ct0 missing');
+    return {
+      authorization: X_BEARER,
+      'x-csrf-token': ct0,
+      'x-twitter-auth-type': 'OAuth2Session',
+      'x-twitter-active-user': 'yes'
+    };
+  }
+
+  function gqlUrl(op, variables) {
+    var vars = encodeURIComponent(JSON.stringify(variables || {}));
+    return '/i/api/graphql/' + op.id + '/' + op.name + '?variables=' + vars;
+  }
+
+  async function gqlGet(op, variables) {
+    var res = await fetch(gqlUrl(op, variables), {
+      method: 'GET',
+      credentials: 'include',
+      headers: xAuthHeaders()
+    });
+    if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', op.name + ' ' + res.status);
+    if (!res.ok) rpcErr('HOST_ERROR', op.name + ' HTTP ' + res.status);
+    var body = await res.json();
+    if (body && body.errors && body.errors.length) {
+      rpcErr('HOST_ERROR', op.name + ': ' + (body.errors[0].message || 'graphql error'));
+    }
+    return (body && body.data) || {};
+  }
+
+  async function gqlPost(op, variables) {
+    var res = await fetch('/i/api/graphql/' + op.id + '/' + op.name, {
+      method: 'POST',
+      credentials: 'include',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, xAuthHeaders()),
+      body: JSON.stringify({ variables: variables || {} })
+    });
+    if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', op.name + ' ' + res.status);
+    if (!res.ok) rpcErr('HOST_ERROR', op.name + ' HTTP ' + res.status);
+    var body = await res.json();
+    if (body && body.errors && body.errors.length) {
+      rpcErr('HOST_ERROR', op.name + ': ' + (body.errors[0].message || 'graphql error'));
+    }
+    return (body && body.data) || {};
+  }
+
+  function historyItemToRow(item) {
+    var gc = (item && item.grokConversation) || {};
+    var id = gc.rest_id ? String(gc.rest_id) : '';
+    if (!id) return null;
+    return {
+      id: id,
+      title: (item.title || '').replace(/\s+/g, ' ').trim(),
+      createdAt: item.created_at_ms ? new Date(item.created_at_ms).toISOString() : null,
+      updatedAt: item.created_at_ms ? new Date(item.created_at_ms).toISOString() : null,
+      grokConversation: gc
+    };
+  }
+
+  async function fetchHistoryRows(needCount) {
+    var want = Math.max(needCount || 40, 1);
+    var cursor = null;
+    var rows = [];
+  gather:
+    for (var page = 0; page < 12 && rows.length < want; page++) {
+      var vars = cursor ? { cursor: cursor } : {};
+      var data = await gqlGet(GQL.history, vars);
+      var block = data.grok_conversation_history || {};
+      var items = block.items || [];
+      for (var i = 0; i < items.length; i++) {
+        var row = historyItemToRow(items[i]);
+        if (row) rows.push(row);
+      }
+      cursor = block.cursor || null;
+      if (!cursor || !items.length) break gather;
+    }
+    return rows;
+  }
+
+  async function titleForChatId(chatId) {
+    if (!chatId) return findTitle(activeRoot());
+    if (chatId === chatIdFromUrl()) return findTitle(activeRoot());
+    try {
+      var rows = await fetchHistoryRows(80);
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].id === chatId && rows[i].title) return rows[i].title;
+      }
+    } catch (e) {}
+    return chatId;
+  }
+
+  function webResultsToLinks(webResults) {
+    var links = [];
+    var list = webResults || [];
+    for (var i = 0; i < list.length; i++) {
+      var w = list[i] || {};
+      var href = w.url || w.preview_url || w.destination || '';
+      if (!href) continue;
+      var text = (w.title || w.name || w.snippet || href).replace(/\s+/g, ' ').trim();
+      links.push({ text: text, href: href });
+    }
+    return dropXChrome(links);
+  }
+
+  function messageFromApiItem(item, assistantTag) {
+    if (!item) return null;
+    var sender = String(item.sender_type || '');
+    var text = String(item.message || '').replace(/\s+\n/g, '\n').trim();
+    if (sender === 'Agent') {
+      if (!text) return null;
+      text = stripAssistantChrome(text);
+      if (!text) return null;
+      var links = webResultsToLinks(item.web_results);
+      var tag = item.grok_mode ? CE.modelFenceTag(String(item.grok_mode), 'grok') : assistantTag;
+      return {
+        role: 'assistant',
+        roleTag: tag,
+        text: text,
+        links: links,
+        sources: CE.dedupeSources(
+          links.map(function (l) {
+            return { title: l.text, url: l.href };
+          })
+        )
+      };
+    }
+    if (sender === 'User') {
+      if (!text) return null;
+      return { role: 'user', roleTag: 'user', text: text, links: [] };
+    }
+    return null;
+  }
+
+  function messagesFromApiItems(items, modelName) {
+    var assistantTag = CE.modelFenceTag(modelName, 'grok');
+    var sorted = (items || []).slice().sort(function (a, b) {
+      return (a.created_at_ms || 0) - (b.created_at_ms || 0);
+    });
+    var out = [];
+    for (var i = 0; i < sorted.length; i++) {
+      var msg = messageFromApiItem(sorted[i], assistantTag);
+      if (msg) out.push(msg);
+    }
+    return out;
+  }
+
+  async function fetchConversationMessages(chatId) {
+    var data = await gqlGet(GQL.items, { restId: String(chatId) });
+    var block = data.grok_conversation_items_by_rest_id;
+    if (!block || !block.items || !block.items.length) {
+      rpcErr('NOT_FOUND', 'conversation not found or empty: ' + chatId);
+    }
+    return block.items;
+  }
+
+  async function getChatPayloadFromApi(chatId) {
+    var items = await fetchConversationMessages(chatId);
+    var u = findUserMeta();
+    var model = findModel() || '';
+    var messages = messagesFromApiItems(items, model);
+    if (!messages.length) rpcErr('NOT_FOUND', 'conversation has no exportable messages: ' + chatId);
+    var title = await titleForChatId(chatId);
+    return {
+      platform: PLATFORM,
+      url: chatUrl(chatId),
+      chatId: chatId,
+      title: title,
+      model: model,
+      userName: u.userName || '',
+      userHandle: u.userHandle || '',
+      userEmail: u.userEmail || '',
+      messages: messages
+    };
+  }
+
+  async function exportDataFromApi() {
+    var chatId = chatIdFromUrl();
+    if (!chatId) {
+      var turns = turnNodes(activeRoot());
+      if (!turns.length) return null;
+      return null;
+    }
+    try {
+      var payload = await getChatPayloadFromApi(chatId);
+      return {
+        title: payload.title,
+        chatId: payload.chatId,
+        model: payload.model,
+        userName: payload.userName,
+        userHandle: payload.userHandle,
+        userEmail: payload.userEmail,
+        messages: payload.messages
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function deleteConversationApi(chatId) {
+    var data = await gqlPost(GQL.delete, { conversationId: String(chatId) });
+    var err = data && data.delete_grok_conversation && data.delete_grok_conversation.grok_deletion_error;
+    if (err && err.error_code) {
+      if (/not\s*found/i.test(String(err.error_code))) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+      rpcErr('HOST_ERROR', String(err.error_code));
+    }
+  }
+
+  function ensureGrokXBarStyles() {
+    if (document.getElementById('chat-export-grok-x-bar-fix')) return;
+    var st = document.createElement('style');
+    st.id = 'chat-export-grok-x-bar-fix';
+    st.textContent =
+      '.chat-export-bar--grok-x{flex:0 0 auto;align-self:center;margin-inline:0;gap:0;white-space:nowrap;max-width:none;position:relative;z-index:6;height:32px}' +
+      '.chat-export-bar--grok-x .chat-export-fmt{height:34px!important;min-height:34px!important;max-height:34px!important;min-width:22px!important;width:max-content!important;padding:0 8px 0 12px!important;gap:4px!important;display:inline-flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;border-radius:9999px!important;border:1px solid transparent!important;background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;color:rgb(231,233,234)!important;cursor:pointer!important}' +
+      '.chat-export-bar--grok-x .chat-export-fmt:hover,.chat-export-bar--grok-x .chat-export-fmt.is-open{background-color:rgba(231,233,234,.1)!important}' +
+      '.chat-export-bar--grok-x .chat-export-format-text{display:inline-block!important;flex:0 0 auto!important;overflow:visible!important;white-space:nowrap!important;min-height:1em!important;font-size:13px!important;font-weight:700!important;line-height:34px!important;color:rgb(231,233,234)!important}' +
+      '.chat-export-bar--grok-x .chat-export-dl{width:34px!important;height:34px!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}';
+    (document.head || document.documentElement).appendChild(st);
   }
 
   function chatUrl(id) {
@@ -775,6 +1012,9 @@
     if (!found || !found.el) return null;
     var chip = findModeChip(root);
     if (chip) found.nativeFrom = chip;
+    found.nativeClass = '';
+    found.nativeIconClass = '';
+    ensureGrokXBarStyles();
     return found;
   }
 
@@ -808,33 +1048,90 @@
         try {
           var limit = Ops.clampLimit(args && args.limit);
           var offset = parseInt(args && args.cursor, 10) || 0;
-          var read = await readHistory();
-          if (read.opened) Ops.closeMenu(document);
-          var rows = read.rows.slice();
+          var rows = await fetchHistoryRows(offset + limit);
           var current = chatIdFromUrl();
           if (current && !rows.some(function (r) { return r.id === current; })) {
-            rows.unshift({ id: current, title: findTitle(activeRoot()) });
+            rows.unshift({
+              id: current,
+              title: findTitle(activeRoot()),
+              createdAt: null,
+              updatedAt: null
+            });
           }
           var matched = rows.filter(function (r) {
             return !Ops.matchQuery || Ops.matchQuery(r.title, args && args.query);
           });
           var page = matched.slice(offset, offset + limit).map(function (r) {
-            return toChat(r.id, r.title);
+            return {
+              platform: PLATFORM,
+              chatId: r.id,
+              title: r.title || '',
+              url: chatUrl(r.id),
+              updatedAt: r.updatedAt || null,
+              createdAt: r.createdAt || null
+            };
           });
           return {
             items: page,
             nextCursor: offset + limit < matched.length ? String(offset + limit) : null
           };
         } catch (err) {
-          hostErr(err);
+          if (err && err.code === 'UNAUTHORIZED') hostErr(err);
+          try {
+            var limitDom = Ops.clampLimit(args && args.limit);
+            var offsetDom = parseInt(args && args.cursor, 10) || 0;
+            var read = await readHistory();
+            if (read.opened) Ops.closeMenu(document);
+            var rowsDom = read.rows.slice();
+            var cur = chatIdFromUrl();
+            if (cur && !rowsDom.some(function (r) { return r.id === cur; })) {
+              rowsDom.unshift({ id: cur, title: findTitle(activeRoot()) });
+            }
+            var matchedDom = rowsDom.filter(function (r) {
+              return !Ops.matchQuery || Ops.matchQuery(r.title, args && args.query);
+            });
+            var pageDom = matchedDom.slice(offsetDom, offsetDom + limitDom).map(function (r) {
+              return toChat(r.id, r.title);
+            });
+            return {
+              items: pageDom,
+              nextCursor: offsetDom + limitDom < matchedDom.length ? String(offsetDom + limitDom) : null
+            };
+          } catch (err2) {
+            hostErr(err2);
+          }
         }
       },
       get: async function (args, ctx) {
         try {
           var chatId = args && args.chatId ? String(args.chatId) : '';
-          if (chatId && chatId !== chatIdFromUrl()) await navigateToChat(chatId);
-          var data = (await ctx.getData()) || {};
-          return Object.assign({ platform: PLATFORM, url: location.href }, data, chatId ? { chatId: chatId } : {});
+          if (!chatId) {
+            var exported = await exportDataFromApi();
+            if (exported && exported.messages && exported.messages.length) {
+              return Object.assign({ platform: PLATFORM, url: location.href }, exported);
+            }
+            var live = ctx && typeof ctx.getData === 'function' ? await ctx.getData() : {};
+            return Object.assign({ platform: PLATFORM, url: location.href }, live || {});
+          }
+          if (chatId === chatIdFromUrl()) {
+            var onPage = await exportDataFromApi();
+            if (onPage && onPage.messages && onPage.messages.length) {
+              return Object.assign({ platform: PLATFORM, url: location.href }, onPage);
+            }
+          }
+          try {
+            return await getChatPayloadFromApi(chatId);
+          } catch (apiErr) {
+            if (apiErr && apiErr.code === 'NOT_FOUND') throw apiErr;
+            if (apiErr && apiErr.code === 'UNAUTHORIZED') throw apiErr;
+            if (chatId === chatIdFromUrl() && ctx && typeof ctx.getData === 'function') {
+              var dom = await ctx.getData();
+              return Object.assign({ platform: PLATFORM, url: location.href, chatId: chatId }, dom || {});
+            }
+            if (chatId !== chatIdFromUrl()) await navigateToChat(chatId);
+            var data = ctx && typeof ctx.getData === 'function' ? await ctx.getData() : {};
+            return Object.assign({ platform: PLATFORM, url: location.href, chatId: chatId }, data || {});
+          }
         } catch (err) {
           hostErr(err);
         }
@@ -878,7 +1175,12 @@
       delete: async function (args) {
         try {
           var chatId = requireChatId(args);
-          await deleteViaHistory(chatId);
+          try {
+            await deleteConversationApi(chatId);
+          } catch (apiErr) {
+            if (apiErr && apiErr.code === 'UNAUTHORIZED') throw apiErr;
+            await deleteViaHistory(chatId);
+          }
           return { deleted: true, chatId: chatId };
         } catch (err) {
           hostErr(err);
@@ -958,4 +1260,21 @@
       }
     }
   });
+
+  ensureGrokXBarStyles();
+
+  var platformEntry = CE.platforms && CE.platforms[PLATFORM];
+  if (platformEntry && typeof platformEntry.getData === 'function') {
+    var domGetData = platformEntry.getData;
+    platformEntry.getData = function () {
+      return exportDataFromApi()
+        .then(function (fromApi) {
+          if (fromApi && fromApi.messages && fromApi.messages.length) return fromApi;
+          return domGetData();
+        })
+        .catch(function () {
+          return domGetData();
+        });
+    };
+  }
 })();
