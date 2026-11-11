@@ -2,7 +2,13 @@
 
 # Chat Export — Chrome extension
 
-<!-- demo.gif pending -->
+<p align="center">
+  <img src="docs/media/demo-dashboard.gif" alt="Admin dashboard: sign-in to overview, browsers, and queues" width="720" />
+</p>
+
+| MCP (local `cem_` / snippet) | Browser permissions |
+| --- | --- |
+| <img src="docs/media/demo-mcp.gif" alt="Dashboard MCP server token and local mcpServers snippet" width="360" /> | <img src="docs/media/demo-permissions.gif" alt="allowCreate, allowProjects, allowDestructive toggles" width="360" /> |
 
 Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so coding agents (Cursor and others) can list, export, create, and ask in those UIs **without vendor API keys**.
 
