@@ -23,8 +23,6 @@ const required = [
   'locales'
 ];
 
-const optional = ['shared.js', 'popup.js'];
-
 for (const rel of required) {
   if (!existsSync(join(root, rel))) {
     console.error(`pack: missing required path: ${rel}`);
@@ -32,7 +30,7 @@ for (const rel of required) {
   }
 }
 
-const entries = [...required, ...optional.filter((rel) => existsSync(join(root, rel)))];
+const entries = [...required];
 
 mkdirSync(outDir, { recursive: true });
 rmSync(outPath, { force: true });

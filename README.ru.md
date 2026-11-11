@@ -12,7 +12,7 @@
 
 **Без сети, без аналитики, только локально.** Экспорт и опциональный MCP-мост остаются на вашей машине (`chrome.downloads` + `127.0.0.1`). Расширение не «звонит домой» и не содержит телеметрии.
 
-**Zip для установки:** [chat-export-extension-2.0.1.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.1/chat-export-extension-2.0.1.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.0.1](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.1).
+**Zip для установки:** [chat-export-extension-2.0.2.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.2/chat-export-extension-2.0.2.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.0.2](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.2).
 
 ## Проблема
 

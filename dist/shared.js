@@ -472,7 +472,7 @@
           return "![" + (alt || "image") + "](" + absUrl(src) + ")";
         }
         if (tag === "code" && el.parentElement && el.parentElement.tagName.toLowerCase() !== "pre") {
-          return "`" + el.textContent.replace(/`/g, "\\`") + "`";
+          return "`" + el.textContent.replace(/\\/g, "\\\\").replace(/`/g, "\\`") + "`";
         }
         if (tag === "pre") {
           var codeEl = el.querySelector("code");
@@ -547,7 +547,7 @@
           var cells = trs[r3].querySelectorAll("th,td");
           var cols = [];
           for (var c3 = 0; c3 < cells.length; c3++) {
-            cols.push(blockChildren(cells[c3], {}).replace(/\|/g, "\\|").replace(/\n+/g, " ").trim());
+            cols.push(blockChildren(cells[c3], {}).replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n+/g, " ").trim());
           }
           if (cols.length) rows.push(cols);
         }
