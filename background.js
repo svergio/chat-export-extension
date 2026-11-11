@@ -191,7 +191,7 @@
   }
 
   // src/background/bridge.js
-  var EXT_VERSION = "1.8.3";
+  var EXT_VERSION = chrome.runtime.getManifest().version;
   var CONTENT_RPC_TYPE = "chat-export-rpc";
   var CONTENT_PING_TYPE = "chat-export-ping";
   var MUTATING_OPS = {
@@ -289,7 +289,7 @@
       return host === "chat.deepseek.com" || host.endsWith(".deepseek.com");
     }
     if (platform === "perplexity") {
-      return host === "perplexity.ai" || host === "www.perplexity.ai" || host.endsWith(".perplexity.ai");
+      return host === "perplexity.ai" || host.endsWith(".perplexity.ai");
     }
     return false;
   }
@@ -352,16 +352,16 @@
       const m = path.match(/\/(?:chat|copilot\/c)\/([^/?#]+)/);
       return m ? m[1] : "";
     }
-    if (platform === "deepseek") {
-      const m = path.match(/\/a\/chat\/s\/([^/?#]+)/);
-      return m ? m[1] : "";
-    }
     if (platform === "qwen") {
       const m = path.match(/\/c\/([^/?#]+)/);
       return m ? m[1] : "";
     }
+    if (platform === "deepseek") {
+      const m = path.match(/\/a\/chat\/s\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
     if (platform === "perplexity") {
-      const m = path.match(/\/search\/([^/?#]+)/);
+      const m = path.match(/\/(?:search|session)\/([^/?#]+)/);
       return m ? m[1] : "";
     }
     return "";
