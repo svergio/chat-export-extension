@@ -2,7 +2,13 @@
 
 # Chat Export — расширение Chrome
 
-<!-- demo.gif pending -->
+<p align="center">
+  <img src="docs/media/demo-dashboard.gif" alt="Админ-дашборд: вход, обзор, браузеры и очереди" width="720" />
+</p>
+
+| MCP (локальный `cem_` / snippet) | Права браузера |
+| --- | --- |
+| <img src="docs/media/demo-mcp.gif" alt="Токен MCP-сервера и локальный mcpServers snippet" width="360" /> | <img src="docs/media/demo-permissions.gif" alt="Переключатели allowCreate, allowProjects, allowDestructive" width="360" /> |
 
 Экспорт и управление **веб-чатами** на восьми площадках (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — в вашем браузере, под вашими правилами. Расширение добавляет панель экспорта на сайтах провайдеров, скачивает **Markdown, YAML, JSON, HTML и PDF** локально и подключается к [локальному MCP-серверу](https://github.com/svergio/chat-export-server), чтобы агенты (Cursor и др.) могли листать, экспортировать, создавать чаты и задавать вопросы **без API-ключей** вендоров.
 
