@@ -642,6 +642,50 @@
     clickSend();
   }
 
+  async function fetchConversationApi(chatId, branchMode) {
+    var branch = branchMode === 'all' ? 'all' : 'active';
+    var path =
+      '/chat_conversations/' +
+      encodeURIComponent(chatId) +
+      '?tree=True&rendering_mode=messages&render_all_tools=true';
+    var res = await apiFetch(path);
+    if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+    if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'get ' + res.status);
+    if (!res.ok) {
+      var t = await res.text();
+      rpcErr('HOST_ERROR', 'get ' + res.status + ' ' + t.slice(0, 160));
+    }
+    var data = await res.json();
+    var user = await sessionUser();
+    var msgs =
+      branch === 'all'
+        ? mapApiMessagesAll(data.chat_messages || [], data.current_leaf_message_uuid, data.model)
+        : mapApiMessages(data.chat_messages || [], data.current_leaf_message_uuid, data.model);
+    return {
+      title: data.name || currentTitle(),
+      chatId: chatId,
+      model: data.model || readModelFromDom() || '',
+      userName: user.userName || '',
+      userHandle: user.userHandle || '',
+      userEmail: user.userEmail || '',
+      branch: branch,
+      messages: msgs
+    };
+  }
+
+  async function exportDataFromApi() {
+    var chatId = currentChatId();
+    if (!chatId) return null;
+    try {
+      var payload = await fetchConversationApi(chatId, 'active');
+      if (!payload.messages || !payload.messages.length) return null;
+      return payload;
+    } catch (e) {
+      if (e && e.code && e.code !== 'HOST_ERROR') throw e;
+      return null;
+    }
+  }
+
   async function maybeRename(chatId, title) {
     var name = String(title || '').trim();
     if (!name || !Ops.testTitle || !Ops.testTitle(name)) return;
@@ -665,33 +709,37 @@
     return 'assistant';
   }
 
+  function claudeComposerExport() {
+    var model = findModelButton();
+    if (!model) return null;
+    var slot = findComposerBarSlot(model);
+    if (!slot) return null;
+    var iconFrom = findAttachButton() || model;
+    return {
+      el: slot,
+      insertAfter: model,
+      nativeFrom: model,
+      nativeIconFrom: iconFrom,
+      downloadSvg: function () {
+        return (
+          '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="chat-export-dl-icon shrink-0">' +
+          '<path d="M10 2.75a.75.75 0 0 1 .75.75v7.19l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 0 1 1.06-1.06l2.22 2.22V3.5A.75.75 0 0 1 10 2.75z"/>' +
+          '<path d="M3.75 14.5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z"/>' +
+          '</svg>'
+        );
+      }
+    };
+  }
+
   CE.definePlatform({
     id: 'claude',
     modifier: 'claude',
     fenceTag: 'claude',
+    exportData: exportDataFromApi,
     active: function () {
       return pmVisible(findProseMirror());
     },
-    composer: function () {
-      var model = findModelButton();
-      if (!model) return null;
-      var slot = findComposerBarSlot(model);
-      if (!slot) return null;
-      return {
-        el: slot,
-        insertAfter: model,
-        nativeFrom: model,
-        nativeIconFrom: findAttachButton() || model,
-        downloadSvg: function () {
-          return (
-            '<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="chat-export-dl-icon">' +
-            '<path d="M10 2.75a.75.75 0 0 1 .75.75v7.19l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 0 1 1.06-1.06l2.22 2.22V3.5A.75.75 0 0 1 10 2.75z"/>' +
-            '<path d="M3.75 14.5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z"/>' +
-            '</svg>'
-          );
-        }
-      };
-    },
+    composer: claudeComposerExport,
     chatId: currentChatId,
     title: currentTitle,
     model: readModelFromDom,
@@ -791,42 +839,34 @@
           var chatId = args && args.chatId ? String(args.chatId) : '';
           var branchMode = args && args.branch === 'all' ? 'all' : 'active';
           if (!chatId) {
-            if (ctx && typeof ctx.getData === 'function') {
+            chatId = currentChatId();
+            if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+          }
+          try {
+            var payload = await fetchConversationApi(chatId, branchMode);
+            return {
+              platform: 'claude',
+              url: chatId === currentChatId() ? location.href : chatUrl(chatId),
+              title: payload.title || '',
+              chatId: chatId,
+              model: payload.model || '',
+              userName: payload.userName || '',
+              userHandle: payload.userHandle || '',
+              userEmail: payload.userEmail || '',
+              branch: payload.branch || branchMode,
+              messages: payload.messages || []
+            };
+          } catch (apiErr) {
+            if (apiErr && (apiErr.code === 'NOT_FOUND' || apiErr.code === 'UNAUTHORIZED')) throw apiErr;
+            if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
               var live = await ctx.getData();
-              return Object.assign({ platform: 'claude', url: location.href, branch: branchMode }, live || {});
+              return Object.assign(
+                { platform: 'claude', url: location.href, branch: branchMode, chatId: chatId },
+                live || {}
+              );
             }
-            rpcErr('BAD_REQUEST', 'chatId required');
+            throw apiErr;
           }
-          // Always prefer API for chatId gets so thinking stays out of text (DOM capture mixes it in).
-          var path =
-            '/chat_conversations/' +
-            encodeURIComponent(chatId) +
-            '?tree=True&rendering_mode=messages&render_all_tools=true';
-          var res = await apiFetch(path);
-          if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
-          if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'get ' + res.status);
-          if (!res.ok) {
-            var t = await res.text();
-            rpcErr('HOST_ERROR', 'get ' + res.status + ' ' + t.slice(0, 160));
-          }
-          var data = await res.json();
-          var user = await sessionUser();
-          var msgs =
-            branchMode === 'all'
-              ? mapApiMessagesAll(data.chat_messages || [], data.current_leaf_message_uuid, data.model)
-              : mapApiMessages(data.chat_messages || [], data.current_leaf_message_uuid, data.model);
-          return {
-            platform: 'claude',
-            url: chatUrl(chatId),
-            title: data.name || '',
-            chatId: chatId,
-            model: data.model || '',
-            userName: user.userName || '',
-            userHandle: user.userHandle || '',
-            userEmail: user.userEmail || '',
-            branch: branchMode,
-            messages: msgs
-          };
         } catch (err) {
           hostErr(err);
         }
