@@ -46,6 +46,34 @@ export function IconCopilot({ size }) {
   );
 }
 
+export function IconQwen({ size }) {
+  const s = size || 16;
+  return (
+    <svg viewBox="0 0 24 24" width={s} height={s} fill="currentColor" aria-hidden="true">
+      <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2c2.2 0 4.1 1.1 5.2 2.8-1.5.9-2.6 2.5-2.9 4.4-.3-.1-.7-.2-1.1-.2-1.8 0-3.3 1-4.1 2.4A4.28 4.28 0 0 0 7.2 9.5 7.98 7.98 0 0 1 12 4.2ZM6.7 12.6c.5-2 2.1-3.6 4.1-4.1.4 2.1 1.9 3.8 3.9 4.6-.9 1.3-2.4 2.2-4.1 2.4a7.08 7.08 0 0 1-3.9-2.9Zm10.6 0a7.08 7.08 0 0 1-3.9 2.9c1.7-.2 3.2-1.1 4.1-2.4 1.3-.5 2.3-1.5 2.9-2.8.3 1 .4 2.1.2 3.2-.5-.4-1.1-.7-1.8-.9.4-.8.6-1.7.5-2Zm-3.3 4.5c-.8 1.1-2.1 1.8-3.5 1.8s-2.7-.7-3.5-1.8c1.5.3 3.1.3 4.6 0 1.2-.3 2.2-.9 2.9-1.8l-.5 1.8Z" />
+    </svg>
+  );
+}
+
+export function IconDeepSeek({ size }) {
+  const s = size || 16;
+  return (
+    <svg viewBox="0 0 24 24" width={s} height={s} fill="currentColor" aria-hidden="true">
+      <path d="M4 13.5c0-4.4 3.6-8.5 8.5-8.5 2.8 0 5.2 1.3 6.8 3.5-1.4.6-2.4 1.8-2.9 3.3-.5-1.9-2.2-3.3-4.3-3.3-2.6 0-4.7 2.1-4.7 4.7 0 .5.1 1 .2 1.5H4Zm14.2 2.2c-1.6 2-4.2 3.3-7.2 3.3-1.6 0-3.1-.4-4.4-1.2l1.4-2.4c1 .6 2.2.9 3.5.9 2.7 0 5-1.2 6.4-3.1l.3 2.5Z" />
+      <path d="M19.5 8.5c.8 1.2 1.3 2.6 1.3 4.2 0 .5-.1 1-.2 1.5l-2.1-.4c.1-.4.1-.7.1-1.1 0-1.4-.4-2.7-1.2-3.8l1.1-1.4Z" />
+    </svg>
+  );
+}
+
+export function IconPerplexity({ size }) {
+  const s = size || 16;
+  return (
+    <svg viewBox="0 0 24 24" width={s} height={s} fill="currentColor" aria-hidden="true">
+      <path d="M12 3.5 8.8 11H4l6.5 4.8L7.3 23 12 18.2 16.7 23l-3.2-7.2L20 11h-4.8L12 3.5Zm0 5.2 2.2 4.3h-4.4L12 8.7Zm-4.6 4.8h3.1l1.5 3.4-2.3-1.7-2.3-1.7Zm9.2 0-2.3 1.7-2.3 1.7 1.5-3.4h3.1Z" />
+    </svg>
+  );
+}
+
 export function IconSun({ size }) {
   const s = size || 14;
   return (
@@ -87,7 +115,10 @@ export const SKIN_OPTIONS = [
   { id: 'grok', Icon: IconGrok },
   { id: 'grok-x', Icon: IconX },
   { id: 'copilot', Icon: IconCopilot },
-  { id: 'claude', Icon: IconClaude }
+  { id: 'claude', Icon: IconClaude },
+  { id: 'qwen', Icon: IconQwen },
+  { id: 'deepseek', Icon: IconDeepSeek },
+  { id: 'perplexity', Icon: IconPerplexity }
 ];
 
 export const SCHEME_OPTIONS = [

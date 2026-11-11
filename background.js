@@ -1091,6 +1091,11 @@
         return "idle";
       }
       if (host === "claude.ai" || host.endsWith(".claude.ai")) return "claude";
+      if (host === "chat.qwen.ai" || host.endsWith(".qwen.ai")) return "qwen";
+      if (host === "chat.deepseek.com" || host.endsWith(".deepseek.com")) return "deepseek";
+      if (host === "perplexity.ai" || host === "www.perplexity.ai" || host.endsWith(".perplexity.ai")) {
+        return "perplexity";
+      }
     } catch (e) {
     }
     return "idle";
