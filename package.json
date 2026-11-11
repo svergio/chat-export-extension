@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/svergio/chat-export-extension.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "preact": "^11.2.0"
   },
