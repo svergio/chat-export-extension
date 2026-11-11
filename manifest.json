@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Chat Export",
   "version": "1.4.0",
-  "description": "Export Grok (grok.com + X), and ChatGPT conversations to Markdown, YAML, JSON, HTML, and PDF.",
+  "description": "Export Grok (grok.com + X), ChatGPT, Claude, and GitHub Copilot chats to Markdown, YAML, JSON, HTML, and PDF.",
   "permissions": ["downloads", "tabs"],
   "background": {
     "service_worker": "background.js"
@@ -25,7 +25,12 @@
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://x.com/*",
-    "https://twitter.com/*"
+    "https://twitter.com/*",
+    "https://claude.ai/*",
+    "https://github.com/*",
+    "https://api.individual.githubcopilot.com/*",
+    "https://api.business.githubcopilot.com/*",
+    "https://api.enterprise.githubcopilot.com/*"
   ],
   "web_accessible_resources": [
     {
@@ -35,7 +40,9 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://x.com/*",
-        "https://twitter.com/*"
+        "https://twitter.com/*",
+        "https://claude.ai/*",
+        "https://github.com/*"
       ]
     }
   ],
@@ -46,7 +53,10 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://x.com/*",
-        "https://twitter.com/*"
+        "https://twitter.com/*",
+        "https://claude.ai/*",
+        "https://github.com/copilot",
+        "https://github.com/copilot/*"
       ],
       "js": ["content/page-harvest.js"],
       "run_at": "document_idle",
@@ -73,6 +83,21 @@
         "https://twitter.com/*"
       ],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok-x.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/claude.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://github.com/copilot",
+        "https://github.com/copilot/*"
+      ],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/copilot.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     }
