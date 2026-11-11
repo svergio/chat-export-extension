@@ -34,7 +34,8 @@
     "https://github.com/*",
     "https://api.individual.githubcopilot.com/*",
     "https://api.business.githubcopilot.com/*",
-    "https://api.enterprise.githubcopilot.com/*"
+    "https://api.enterprise.githubcopilot.com/*",
+    "https://chat.qwen.ai/*"
   ],
   "web_accessible_resources": [
     {
@@ -46,7 +47,8 @@
         "https://x.com/*",
         "https://twitter.com/*",
         "https://claude.ai/*",
-        "https://github.com/*"
+        "https://github.com/*",
+        "https://chat.qwen.ai/*"
       ]
     }
   ],
@@ -104,6 +106,12 @@
         "https://github.com/copilot/*"
       ],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/copilot.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://chat.qwen.ai/*"],
+      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/qwen.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     }

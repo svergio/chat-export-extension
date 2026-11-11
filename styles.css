@@ -327,6 +327,68 @@
   height: 16px !important;
 }
 
+.chat-export-bar--qwen {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 4px;
+  gap: 2px;
+  height: 32px;
+}
+
+.chat-export-bar--qwen > button[aria-label='Export format'] {
+  height: 32px !important;
+  min-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 0 10px !important;
+  border: 0 !important;
+  border-radius: 9999px !important;
+  background: transparent !important;
+  color: rgba(250, 251, 255, 0.92) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 32px !important;
+}
+
+.chat-export-bar--qwen > button[aria-label='Export format']:hover,
+.chat-export-bar--qwen > button[aria-label='Export format'].is-open {
+  background: rgba(97, 92, 237, 0.22) !important;
+}
+
+.chat-export-bar--qwen .chat-export-format-text {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+}
+
+.chat-export-bar--qwen .chat-export-chevron {
+  width: 12px !important;
+  height: 12px !important;
+  opacity: 0.85 !important;
+}
+
+.chat-export-bar--qwen .chat-export-dl {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 0 !important;
+  background: rgba(97, 92, 237, 0.18) !important;
+  color: rgb(250, 251, 255) !important;
+}
+
+.chat-export-bar--qwen .chat-export-dl:hover {
+  background: rgba(124, 116, 255, 0.32) !important;
+}
+
+.chat-export-bar--qwen .chat-export-dl svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 .chat-export-bar button {
   cursor: pointer;
 }
