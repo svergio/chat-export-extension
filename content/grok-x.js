@@ -2,7 +2,7 @@
   'use strict';
 
   var CE = window.ChatExport;
-  if (!CE) return;
+  if (!CE || !CE.definePlatform) return;
 
   var PLATFORM = 'grok-x';
   var COPY_SEL = 'button[aria-label="Копировать текст"], button[aria-label="Copy text"]';
@@ -366,18 +366,6 @@
     return messages;
   }
 
-  function messagesFromHydrate(res, modelName, root) {
-    var live = parseMessages(modelName, root);
-    if (!res || !res.items) return live;
-    var captured = [];
-    var order = res.order || [];
-    for (var i = 0; i < order.length; i++) {
-      var row = res.items[order[i]];
-      if (row && row.payload && row.payload.role) captured.push(row.payload);
-    }
-    return captured.length > live.length ? captured : live;
-  }
-
   function liveScroller(root) {
     var list = findTurnList(root);
     var from = list || findComposerTextarea(root) || root;
@@ -450,150 +438,500 @@
     };
   }
 
-  function mount() {
-    var root = activeRoot();
-    if (!root) return;
-    // Avoid injecting on plain X feed without Grok UI
-    if (!findComposerTextarea(root)) return;
+  var Ops = CE.Ops || {};
+  var GROK_PATH = '/i/grok';
+  var DELETE_RE = /удалить|delete/i;
+  var HISTORY_RE = /^(История|History)/i;
+  var SEND_RE = /send|отправ|submit|grok something|спросить/i;
+  var MORE_SELECTOR =
+    'button[aria-haspopup="menu"], button[aria-label*="more" i], button[aria-label*="ещ" i], button[aria-label*="действ" i], button[aria-label*="actions" i]';
 
-    var found = findComposerToolbar(root);
-    if (!found || !found.el) return;
+  function rpcErr(code, message, details) {
+    throw new CE.RpcError(code, message, details);
+  }
 
-    var existing = document.querySelector('[data-chat-export-bar="' + PLATFORM + '"]');
-    var sameVer = existing && existing.getAttribute('data-chat-export-v') === CE.EXT_VERSION;
-    if (
-      existing &&
-      existing.isConnected &&
-      sameVer &&
-      existing.parentElement === found.el &&
-      found.el.contains(existing)
-    ) {
-      return;
-    }
-    if (existing) existing.remove();
-
-    var modeChip = findModeChip(root);
-    CE.injectBar(found.el, {
-      platform: PLATFORM,
-      modifier: 'grok-x',
-      insertAfter: found.insertAfter,
-      beforeChild: found.beforeChild,
-      nativeFrom: modeChip || found.nativeFrom,
-      nativeClass: modeChip ? String(modeChip.className || '').trim() : '',
-      nativeIconFrom: found.nativeIconFrom,
-      getData: function () {
-        var cur = activeRoot() || root;
-        var u = findUserMeta();
-        var model = findModel(cur);
-        var scroller = liveScroller(cur);
-        var assistantTag = CE.modelFenceTag(model, 'grok');
-        return CE.hydrateTranscript({
-          scroller: scroller,
-          fromEl: scroller,
-          maxSteps: 40,
-          nodes: function () {
-            return turnNodes(cur);
-          },
-          keyOf: turnKey,
-          capture: function (el) {
-            return messageFromTurn(el, assistantTag);
-          }
-        }).then(function (res) {
-          return {
-            title: findTitle(cur),
-            chatId: chatIdFromUrl(),
-            model: model,
-            userName: u.userName,
-            userHandle: u.userHandle,
-            userEmail: u.userEmail,
-            messages: messagesFromHydrate(res, model, cur)
-          };
-        });
-      }
-    });
+  function hostErr(err) {
+    if (err && err.code && CE.RpcError && err instanceof CE.RpcError) throw err;
+    rpcErr('HOST_ERROR', (err && err.message) || String(err || 'host error'));
   }
 
   function projectsGuard() {
-    throw new CE.RpcError('OPTION_NOT_FOUND', 'Projects are not supported on ' + PLATFORM, { supported: false });
+    rpcErr('OPTION_NOT_FOUND', 'Projects are not supported on ' + PLATFORM, { supported: false });
   }
 
-  function platformGetData() {
+  function chatUrl(id) {
+    return location.origin + GROK_PATH + '?conversation=' + encodeURIComponent(id);
+  }
+
+  function loginRequired() {
+    return /^\/(i\/flow\/login|login)(\/|$)/i.test(location.pathname || '');
+  }
+
+  function failNav(message) {
+    if (loginRequired()) rpcErr('UNAUTHORIZED', 'X requires login to use Grok');
+    rpcErr('TIMEOUT', message);
+  }
+
+  function visible(el) {
+    if (!el || !el.isConnected) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+
+  function labelOf(el) {
+    return ((el.getAttribute('aria-label') || '') + ' ' + (el.textContent || '')).replace(/\s+/g, ' ').trim();
+  }
+
+  function turnCount() {
     var root = activeRoot();
-    if (!root) {
-      return Promise.resolve({
-        title: 'grok-x',
-        chatId: chatIdFromUrl(),
-        model: '',
-        userName: '',
-        userHandle: '',
-        userEmail: '',
-        messages: []
-      });
-    }
-    var u = findUserMeta();
-    var model = findModel(root);
-    var scroller = liveScroller(root);
-    var assistantTag = CE.modelFenceTag(model, 'grok');
-    return CE.hydrateTranscript({
-      scroller: scroller,
-      fromEl: scroller,
-      maxSteps: 40,
-      nodes: function () {
-        return turnNodes(root);
-      },
-      keyOf: turnKey,
-      capture: function (el) {
-        return messageFromTurn(el, assistantTag);
+    return root ? turnNodes(root).length : 0;
+  }
+
+  function composerInput() {
+    var root = activeRoot();
+    return root ? findComposerTextarea(root) : null;
+  }
+
+  function isGenerating() {
+    return !!(Ops.findStopControl && Ops.findStopControl(activeRoot() || document));
+  }
+
+  function findSendButton(input) {
+    var node = input && input.parentElement;
+    for (var depth = 0; node && depth < 6; depth++) {
+      var btns = node.querySelectorAll('button');
+      for (var i = 0; i < btns.length; i++) {
+        var b = btns[i];
+        if (b.closest('[data-chat-export-bar]') || !visible(b)) continue;
+        var blob = (b.getAttribute('data-testid') || '') + ' ' + labelOf(b);
+        if (/voice|голос|attach|файл|file|mode|режим/i.test(blob)) continue;
+        if (SEND_RE.test(blob) || b.getAttribute('type') === 'submit') return b;
       }
-    }).then(function (res) {
-      return {
-        title: findTitle(root),
-        chatId: chatIdFromUrl(),
-        model: model,
-        userName: u.userName,
-        userHandle: u.userHandle,
-        userEmail: u.userEmail,
-        messages: messagesFromHydrate(res, model, root)
-      };
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function historyRows() {
+    var seen = {};
+    var out = [];
+    var links = document.querySelectorAll('a[href*="conversation="]');
+    for (var i = 0; i < links.length; i++) {
+      var link = links[i];
+      if (link.closest('[data-chat-export-bar]')) continue;
+      var id = '';
+      try {
+        id = new URL(link.getAttribute('href'), location.href).searchParams.get('conversation') || '';
+      } catch (e) {}
+      if (!id || seen[id]) continue;
+      seen[id] = true;
+      var title = (link.innerText || link.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+      out.push({ id: id, title: title, el: link });
+    }
+    return out;
+  }
+
+  async function ensureGrokPage() {
+    if (isGrokPath()) return;
+    Ops.softNavigate(GROK_PATH);
+    await Ops.waitFor(
+      function () {
+        return isGrokPath() && activeRoot() ? true : null;
+      },
+      { timeoutMs: 15000, message: 'Grok page timeout' }
+    ).catch(function () {
+      failNav('X Grok page timeout');
     });
   }
 
-  if (!CE.platforms[PLATFORM]) {
-    CE.platforms[PLATFORM] = {
-      id: PLATFORM,
-      chatId: chatIdFromUrl,
-      getData: platformGetData,
-      ops: {
-        capabilities: async function () {
-          return {
-            platform: PLATFORM,
-            projectsSupported: false,
-            models: [],
-            modes: [],
-            toggles: [],
-            tools: [],
-            current: {},
-            detectedAt: new Date().toISOString()
-          };
-        },
-        containers: async function () {
-          return { items: [], nextCursor: null };
-        },
-        containerChats: async function () {
-          projectsGuard();
-        },
-        containerCreate: async function () {
-          projectsGuard();
-        },
-        containerDelete: async function () {
-          projectsGuard();
-        },
-        containerMoveChat: async function () {
-          projectsGuard();
-        }
+  async function openHistory() {
+    if (historyRows().length) return false;
+    var btns = document.querySelectorAll('button, [role="button"]');
+    for (var i = 0; i < btns.length; i++) {
+      if (!visible(btns[i]) || btns[i].closest('[data-chat-export-bar]')) continue;
+      var aria = (btns[i].getAttribute('aria-label') || '').trim();
+      var text = (btns[i].textContent || '').replace(/\s+/g, ' ').trim();
+      if (HISTORY_RE.test(aria) || HISTORY_RE.test(text)) {
+        Ops.clickEl(btns[i]);
+        return true;
       }
+    }
+    return false;
+  }
+
+  async function readHistory() {
+    await ensureGrokPage();
+    var opened = await openHistory();
+    var rows = await Ops.waitFor(
+      function () {
+        var found = historyRows();
+        return found.length ? found : null;
+      },
+      { timeoutMs: 5000, message: 'history empty' }
+    ).catch(function () {
+      return [];
+    });
+    return { rows: rows, opened: opened };
+  }
+
+  function toChat(id, title) {
+    return {
+      platform: PLATFORM,
+      chatId: id,
+      title: title || '',
+      url: chatUrl(id),
+      updatedAt: null,
+      createdAt: null
     };
   }
 
-  CE.observe(mount);
+  async function navigateToChat(chatId) {
+    if (isGrokPath() && chatIdFromUrl() === chatId && activeRoot()) return;
+    Ops.softNavigate(GROK_PATH + '?conversation=' + encodeURIComponent(chatId));
+    await Ops.waitFor(
+      function () {
+        return isGrokPath() && chatIdFromUrl() === chatId && composerInput() ? true : null;
+      },
+      { timeoutMs: 25000, message: 'Grok X navigate timeout' }
+    ).catch(function () {
+      failNav('Grok X navigate timeout: ' + chatId);
+    });
+    await Ops.waitFor(
+      function () {
+        return turnCount() > 0 ? true : null;
+      },
+      { timeoutMs: 15000, message: 'conversation empty' }
+    ).catch(function () {
+      rpcErr('NOT_FOUND', 'conversation not found or empty: ' + chatId);
+    });
+  }
+
+  async function ensureNewChat() {
+    if (isGrokPath() && !chatIdFromUrl() && composerInput()) return;
+    Ops.softNavigate(GROK_PATH);
+    await Ops.waitFor(
+      function () {
+        return isGrokPath() && !chatIdFromUrl() && composerInput() ? true : null;
+      },
+      { timeoutMs: 25000, message: 'Grok X new chat timeout' }
+    ).catch(function () {
+      failNav('Grok X new chat timeout');
+    });
+  }
+
+  async function submitComposerText(text) {
+    var body = String(text || '').trim();
+    if (!body) rpcErr('BAD_REQUEST', 'text is required');
+    var input = await Ops.waitFor(composerInput, { timeoutMs: 15000, message: 'Grok X composer timeout' }).catch(
+      function () {
+        failNav('Grok X composer timeout');
+      }
+    );
+    var turnsBefore = turnCount();
+    Ops.fillEditable(input, body);
+    await Ops.sleep(200);
+    await Ops.ensureComposerSubmitted({
+      send: findSendButton(input),
+      input: input,
+      message: 'Grok X submit failed',
+      isDone: function () {
+        return isGenerating() || turnCount() > turnsBefore ? true : null;
+      }
+    });
+    return turnsBefore;
+  }
+
+  async function waitAssistantReply(turnsBefore, timeoutMs) {
+    var lastSig = '';
+    var stableSince = 0;
+    await Ops.waitFor(
+      function () {
+        if (isGenerating()) {
+          stableSince = 0;
+          return null;
+        }
+        var root = activeRoot();
+        if (!root) return null;
+        var turns = turnNodes(root);
+        if (turns.length <= turnsBefore) return null;
+        var last = turns[turns.length - 1];
+        if (!hasCopy(last)) return null;
+        var sig = turns.length + ':' + (last.innerText || '').length;
+        if (sig !== lastSig) {
+          lastSig = sig;
+          stableSince = Date.now();
+          return null;
+        }
+        return Date.now() - stableSince >= 1500 ? true : null;
+      },
+      { timeoutMs: timeoutMs || 180000, intervalMs: 300, message: 'Grok X reply timeout' }
+    ).catch(function () {
+      rpcErr('TIMEOUT', 'Grok X reply timeout');
+    });
+  }
+
+  async function sendInChat(chatId, text) {
+    await navigateToChat(chatId);
+    var turnsBefore = await submitComposerText(text);
+    await waitAssistantReply(turnsBefore, 180000);
+  }
+
+  function composeAsk(args, requireSelection) {
+    var selection = String((args && args.selection) || '').trim();
+    var prompt = String((args && args.prompt) || '').trim();
+    if (!prompt) rpcErr('BAD_REQUEST', 'prompt required');
+    if (requireSelection && !selection) rpcErr('BAD_REQUEST', 'selection required');
+    if (!selection) return { selection: '', text: prompt };
+    var text = Ops.quoteSelectionPrompt ? Ops.quoteSelectionPrompt(selection, prompt) : '> ' + selection + '\n\n' + prompt;
+    return { selection: selection, text: text };
+  }
+
+  function requireChatId(args) {
+    var chatId = args && args.chatId ? String(args.chatId) : '';
+    if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+    return chatId;
+  }
+
+  async function deleteViaHistory(chatId) {
+    var read = await readHistory();
+    var row = null;
+    for (var i = 0; i < read.rows.length; i++) {
+      if (read.rows[i].id === chatId) row = read.rows[i];
+    }
+    if (!row) rpcErr('NOT_FOUND', 'conversation not found in history: ' + chatId);
+    var trigger = null;
+    var node = row.el;
+    for (var depth = 0; node && depth < 5 && !trigger; depth++) {
+      trigger = node.querySelector(MORE_SELECTOR);
+      node = node.parentElement;
+    }
+    if (!trigger) rpcErr('HOST_ERROR', 'history row actions button not found');
+    var menu = await Ops.openMenu(trigger, { message: 'history row menu did not open' });
+    if (!Ops.pickMenuItem(menu, DELETE_RE)) {
+      Ops.closeMenu(document);
+      rpcErr('OPTION_NOT_FOUND', 'delete menu item not found');
+    }
+    var confirm = await Ops.waitFor(
+      function () {
+        var dialogs = document.querySelectorAll('[role="dialog"], [role="alertdialog"], [data-testid="confirmationSheetDialog"]');
+        for (var d = 0; d < dialogs.length; d++) {
+          var btns = dialogs[d].querySelectorAll('button, [role="button"]');
+          for (var b = 0; b < btns.length; b++) {
+            var t = (btns[b].textContent || '').replace(/\s+/g, ' ').trim();
+            if (/^(удалить|delete)$/i.test(t) && !btns[b].disabled) return btns[b];
+          }
+        }
+        return null;
+      },
+      { timeoutMs: 4000, message: 'delete confirmation not found' }
+    ).catch(function () {
+      return null;
+    });
+    if (confirm) Ops.clickEl(confirm);
+    await Ops.waitFor(
+      function () {
+        for (var r = 0; r < historyRows().length; r++) {
+          if (historyRows()[r].id === chatId) return null;
+        }
+        return true;
+      },
+      { timeoutMs: 10000, message: 'conversation still present after delete' }
+    ).catch(function () {
+      rpcErr('HOST_ERROR', 'conversation still present after delete: ' + chatId);
+    });
+    if (read.opened) Ops.closeMenu(document);
+  }
+
+  function composer() {
+    var root = activeRoot();
+    if (!root || !findComposerTextarea(root)) return null;
+    var found = findComposerToolbar(root);
+    if (!found || !found.el) return null;
+    var chip = findModeChip(root);
+    if (chip) found.nativeFrom = chip;
+    return found;
+  }
+
+  CE.definePlatform({
+    id: PLATFORM,
+    modifier: 'grok-x',
+    fenceTag: 'grok',
+    maxSteps: 40,
+    composer: composer,
+    chatId: chatIdFromUrl,
+    title: function () {
+      return findTitle(activeRoot());
+    },
+    model: function () {
+      var root = activeRoot();
+      return root ? findModel(root) : '';
+    },
+    user: findUserMeta,
+    scroller: function () {
+      var root = activeRoot();
+      return root ? liveScroller(root) : null;
+    },
+    turns: function () {
+      var root = activeRoot();
+      return root ? turnNodes(root) : [];
+    },
+    turnKey: turnKey,
+    capture: messageFromTurn,
+    ops: {
+      list: async function (args) {
+        try {
+          var limit = Ops.clampLimit(args && args.limit);
+          var offset = parseInt(args && args.cursor, 10) || 0;
+          var read = await readHistory();
+          if (read.opened) Ops.closeMenu(document);
+          var rows = read.rows.slice();
+          var current = chatIdFromUrl();
+          if (current && !rows.some(function (r) { return r.id === current; })) {
+            rows.unshift({ id: current, title: findTitle(activeRoot()) });
+          }
+          var matched = rows.filter(function (r) {
+            return !Ops.matchQuery || Ops.matchQuery(r.title, args && args.query);
+          });
+          var page = matched.slice(offset, offset + limit).map(function (r) {
+            return toChat(r.id, r.title);
+          });
+          return {
+            items: page,
+            nextCursor: offset + limit < matched.length ? String(offset + limit) : null
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      get: async function (args, ctx) {
+        try {
+          var chatId = args && args.chatId ? String(args.chatId) : '';
+          if (chatId && chatId !== chatIdFromUrl()) await navigateToChat(chatId);
+          var data = (await ctx.getData()) || {};
+          return Object.assign({ platform: PLATFORM, url: location.href }, data, chatId ? { chatId: chatId } : {});
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      create: async function (args) {
+        try {
+          var text = String((args && args.text) || '').trim();
+          if (!text) rpcErr('BAD_REQUEST', 'text is required');
+          await ensureNewChat();
+          await submitComposerText(text);
+          var chatId = await Ops.waitFor(chatIdFromUrl, { timeoutMs: 90000, message: 'Grok X chatId timeout' }).catch(
+            function () {
+              rpcErr('TIMEOUT', 'Grok X chatId timeout');
+            }
+          );
+          return {
+            platform: PLATFORM,
+            chatId: chatId,
+            title: findTitle(activeRoot()),
+            url: chatUrl(chatId),
+            updatedAt: new Date().toISOString()
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      send: async function (args) {
+        try {
+          var chatId = requireChatId(args);
+          if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
+          await sendInChat(chatId, args.text);
+          return {
+            platform: PLATFORM,
+            chatId: chatId,
+            title: findTitle(activeRoot()),
+            url: chatUrl(chatId),
+            updatedAt: new Date().toISOString()
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      delete: async function (args) {
+        try {
+          var chatId = requireChatId(args);
+          await deleteViaHistory(chatId);
+          return { deleted: true, chatId: chatId };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      hostState: function () {
+        var input = composerInput();
+        return {
+          generating: isGenerating(),
+          composerReady: !!input && (Ops.composerReady ? Ops.composerReady(input) : true)
+        };
+      },
+      askSelection: async function (args, ctx) {
+        try {
+          var chatId = requireChatId(args);
+          var ask = composeAsk(args, true);
+          await sendInChat(chatId, ask.text);
+          var data = (await ctx.getData()) || {};
+          var messages = data.messages || [];
+          return {
+            status: 'done',
+            platform: PLATFORM,
+            chatId: chatId,
+            selection: ask.selection,
+            reply: messages[messages.length - 1] || null,
+            after: Math.max(messages.length - 1, 0),
+            total: messages.length
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      sideAsk: async function (args) {
+        try {
+          var chatId = requireChatId(args);
+          var ask = composeAsk(args, false);
+          await sendInChat(chatId, ask.text);
+          return { status: 'done', platform: PLATFORM, chatId: chatId, mode: 'main_fallback' };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      capabilities: async function () {
+        try {
+          var root = activeRoot();
+          var model = root ? findModel(root) : '';
+          var id = model && Ops.normalizeId ? Ops.normalizeId(model) : model;
+          var models = model ? [{ id: id, label: model, kind: 'model' }] : [];
+          return {
+            platform: PLATFORM,
+            projectsSupported: false,
+            models: models,
+            modes: models.slice(),
+            toggles: [],
+            tools: [],
+            current: model ? { model: id, mode: id, toggles: [] } : {},
+            detectedAt: new Date().toISOString()
+          };
+        } catch (err) {
+          hostErr(err);
+        }
+      },
+      containers: async function () {
+        return { items: [], nextCursor: null };
+      },
+      containerChats: async function () {
+        projectsGuard();
+      },
+      containerCreate: async function () {
+        projectsGuard();
+      },
+      containerDelete: async function () {
+        projectsGuard();
+      },
+      containerMoveChat: async function () {
+        projectsGuard();
+      }
+    }
+  });
 })();
