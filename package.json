@@ -1,0 +1,21 @@
+{
+  "name": "chat-export-extension",
+  "version": "1.8.3",
+  "description": "Export Grok, X, ChatGPT, Claude, and GitHub Copilot chats to MD/YAML/JSON/HTML/PDF.",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/svergio/chat-export-extension.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "preact": "^11.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "happy-dom": "^17.4.4"
+  }
+}
