@@ -121,6 +121,8 @@ export const SKIN_OPTIONS = [
   { id: 'perplexity', Icon: IconPerplexity }
 ];
 
+export const PLATFORM_ICONS = Object.fromEntries(SKIN_OPTIONS.map((o) => [o.id, o.Icon]));
+
 export const SCHEME_OPTIONS = [
   { id: 'auto', Icon: IconAuto },
   { id: 'light', Icon: IconSun },

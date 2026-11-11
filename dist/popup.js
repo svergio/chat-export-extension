@@ -796,6 +796,7 @@
     { id: "deepseek", Icon: IconDeepSeek },
     { id: "perplexity", Icon: IconPerplexity }
   ];
+  var PLATFORM_ICONS = Object.fromEntries(SKIN_OPTIONS.map((o3) => [o3.id, o3.Icon]));
   var SCHEME_OPTIONS = [
     { id: "auto", Icon: IconAuto },
     { id: "light", Icon: IconSun },
@@ -1047,7 +1048,8 @@
     return /* @__PURE__ */ k("div", { class: "ce-wrap" }, /* @__PURE__ */ k("section", { class: "ce-card" }, /* @__PURE__ */ k("header", { class: "ce-head" }, /* @__PURE__ */ k("h1", null, t3("app.title")), gatewayOn ? /* @__PURE__ */ k(StatusDot, { status, label: statusLabel }) : null), /* @__PURE__ */ k("h2", null, t3("label.platforms")), /* @__PURE__ */ k("div", { class: "ce-platforms" }, PLATFORMS.map(function(id) {
       const on = settings.platforms[id] !== false;
       const label = t3("platform." + id);
-      return /* @__PURE__ */ k("label", { key: id, class: "ce-row" }, /* @__PURE__ */ k("span", null, label), /* @__PURE__ */ k(
+      const PlatIcon = PLATFORM_ICONS[id];
+      return /* @__PURE__ */ k("label", { key: id, class: "ce-row" }, /* @__PURE__ */ k("span", { class: "ce-platform-label" }, PlatIcon ? /* @__PURE__ */ k(PlatIcon, { size: 14 }) : null, label), /* @__PURE__ */ k(
         Switch,
         {
           on,
