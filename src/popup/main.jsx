@@ -9,7 +9,13 @@ import {
   resolveUiScheme
 } from '../settings.js';
 import { createTranslator, faqKeys, resolveLocale } from '../i18n/index.js';
-import { SKIN_OPTIONS, SCHEME_OPTIONS, LOCALE_OPTIONS, IconChevron } from './skin-icons.jsx';
+import {
+  SKIN_OPTIONS,
+  SCHEME_OPTIONS,
+  LOCALE_OPTIONS,
+  PLATFORM_ICONS,
+  IconChevron
+} from './skin-icons.jsx';
 
 function statusState(status) {
   return (status && status.state) || 'offline';
@@ -306,9 +312,13 @@ function App() {
           {PLATFORMS.map(function (id) {
             const on = settings.platforms[id] !== false;
             const label = t('platform.' + id);
+            const PlatIcon = PLATFORM_ICONS[id];
             return (
               <label key={id} class="ce-row">
-                <span>{label}</span>
+                <span class="ce-platform-label">
+                  {PlatIcon ? <PlatIcon size={14} /> : null}
+                  {label}
+                </span>
                 <Switch
                   on={on}
                   disabled={busy}
@@ -496,6 +506,12 @@ function App() {
               />
             </label>
 
+            <label class="ce-field">
+              <span>{t('label.browserId')}</span>
+              <input type="text" readOnly spellcheck={false} value={browserId || '—'} />
+              <p class="ce-hint">{t('browser.hint')}</p>
+            </label>
+
             <div class="ce-field">
               <span>{t('label.gatewayToken')}</span>
               <input
@@ -608,7 +624,6 @@ function App() {
               </ul>
             </details>
 
-            <p class="ce-meta">browserId: {browserId || '—'}</p>
           </div>
         ) : null}
       </section>

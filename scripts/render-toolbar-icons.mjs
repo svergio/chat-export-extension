@@ -87,7 +87,7 @@ async function renderGrokFromBrand() {
   }
 }
 
-for (const kind of ['idle', 'x', 'chatgpt']) {
+for (const kind of ['idle', 'x', 'chatgpt', 'qwen', 'deepseek', 'perplexity']) {
   await renderSvgKind(kind);
 }
 await renderGrokFromBrand();

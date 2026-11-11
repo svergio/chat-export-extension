@@ -454,9 +454,8 @@
   function htmlToMarkdown(root) {
     if (!root) return '';
     if (typeof root === 'string') {
-      var wrap = document.createElement('div');
-      wrap.innerHTML = root;
-      return htmlToMarkdown(wrap).trim();
+      var doc = new DOMParser().parseFromString(root, 'text/html');
+      return htmlToMarkdown(doc.body || doc.documentElement).trim();
     }
 
     function walk(node, ctx) {
@@ -851,6 +850,9 @@
     if (tag === 'chatgpt') return 'ChatGPT';
     if (tag === 'copilot') return 'Copilot';
     if (tag === 'claude') return 'Claude';
+    if (tag === 'qwen') return 'Qwen';
+    if (tag === 'deepseek') return 'DeepSeek';
+    if (tag === 'perplexity') return 'Perplexity';
     if (tag === 'assistant') return 'Assistant';
     if (tag === 'user') return 'User';
     return tag;

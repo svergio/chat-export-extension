@@ -766,6 +766,56 @@
     );
   }
 
+  function findFileInput() {
+    var form =
+      document.querySelector('form[data-composer="true"]') ||
+      document.querySelector('#grok-content-area form') ||
+      document.querySelector('form');
+    if (form) {
+      var inp = form.querySelector('input[type="file"]');
+      if (inp) return inp;
+    }
+    return document.querySelector('input[type="file"]');
+  }
+
+  function findAttachButton() {
+    var form =
+      document.querySelector('form[data-composer="true"]') || document.querySelector('#grok-content-area form');
+    if (!form) return null;
+    return (
+      form.querySelector('button[aria-label*="Добавить файлы" i]') ||
+      form.querySelector('button[aria-label*="Attach" i]') ||
+      form.querySelector('button[aria-label*="Прикрепить" i]')
+    );
+  }
+
+  async function applyWireFiles(files) {
+    var list = Array.isArray(files) ? files : [];
+    if (!list.length) return;
+    var input = findFileInput();
+    if (!input) {
+      var attach = findAttachButton();
+      if (attach) Ops.clickEl(attach);
+      input = await Ops.waitFor(findFileInput, { timeoutMs: 10000, message: 'ATTACH_UNSUPPORTED' });
+    }
+    if (!input) rpcErr('ATTACH_UNSUPPORTED', 'file input not found');
+    var n = Ops.setFileInputFiles(input, list);
+    var names = list.map(function (f) {
+      return f && f.name;
+    }).filter(Boolean);
+    var form =
+      document.querySelector('form[data-composer="true"]') ||
+      document.querySelector('#grok-content-area form') ||
+      document;
+    await Ops.waitAttachChips(form, n, {
+      timeoutMs: 120000,
+      names: names,
+      fileInput: input,
+      allowSpinner: true,
+      message: 'ATTACH_TIMEOUT'
+    });
+  }
+
   async function navigateToChat(chatId) {
     if (currentChatId() === chatId) return;
     var path = '/c/' + chatId;
@@ -860,10 +910,34 @@
     return toChat({ conversationId: chatId, title: '' }, container);
   }
 
+  function exportDataFromApi() {
+    var chatId = currentChatId();
+    if (!chatId) return Promise.resolve(null);
+    return loadConversationMessages(chatId).then(function (messages) {
+      if (!messages.length) return null;
+      var out = { messages: messages, title: findTitle(), model: findModel() };
+      return apiFetch('/rest/app-chat/conversations/' + encodeURIComponent(chatId))
+        .then(function (res) {
+          if (!res.ok) return out;
+          return res.json().then(function (data) {
+            var row = (data && (data.conversation || data)) || {};
+            if (row.title) out.title = String(row.title).trim() || out.title;
+            var apiModel = row.model || row.modelId || (row.properties && row.properties.model);
+            if (apiModel && !out.model) out.model = String(apiModel);
+            return out;
+          });
+        })
+        .catch(function () {
+          return out;
+        });
+    });
+  }
+
   CE.definePlatform({
     id: 'grok',
     modifier: 'grok',
     fenceTag: 'grok',
+    exportData: exportDataFromApi,
     composer: findComposerToolbar,
     chatId: chatIdFromUrl,
     title: findTitle,
@@ -971,6 +1045,7 @@
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
+          if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(args.text);
           await waitAssistantReply(turnsBefore, 180000);
           return {
@@ -989,19 +1064,20 @@
           var text = String((args && args.text) || '').trim();
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await ensureNewChat();
+          if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(text);
           var chatId = await Ops.waitFor(
             function () {
               var id = currentChatId();
               if (id) return id;
-              if (responseTurnCount() > turnsBefore) return currentChatId() || true;
+              if (responseTurnCount() > turnsBefore) {
+                id = currentChatId();
+                return id || null;
+              }
               return null;
             },
             { timeoutMs: 90000, message: 'Grok chatId timeout' }
           );
-          if (chatId === true) {
-            chatId = await Ops.waitFor(currentChatId, { timeoutMs: 30000, message: 'Grok chatId timeout' });
-          }
           return {
             platform: 'grok',
             chatId: String(chatId),

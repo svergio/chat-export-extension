@@ -5,8 +5,26 @@
   var DEFAULT_HOST = "127.0.0.1";
   var DEFAULT_PORT = 8765;
   var WS_PATH = "/ws";
-  var PLATFORMS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
-  var UI_SKINS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
+  var PLATFORMS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
+  var UI_SKINS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
   var STORAGE_KEYS = Object.freeze({
@@ -25,7 +43,10 @@
       grok: true,
       "grok-x": true,
       copilot: true,
-      claude: true
+      claude: true,
+      qwen: true,
+      deepseek: true,
+      perplexity: true
     }),
     allowCreate: true,
     allowDestructive: false,
@@ -170,7 +191,7 @@
   }
 
   // src/background/bridge.js
-  var EXT_VERSION = "1.8.3";
+  var EXT_VERSION = chrome.runtime.getManifest().version;
   var CONTENT_RPC_TYPE = "chat-export-rpc";
   var CONTENT_PING_TYPE = "chat-export-ping";
   var MUTATING_OPS = {
@@ -201,14 +222,20 @@
     grok: "https://grok.com/",
     "grok-x": "https://x.com/i/grok",
     copilot: "https://github.com/copilot",
-    claude: "https://claude.ai/new"
+    claude: "https://claude.ai/new",
+    qwen: "https://chat.qwen.ai/",
+    deepseek: "https://chat.deepseek.com/",
+    perplexity: "https://www.perplexity.ai/"
   };
   var PLATFORM_CONTENT = {
     chatgpt: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/chatgpt.js"],
     grok: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok.js"],
     "grok-x": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok-x.js"],
     copilot: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/copilot.js"],
-    claude: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/claude.js"]
+    claude: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/claude.js"],
+    qwen: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/qwen.js"],
+    deepseek: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/deepseek.js"],
+    perplexity: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/perplexity.js"]
   };
   var socket = null;
   var reconnectTimer = null;
@@ -254,6 +281,15 @@
     }
     if (platform === "claude") {
       return host === "claude.ai" || host.endsWith(".claude.ai");
+    }
+    if (platform === "qwen") {
+      return host === "chat.qwen.ai" || host.endsWith(".qwen.ai");
+    }
+    if (platform === "deepseek") {
+      return host === "chat.deepseek.com" || host.endsWith(".deepseek.com");
+    }
+    if (platform === "perplexity") {
+      return host === "perplexity.ai" || host.endsWith(".perplexity.ai");
     }
     return false;
   }
@@ -314,6 +350,18 @@
     }
     if (platform === "copilot") {
       const m = path.match(/\/(?:chat|copilot\/c)\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "qwen") {
+      const m = path.match(/\/c\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "deepseek") {
+      const m = path.match(/\/a\/chat\/s\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "perplexity") {
+      const m = path.match(/\/(?:search|session)\/([^/?#]+)/);
       return m ? m[1] : "";
     }
     return "";
@@ -1042,21 +1090,13 @@
     }
   }
 
-  // src/background/main.js
-  function bytesToBase64(bytes) {
-    var chunk = 32768;
-    var parts = [];
-    for (var i = 0; i < bytes.length; i += chunk) {
-      parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunk)));
-    }
-    return btoa(parts.join(""));
-  }
-  function iconKindFromUrl(url) {
+  // src/hostSkin.js
+  function toolbarKindFromUrl(url) {
     if (!url) return "idle";
     try {
-      var u = new URL(url);
-      var host = (u.hostname || "").toLowerCase();
-      var path = u.pathname || "";
+      const u = new URL(url);
+      const host = (u.hostname || "").toLowerCase();
+      const path = u.pathname || "";
       if (host === "grok.com" || host.endsWith(".grok.com")) return "grok";
       if (host === "chatgpt.com" || host === "chat.openai.com" || host.endsWith(".chatgpt.com")) {
         return "chatgpt";
@@ -1070,9 +1110,27 @@
         return "idle";
       }
       if (host === "claude.ai" || host.endsWith(".claude.ai")) return "claude";
+      if (host === "chat.qwen.ai" || host.endsWith(".qwen.ai")) return "qwen";
+      if (host === "chat.deepseek.com" || host.endsWith(".deepseek.com")) return "deepseek";
+      if (host === "perplexity.ai" || host === "www.perplexity.ai" || host.endsWith(".perplexity.ai")) {
+        return "perplexity";
+      }
     } catch (e) {
     }
     return "idle";
+  }
+
+  // src/background/main.js
+  function bytesToBase64(bytes) {
+    var chunk = 32768;
+    var parts = [];
+    for (var i = 0; i < bytes.length; i += chunk) {
+      parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunk)));
+    }
+    return btoa(parts.join(""));
+  }
+  function iconKindFromUrl(url) {
+    return toolbarKindFromUrl(url);
   }
   function iconPaths(kind) {
     var k = kind || "idle";

@@ -6,9 +6,27 @@ export const DEFAULT_PORT = 8765;
 
 export const WS_PATH = '/ws';
 
-export const PLATFORMS = Object.freeze(['chatgpt', 'grok', 'grok-x', 'copilot', 'claude']);
+export const PLATFORMS = Object.freeze([
+  'chatgpt',
+  'grok',
+  'grok-x',
+  'copilot',
+  'claude',
+  'qwen',
+  'deepseek',
+  'perplexity'
+]);
 
-export const UI_SKINS = Object.freeze(['chatgpt', 'grok', 'grok-x', 'copilot', 'claude']);
+export const UI_SKINS = Object.freeze([
+  'chatgpt',
+  'grok',
+  'grok-x',
+  'copilot',
+  'claude',
+  'qwen',
+  'deepseek',
+  'perplexity'
+]);
 
 export const UI_SCHEMES = Object.freeze(['auto', 'light', 'dark']);
 
@@ -31,7 +49,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
     grok: true,
     'grok-x': true,
     copilot: true,
-    claude: true
+    claude: true,
+    qwen: true,
+    deepseek: true,
+    perplexity: true
   }),
   allowCreate: true,
   allowDestructive: false,

@@ -429,8 +429,26 @@
   var FAQ_VERSION = 1;
   var DEFAULT_HOST = "127.0.0.1";
   var DEFAULT_PORT = 8765;
-  var PLATFORMS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
-  var UI_SKINS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
+  var PLATFORMS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
+  var UI_SKINS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
   var STORAGE_KEYS = Object.freeze({
@@ -449,7 +467,10 @@
       grok: true,
       "grok-x": true,
       copilot: true,
-      claude: true
+      claude: true,
+      qwen: true,
+      deepseek: true,
+      perplexity: true
     }),
     allowCreate: true,
     allowDestructive: false,
@@ -528,6 +549,7 @@
     "label.allowProjects": "Allow project management",
     "label.rpcTimeout": "Operation timeout (sec)",
     "label.browserLabel": "Browser label",
+    "label.browserId": "Browser id (per Chrome profile)",
     "label.platforms": "Platforms",
     "label.destructive": "Allow deleting chats and projects",
     "label.faq": "FAQ",
@@ -538,6 +560,9 @@
     "skin.grok-x": "X Grok",
     "skin.copilot": "Copilot",
     "skin.claude": "Claude",
+    "skin.qwen": "Qwen",
+    "skin.deepseek": "DeepSeek",
+    "skin.perplexity": "Perplexity",
     "theme.auto": "System",
     "theme.light": "Light",
     "theme.dark": "Dark",
@@ -549,6 +574,9 @@
     "platform.grok-x": "X Grok",
     "platform.copilot": "Copilot",
     "platform.claude": "Claude",
+    "platform.qwen": "Qwen",
+    "platform.deepseek": "DeepSeek",
+    "platform.perplexity": "Perplexity",
     "bar.pack": "Pack",
     "bar.pack.folder": "Folder",
     "bar.pack.zip": "Zip",
@@ -573,6 +601,7 @@
     "key.placeholder": "Generate ceb_ token\u2026",
     "key.hint": "The extension mints a ceb_ token per browser. Legacy cek_ tokens still work. On connect the token is enrolled on the local server.",
     "key.hintId": "Id:",
+    "browser.hint": "Each Chrome profile needs its own ceb_ token and shows up separately on the dashboard Browsers page.",
     "faq.lead": "Before connecting the local server, read the FAQ:",
     "faq.agree": "I understand and agree",
     "faq.1": "The extension and server run only locally on your computer. No telemetry, no external servers, data is not sent anywhere.",
@@ -605,6 +634,7 @@
     "label.allowProjects": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u0443\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043F\u0440\u043E\u0435\u043A\u0442\u0430\u043C\u0438",
     "label.rpcTimeout": "\u0422\u0430\u0439\u043C\u0430\u0443\u0442 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0439 (\u0441\u0435\u043A)",
     "label.browserLabel": "\u041C\u0435\u0442\u043A\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430",
+    "label.browserId": "Id \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 (\u043D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome)",
     "label.platforms": "\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u044B",
     "label.destructive": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0435 \u0447\u0430\u0442\u043E\u0432 \u0438 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432",
     "label.faq": "FAQ",
@@ -615,6 +645,9 @@
     "skin.grok-x": "X Grok",
     "skin.copilot": "Copilot",
     "skin.claude": "Claude",
+    "skin.qwen": "Qwen",
+    "skin.deepseek": "DeepSeek",
+    "skin.perplexity": "Perplexity",
     "theme.auto": "\u0421\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0439",
     "theme.light": "\u0421\u0432\u0435\u0442\u043B\u0430\u044F",
     "theme.dark": "\u0422\u0451\u043C\u043D\u0430\u044F",
@@ -626,6 +659,9 @@
     "platform.grok-x": "X Grok",
     "platform.copilot": "Copilot",
     "platform.claude": "Claude",
+    "platform.qwen": "Qwen",
+    "platform.deepseek": "DeepSeek",
+    "platform.perplexity": "Perplexity",
     "bar.pack": "\u0423\u043F\u0430\u043A\u043E\u0432\u043A\u0430",
     "bar.pack.folder": "\u041F\u0430\u043F\u043A\u0430",
     "bar.pack.zip": "\u0410\u0440\u0445\u0438\u0432",
@@ -650,6 +686,7 @@
     "key.placeholder": "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u0442\u043E\u043A\u0435\u043D ceb_\u2026",
     "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0421\u0442\u0430\u0440\u044B\u0435 cek_ \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u0440\u0430\u0431\u043E\u0447\u0438\u043C\u0438. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
     "key.hintId": "Id:",
+    "browser.hint": "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0440\u043E\u0444\u0438\u043B\u044F Chrome \u0441\u0432\u043E\u0439 \u0442\u043E\u043A\u0435\u043D ceb_ \u0438 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 Browsers \u0432 \u0434\u0430\u0448\u0431\u043E\u0440\u0434\u0435.",
     "faq.lead": "\u041F\u0435\u0440\u0435\u0434 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\u043C \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u0441\u0435\u0440\u0432\u0435\u0440\u0430 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0439\u0442\u0435 FAQ:",
     "faq.agree": "\u041F\u043E\u043D\u0438\u043C\u0430\u044E \u0438 \u0441\u043E\u0433\u043B\u0430\u0441\u0435\u043D",
     "faq.1": "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435 \u0438 \u0441\u0435\u0440\u0432\u0435\u0440 \u0440\u0430\u0431\u043E\u0442\u0430\u044E\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435. \u041D\u0435\u0442 \u0442\u0435\u043B\u0435\u043C\u0435\u0442\u0440\u0438\u0438, \u043D\u0435\u0442 \u0432\u043D\u0435\u0448\u043D\u0438\u0445 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u0432, \u0434\u0430\u043D\u043D\u044B\u0435 \u043D\u0438\u043A\u0443\u0434\u0430 \u043D\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u044F\u044E\u0442\u0441\u044F.",
@@ -707,19 +744,31 @@
   }
   function IconGrok({ size }) {
     const s3 = size || 16;
-    return /* @__PURE__ */ k("svg", { viewBox: "0 0 512 512", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M210.484 312.759L343.465 210.383C349.984 205.364 359.302 207.322 362.408 215.117C378.758 256.231 371.454 305.64 338.925 339.563C306.397 373.487 261.137 380.927 219.768 363.983L174.577 385.803C239.394 432.008 318.104 420.581 367.289 369.251C406.303 328.564 418.386 273.104 407.088 223.091L407.19 223.198C390.807 149.726 411.218 120.359 453.03 60.3072C454.02 58.8833 455.01 57.4595 456 56L400.978 113.382V113.204L210.45 312.794" }), /* @__PURE__ */ k("path", { d: "M183.042 337.641C136.519 291.294 144.54 219.567 184.236 178.203C213.59 147.59 261.683 135.096 303.666 153.464L348.755 131.75C340.632 125.627 330.221 119.042 318.275 114.414C264.277 91.2407 199.63 102.774 155.735 148.516C113.513 192.549 100.236 260.254 123.036 318.027C140.069 361.206 112.148 391.748 84.0229 422.575C74.0561 433.503 64.0553 444.431 56 456L183.007 337.677" }));
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("g", { transform: "scale(0.046875)" }, /* @__PURE__ */ k("path", { d: "M210.484 312.759L343.465 210.383C349.984 205.364 359.302 207.322 362.408 215.117C378.758 256.231 371.454 305.64 338.925 339.563C306.397 373.487 261.137 380.927 219.768 363.983L174.577 385.803C239.394 432.008 318.104 420.581 367.289 369.251C406.303 328.564 418.386 273.104 407.088 223.091L407.19 223.198C390.807 149.726 411.218 120.359 453.03 60.3072C454.02 58.8833 455.01 57.4595 456 56L400.978 113.382V113.204L210.45 312.794" }), /* @__PURE__ */ k("path", { d: "M183.042 337.641C136.519 291.294 144.54 219.567 184.236 178.203C213.59 147.59 261.683 135.096 303.666 153.464L348.755 131.75C340.632 125.627 330.221 119.042 318.275 114.414C264.277 91.2407 199.63 102.774 155.735 148.516C113.513 192.549 100.236 260.254 123.036 318.027C140.069 361.206 112.148 391.748 84.0229 422.575C74.0561 433.503 64.0553 444.431 56 456L183.007 337.677" })));
   }
   function IconX({ size }) {
     const s3 = size || 16;
-    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" }));
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" }));
   }
   function IconClaude({ size }) {
     const s3 = size || 16;
-    return /* @__PURE__ */ k("svg", { viewBox: "0 0 100 100", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "m19.6 66.5 19.7-11 .3-1-.3-.5h-1l-3.3-.2-11.2-.3L14 53l-9.5-.5-2.4-.5L0 49l.2-1.5 2-1.3 2.9.2 6.3.5 9.5.6 6.9.4L38 49.1h1.6l.2-.7-.5-.4-.4-.4L29 41l-10.6-7-5.6-4.1-3-2-1.5-2-.6-4.2 2.7-3 3.7.3.9.2 3.7 2.9 8 6.1L37 36l1.5 1.2.6-.4.1-.3-.7-1.1L33 25l-6-10.4-2.7-4.3-.7-2.6c-.3-1-.4-2-.4-3l3-4.2L28 0l4.2.6L33.8 2l2.6 6 4.1 9.3L47 29.9l2 3.8 1 3.4.3 1h.7v-.5l.5-7.2 1-8.7 1-11.2.3-3.2 1.6-3.8 3-2L61 2.6l2 2.9-.3 1.8-1.1 7.7L59 27.1l-1.5 8.2h.9l1-1.1 4.1-5.4 6.9-8.6 3-3.5L77 13l2.3-1.8h4.3l3.1 4.7-1.4 4.9-4.4 5.6-3.7 4.7-5.3 7.1-3.2 5.7.3.4h.7l12-2.6 6.4-1.1 7.6-1.3 3.5 1.6.4 1.6-1.4 3.4-8.2 2-9.6 2-14.3 3.3-.2.1.2.3 6.4.6 2.8.2h6.8l12.6 1 3.3 2 1.9 2.7-.3 2-5.1 2.6-6.8-1.6-16-3.8-5.4-1.3h-.8v.4l4.6 4.5 8.3 7.5L89 80.1l.5 2.4-1.3 2-1.4-.2-9.2-7-3.6-3-8-6.8h-.5v.7l1.8 2.7 9.8 14.7.5 4.5-.7 1.4-2.6 1-2.7-.6-5.8-8-6-9-4.7-8.2-.5.4-2.9 30.2-1.3 1.5-3 1.2-2.5-2-1.4-3 1.4-6.2 1.6-8 1.3-6.4 1.2-7.9.7-2.6v-.2H49L43 72l-9 12.3-7.2 7.6-1.7.7-3-1.5.3-2.8L24 86l10-12.8 6-7.9 4-4.6-.1-.5h-.3L17.2 77.4l-4.7.6-2-2 .2-3 1-1 8-5.5Z" }));
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z" }));
   }
   function IconCopilot({ size }) {
     const s3 = size || 16;
     return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M23.922 16.997C23.061 18.492 18.063 22.02 12 22.02 5.937 22.02.939 18.492.078 16.997A.641.641 0 0 1 0 16.741v-2.869a.883.883 0 0 1 .053-.22c.372-.935 1.347-2.292 2.605-2.656.167-.429.414-1.055.644-1.517a10.098 10.098 0 0 1-.052-1.086c0-1.331.282-2.499 1.132-3.368.397-.406.89-.717 1.474-.952C7.255 2.937 9.248 1.98 11.978 1.98c2.731 0 4.767.957 6.166 2.093.584.235 1.077.546 1.474.952.85.869 1.132 2.037 1.132 3.368 0 .368-.014.733-.052 1.086.23.462.477 1.088.644 1.517 1.258.364 2.233 1.721 2.605 2.656a.841.841 0 0 1 .053.22v2.869a.641.641 0 0 1-.078.256Zm-11.75-5.992h-.344a4.359 4.359 0 0 1-.355.508c-.77.947-1.918 1.492-3.508 1.492-1.725 0-2.989-.359-3.782-1.259a2.137 2.137 0 0 1-.085-.104L4 11.746v6.585c1.435.779 4.514 2.179 8 2.179 3.486 0 6.565-1.4 8-2.179v-6.585l-.098-.104s-.033.045-.085.104c-.793.9-2.057 1.259-3.782 1.259-1.59 0-2.738-.545-3.508-1.492a4.359 4.359 0 0 1-.355-.508Zm2.328 3.25c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm-5 0c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm3.313-6.185c.136 1.057.403 1.913.878 2.497.442.544 1.134.938 2.344.938 1.573 0 2.292-.337 2.657-.751.384-.435.558-1.15.558-2.361 0-1.14-.243-1.847-.705-2.319-.477-.488-1.319-.862-2.824-1.025-1.487-.161-2.192.138-2.533.529-.269.307-.437.808-.438 1.578v.021c0 .265.021.562.063.893Zm-1.626 0c.042-.331.063-.628.063-.894v-.02c-.001-.77-.169-1.271-.438-1.578-.341-.391-1.046-.69-2.533-.529-1.505.163-2.347.537-2.824 1.025-.462.472-.705 1.179-.705 2.319 0 1.211.175 1.926.558 2.361.365.414 1.084.751 2.657.751 1.21 0 1.902-.394 2.344-.938.475-.584.742-1.44.878-2.497Z" }));
+  }
+  function IconQwen({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M23.919 14.545 20.817 9.17l1.47-2.544a.56.56 0 0 0 0-.566l-1.633-2.83a.57.57 0 0 0-.49-.283h-6.207L12.487.402a.57.57 0 0 0-.49-.284H8.732a.56.56 0 0 0-.49.284L5.139 5.775h-2.94a.56.56 0 0 0-.49.284L.077 8.887a.56.56 0 0 0 0 .567L3.18 14.83l-1.47 2.545a.56.56 0 0 0 0 .566l1.634 2.83a.57.57 0 0 0 .49.283h6.205l1.47 2.545a.57.57 0 0 0 .49.284h3.266a.57.57 0 0 0 .49-.284l3.104-5.375h2.94a.57.57 0 0 0 .49-.283l1.634-2.828a.55.55 0 0 0-.004-.568M8.733.686l1.634 2.828-1.634 2.828H21.8L20.164 9.17H7.425L5.63 6.06Zm1.306 19.801-6.205-.002 1.634-2.83h3.265L2.201 6.344h3.267q3.182 5.517 6.367 11.032zm10.124-5.66L18.53 12l-6.532 11.315-1.634-2.83c2.129-3.673 4.25-7.351 6.373-11.028h3.592l3.102 5.374z" }));
+  }
+  function IconDeepSeek({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M23.748 4.651c-.254-.124-.364.113-.512.233-.051.04-.094.09-.137.137-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.155-.708-.311-.955-.65-.172-.24-.219-.509-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.094.172.187.129.323-.082.28-.18.553-.266.833-.055.179-.137.218-.328.14a5.5 5.5 0 0 1-1.737-1.179c-.857-.828-1.631-1.743-2.597-2.46a12 12 0 0 0-.689-.47c-.985-.957.13-1.743.387-1.836.27-.098.094-.433-.778-.428-.872.003-1.67.295-2.687.685a3 3 0 0 1-.465.136 9.6 9.6 0 0 0-2.883-.101c-1.885.21-3.39 1.1-4.497 2.622C.082 8.776-.231 10.854.152 13.02c.403 2.284 1.568 4.175 3.36 5.653 1.857 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.132-.284 4.994-1.86.47.234.962.328 1.78.398.629.058 1.235-.031 1.705-.129.735-.155.684-.836.418-.961-2.155-1.004-1.682-.595-2.112-.926 1.095-1.295 2.768-3.598 3.284-6.733.05-.346.115-.834.108-1.114-.004-.171.035-.238.23-.257a4.2 4.2 0 0 0 1.545-.475c1.397-.763 1.96-2.016 2.093-3.517.02-.23-.004-.467-.247-.588M11.58 18.168c-2.088-1.642-3.101-2.183-3.52-2.16-.39.024-.32.472-.234.763.09.288.207.487.371.74.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.168-1.361-.801-2.5-1.86-3.301-3.306-.775-1.393-1.225-2.888-1.299-4.482-.02-.385.094-.522.477-.592a4.7 4.7 0 0 1 1.53-.038c2.131.311 3.946 1.264 5.467 2.774.868.86 1.525 1.887 2.202 2.89.72 1.066 1.494 2.082 2.48 2.915.348.291.626.513.892.677-.802.09-2.14.109-3.055-.615zm1.001-6.44a.306.306 0 0 1 .415-.287.3.3 0 0 1 .113.074.3.3 0 0 1 .086.214c0 .17-.136.307-.308.307a.303.303 0 0 1-.306-.307m3.11 1.596c-.2.081-.4.151-.591.16a1.25 1.25 0 0 1-.798-.254c-.274-.23-.47-.358-.551-.758a1.7 1.7 0 0 1 .015-.588c.07-.327-.007-.537-.238-.727-.188-.156-.426-.199-.689-.199a.6.6 0 0 1-.254-.078.253.253 0 0 1-.114-.358 1 1 0 0 1 .192-.21c.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.392.451.462.576.685.915.176.264.336.536.446.848.066.194-.02.353-.25.45" }));
+  }
+  function IconPerplexity({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M22.3977 7.0896h-2.3106V.0676l-7.5094 6.3542V.1577h-1.1554v6.1966L4.4904 0v7.0896H1.6023v10.3976h2.8882V24l6.932-6.3591v6.2005h1.1554v-6.0469l6.9318 6.1807v-6.4879h2.8882V7.0896zm-3.4657-4.531v4.531h-5.355l5.355-4.531zm-13.2862.0676 4.8691 4.4634H5.6458V2.6262zM2.7576 16.332V8.245h7.8476l-6.1149 6.1147v1.9723H2.7576zm2.8882 5.0404v-3.8852h.0001v-2.6488l5.7763-5.7764v7.0111l-5.7764 5.2993zm12.7086.0248-5.7766-5.1509V9.0618l5.7766 5.7766v6.5588zm2.8882-5.0652h-1.733v-1.9723L13.3948 8.245h7.8478v8.087z" }));
   }
   function IconSun({ size }) {
     const s3 = size || 14;
@@ -742,8 +791,12 @@
     { id: "grok", Icon: IconGrok },
     { id: "grok-x", Icon: IconX },
     { id: "copilot", Icon: IconCopilot },
-    { id: "claude", Icon: IconClaude }
+    { id: "claude", Icon: IconClaude },
+    { id: "qwen", Icon: IconQwen },
+    { id: "deepseek", Icon: IconDeepSeek },
+    { id: "perplexity", Icon: IconPerplexity }
   ];
+  var PLATFORM_ICONS = Object.fromEntries(SKIN_OPTIONS.map((o3) => [o3.id, o3.Icon]));
   var SCHEME_OPTIONS = [
     { id: "auto", Icon: IconAuto },
     { id: "light", Icon: IconSun },
@@ -995,7 +1048,8 @@
     return /* @__PURE__ */ k("div", { class: "ce-wrap" }, /* @__PURE__ */ k("section", { class: "ce-card" }, /* @__PURE__ */ k("header", { class: "ce-head" }, /* @__PURE__ */ k("h1", null, t3("app.title")), gatewayOn ? /* @__PURE__ */ k(StatusDot, { status, label: statusLabel }) : null), /* @__PURE__ */ k("h2", null, t3("label.platforms")), /* @__PURE__ */ k("div", { class: "ce-platforms" }, PLATFORMS.map(function(id) {
       const on = settings.platforms[id] !== false;
       const label = t3("platform." + id);
-      return /* @__PURE__ */ k("label", { key: id, class: "ce-row" }, /* @__PURE__ */ k("span", null, label), /* @__PURE__ */ k(
+      const PlatIcon = PLATFORM_ICONS[id];
+      return /* @__PURE__ */ k("label", { key: id, class: "ce-row" }, /* @__PURE__ */ k("span", { class: "ce-platform-label" }, PlatIcon ? /* @__PURE__ */ k(PlatIcon, { size: 14 }) : null, label), /* @__PURE__ */ k(
         Switch,
         {
           on,
@@ -1159,7 +1213,7 @@
         onChange: (e3) => setSettings(Object.assign({}, settings, { browserLabel: e3.currentTarget.value })),
         onBlur: () => persist(settings)
       }
-    )), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.gatewayToken")), /* @__PURE__ */ k(
+    )), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.browserId")), /* @__PURE__ */ k("input", { type: "text", readOnly: true, spellcheck: false, value: browserId || "\u2014" }), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("browser.hint"))), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.gatewayToken")), /* @__PURE__ */ k(
       "input",
       {
         type: "text",
@@ -1233,7 +1287,7 @@
       }
     )), /* @__PURE__ */ k("details", { class: "ce-more" }, /* @__PURE__ */ k("summary", null, t3("label.faq")), /* @__PURE__ */ k("ul", null, faqKeys().map(function(key) {
       return /* @__PURE__ */ k("li", { key }, t3(key));
-    }))), /* @__PURE__ */ k("p", { class: "ce-meta" }, "browserId: ", browserId || "\u2014")) : null));
+    })))) : null));
   }
   Q(/* @__PURE__ */ k(App, null), document.getElementById("app"));
 })();

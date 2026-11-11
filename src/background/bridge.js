@@ -15,7 +15,7 @@ import {
   wsUrl
 } from '../settings.js';
 
-const EXT_VERSION = '1.8.3';
+const EXT_VERSION = chrome.runtime.getManifest().version;
 const CONTENT_RPC_TYPE = 'chat-export-rpc';
 const CONTENT_PING_TYPE = 'chat-export-ping';
 const MUTATING_OPS = {
@@ -47,7 +47,10 @@ const PLATFORM_START = {
   grok: 'https://grok.com/',
   'grok-x': 'https://x.com/i/grok',
   copilot: 'https://github.com/copilot',
-  claude: 'https://claude.ai/new'
+  claude: 'https://claude.ai/new',
+  qwen: 'https://chat.qwen.ai/',
+  deepseek: 'https://chat.deepseek.com/',
+  perplexity: 'https://www.perplexity.ai/'
 };
 
 const PLATFORM_CONTENT = {
@@ -55,7 +58,10 @@ const PLATFORM_CONTENT = {
   grok: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/grok.js'],
   'grok-x': ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/grok-x.js'],
   copilot: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/copilot.js'],
-  claude: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/claude.js']
+  claude: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/claude.js'],
+  qwen: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/qwen.js'],
+  deepseek: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/deepseek.js'],
+  perplexity: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/perplexity.js']
 };
 
 let socket = null;
@@ -104,6 +110,15 @@ function matchPlatform(platform, url) {
   }
   if (platform === 'claude') {
     return host === 'claude.ai' || host.endsWith('.claude.ai');
+  }
+  if (platform === 'qwen') {
+    return host === 'chat.qwen.ai' || host.endsWith('.qwen.ai');
+  }
+  if (platform === 'deepseek') {
+    return host === 'chat.deepseek.com' || host.endsWith('.deepseek.com');
+  }
+  if (platform === 'perplexity') {
+    return host === 'perplexity.ai' || host.endsWith('.perplexity.ai');
   }
   return false;
 }
@@ -171,6 +186,18 @@ function extractChatId(platform, url) {
   }
   if (platform === 'copilot') {
     const m = path.match(/\/(?:chat|copilot\/c)\/([^/?#]+)/);
+    return m ? m[1] : '';
+  }
+  if (platform === 'qwen') {
+    const m = path.match(/\/c\/([^/?#]+)/);
+    return m ? m[1] : '';
+  }
+  if (platform === 'deepseek') {
+    const m = path.match(/\/a\/chat\/s\/([^/?#]+)/);
+    return m ? m[1] : '';
+  }
+  if (platform === 'perplexity') {
+    const m = path.match(/\/(?:search|session)\/([^/?#]+)/);
     return m ? m[1] : '';
   }
   return '';

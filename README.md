@@ -1,41 +1,130 @@
-# Chat Export
+[English](README.md) | [Русский](README.ru.md) · [![Support on DonationAlerts](https://img.shields.io/badge/Support-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel)
 
-Lightweight Manifest V3 Chrome extension. Adds an export control to Grok (`grok.com` and X: `/i/grok` + post-analysis drawer) and ChatGPT composers. Reads the conversation from the DOM and downloads Markdown, YAML, JSON, HTML, and/or PDF locally. No background worker, no network, no analytics.
+# Chat Export — Chrome extension
 
-## Load unpacked
+Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so coding agents (Cursor and others) can list, export, create, and ask in those UIs **without vendor API keys**.
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked** (or **Reload** after an update)
-4. Select this folder: `chat-export-extension/`
-5. Open [grok.com](https://grok.com), [chatgpt.com](https://chatgpt.com), or [x.com/i/grok](https://x.com/i/grok) and **refresh the tab** after Reload (content scripts stay on the old file until the page reloads)
+## The problem
 
-ChatGPT: the bar sits in the new composer footer (next to Thinking / Dictation), not the old `footer[data-ds-composer]`.
+Official UIs are great for chatting but weak for **archiving**, **batch export**, and **agent orchestration**. Copy-paste does not scale across eight providers, and cloud APIs are a separate billing and compliance story.
 
-X Grok: bar mounts next to the Fast/Быстрый chip on `/i/grok` and inside `[data-testid=GrokDrawer]` (Анализ поста). It does not appear on the plain home feed.
+## What you get
 
-## Usage
+| Platform | Hosts | Export bar | MCP via server |
+|----------|-------|------------|----------------|
+| ChatGPT | `chatgpt.com` | Yes | Yes |
+| Grok | `grok.com` | Yes | Yes |
+| X Grok | `x.com/i/grok` | Yes | Yes |
+| Claude | `claude.ai` | Yes | Yes |
+| GitHub Copilot Chat | `github.com/copilot*` | Yes | Yes |
+| Qwen | `chat.qwen.ai` | Yes | Yes |
+| DeepSeek | `chat.deepseek.com` | Yes | Yes |
+| Perplexity | `perplexity.ai` | Yes | Yes |
 
-- Format pill opens **upward**. Check MD / YAML / JSON / HTML / PDF (several at once). There is no separate "both" item.
-- Two or more formats: **Папка | Архив** toggle appears under the list (hidden when only one format is on). Default is **Архив**.
-- Download icon:
-  - One format: click goes to Downloads with **no Save As** (`chrome.downloads`, `saveAs: false`). Shift/Ctrl/Cmd = Save As.
-  - Several + Архив: one `{name}.zip` in Downloads the same way. Shift = Save As for the zip.
-  - Several + Папка: first time pick a folder; later clicks reuse it. Shift = pick another. Writes `{name}/` inside, no extra Chrome download dialog.
+Dom parsing stays in the extension; automation and MCP live in the [local server](https://github.com/svergio/chat-export-server). Optional [dashboard](https://github.com/svergio/chat-export-dashboard) for operators.
 
-`<a download>` cannot skip Chrome’s “Ask where to save each file”. Silent saves go through the extension downloads API.
-- File name: `{platform}-{title}-{YYYY-MM-DD}.{md|yaml|json|html|pdf}` (or `.zip` / that name as a subfolder)
+```mermaid
+flowchart LR
+  subgraph browser [Your Chrome]
+    EXT[Chat Export extension]
+    TABS[Provider web tabs]
+    TABS <--> EXT
+  end
+  subgraph local [127.0.0.1]
+    SRV[chat-export-server]
+    DASH[Dashboard /dashboard]
+    SRV --- DASH
+  end
+  subgraph agent [Your IDE]
+    MCP[Cursor / MCP client]
+  end
+  EXT <-->|WebSocket ceb_| SRV
+  MCP <-->|HTTP MCP cem_/cek_| SRV
+```
 
-## Markdown layout
+## Quick start (3 steps)
 
-System and role markers use fenced blocks (`sys`, `user`, `grok` / `chatgpt`, `sources`). Conversation bodies stay live markdown. JSON is pretty-printed with `schema: chat-export/1`. HTML is a script-free semantic article. PDF is selectable text (not a screenshot), including Cyrillic.
+1. **Load the extension** — `chrome://extensions` → Developer mode → **Load unpacked** → select this repo folder. Refresh each provider tab after reload.
+2. **Start the server** (for MCP) — clone [chat-export-server](https://github.com/svergio/chat-export-server), `npm install && npm run build`, `chat-export-server key new`, `chat-export-server start` (default `http://127.0.0.1:8765`).
+3. **Point your agent** — add MCP URL `http://127.0.0.1:8765/mcp` with `Authorization: Bearer <your key>` (see server README). Use `browsers_bind` so ops run in your logged-in profile.
 
-## Platforms
+Wiki walkthrough: [Installation and quickstart](https://github.com/svergio/chat-export-extension/wiki).
 
-Target host list and rollout priority: [docs/platforms.md](docs/platforms.md). Grok is three surfaces: `grok.com`, X full chat `x.com/i/grok`, and X post drawer `GrokDrawer`.
+## Configuration
 
-## CDT note
+This repo controls the **browser bridge** only. MCP keys and the data directory live on [chat-export-server](https://github.com/svergio/chat-export-server).
 
-Chrome remote debugging (`chrome://inspect/#remote-debugging`) is optional for install.
+### Popup and options (`src/settings.js`)
 
-Test against the user Chrome on `:9222`, not the MCP dummy profile (`--disable-extensions`). After Reload unpacked, refresh the Grok/ChatGPT tab.
+Settings persist in `chrome.storage.local` under `ce.settings`.
+
+| Setting | Default | Role |
+|---------|---------|------|
+| `serverOn` | `false` | Turn WebSocket bridge on |
+| `host` | `127.0.0.1` | Server host (keep loopback unless you know the risk) |
+| `port` | `8765` | Server HTTP/WS port |
+| `apiKey` | empty | Browser gateway token `ceb_…` from server or dashboard |
+| `browserLabel` | `Chrome` | Label in dashboard / `browsers_list` |
+| `platforms.*` | all enabled | Per-site toggles: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude`, `qwen`, `deepseek`, `perplexity` |
+| `allowCreate` | `true` | Allow MCP create/send |
+| `allowDestructive` | `false` | Allow MCP delete (server must agree) |
+| `allowProjects` | `true` | Project tools where supported |
+| `rpcTimeoutS` | `60` | Extension RPC timeout (seconds) |
+
+**Basic** mode: export formats and bridge on/off. **Advanced**: host, port, `ceb_` token, platform matrix, permission gates.
+
+### Connect to the local server
+
+1. Start [chat-export-server](https://github.com/svergio/chat-export-server) on `http://127.0.0.1:8765`.
+2. Create or copy a **`ceb_`** token (`chat-export-server browser enroll` or dashboard **Browsers**).
+3. Popup → Advanced → paste token, set host/port, enable **serverOn**, save.
+4. Open provider tabs logged in; status should show a live WebSocket (`/ws`).
+
+### Browser slots (two profiles)
+
+Up to **two** Chrome profiles may hold active `ceb_` connections (separate job lanes). Install this extension in the second profile, enroll another `ceb_` key in the [dashboard](https://github.com/svergio/chat-export-dashboard) **Browsers** page, keep both windows open.
+
+Server MCP setup: [server README — Configuration](https://github.com/svergio/chat-export-server#configuration). Dashboard login: [dashboard README](https://github.com/svergio/chat-export-dashboard#configuration).
+
+## Export bar (no server required)
+
+1. Open a supported host (e.g. [chatgpt.com](https://chatgpt.com), [grok.com](https://grok.com), [claude.ai](https://claude.ai), [chat.qwen.ai](https://chat.qwen.ai), [chat.deepseek.com](https://chat.deepseek.com), [perplexity.ai](https://perplexity.ai)) and refresh after extension updates.
+2. Choose formats (MD / YAML / JSON / HTML / PDF). Multi-format: **Folder** or **Zip** toggle.
+3. Download icon — silent save to Downloads (Shift/Cmd = Save As). Names: `{platform}-{title}-{date}.{ext}`.
+
+Markdown uses fenced role blocks; JSON includes `schema: chat-export/1`. PDF is selectable text (including Cyrillic), not a screenshot.
+
+Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer tree.
+
+## Security
+
+- Export and bridge run **only on your machine**. No analytics in the extension path described here.
+- Only **your** logged-in sessions are touched; the server does not receive site passwords.
+- Browser bridge uses `ceb_` tokens; MCP uses `cem_`/`cek_`. Do not commit keys. Rotate if leaked.
+- Destructive automation (`chats_delete`, etc.) is **gated** in extension settings and on the server (`allowDestructive`, `confirm: true`).
+- Threat model and audit expectations: server [SECURITY.md](https://github.com/svergio/chat-export-server/blob/main/SECURITY.md) and project [security audit](https://github.com/svergio/chat-export-server#security).
+
+## Related repositories
+
+| Repo | Role |
+|------|------|
+| [chat-export-extension](https://github.com/svergio/chat-export-extension) (this repo) | MV3 UI, content scripts, WS bridge |
+| [chat-export-server](https://github.com/svergio/chat-export-server) | MCP, jobs, SQLite cache, hub |
+| [chat-export-dashboard](https://github.com/svergio/chat-export-dashboard) | React operator UI (`/dashboard`) |
+| [Wiki](https://github.com/svergio/chat-export-extension/wiki) | Install, tools, FAQ |
+
+## Support the project
+
+Chat Export is free and open source. If it saves you time:
+
+- **Tip (fiat):** [DonationAlerts — svwergio_mel](https://www.donationalerts.com/r/svwergio_mel)
+
+Tips are voluntary and non-refundable. They do not buy private support SLAs.
+
+## Contributing
+
+Platform and locale checklists (concrete paths across extension, server, dashboard): [CONTRIBUTING.md](CONTRIBUTING.md) and [wiki Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing).
+
+## License
+
+See [LICENSE](LICENSE) in this repository.

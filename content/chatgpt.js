@@ -905,6 +905,31 @@
     return res.json();
   }
 
+  async function getChatPayload(chatId) {
+    var conv = await fetchConversation(chatId);
+    var user = await sessionUser();
+    var meta = findUserMeta();
+    return {
+      title: conv.title || findTitle(),
+      chatId: chatId,
+      model: conv.default_model_slug || findModel(),
+      userName: meta.userName || user.name || '',
+      userHandle: meta.userHandle || '',
+      userEmail: meta.userEmail || user.email || '',
+      messages: mappingToMessages(conv)
+    };
+  }
+
+  async function exportDataFromApi() {
+    var chatId = currentChatId();
+    if (!chatId) return null;
+    try {
+      return await getChatPayload(chatId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   function findComposerInput() {
     var form =
       document.querySelector('form[data-type="unified-composer"]') ||
@@ -975,6 +1000,49 @@
       },
       { timeoutMs: 120000, message: 'ChatGPT composer busy' }
     ).catch(function () {});
+  }
+
+  function findFileInput() {
+    var footer = findComposerFooter();
+    if (footer) {
+      var inp = footer.querySelector('input[type="file"]');
+      if (inp) return inp;
+    }
+    return document.querySelector('input[type="file"]');
+  }
+
+  function findAttachButton() {
+    var footer = findComposerFooter();
+    if (!footer) return null;
+    var btns = footer.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      var blob = btnBlob(btns[i]);
+      if (/файл|file|attach|прикреп|добавить/i.test(blob)) return btns[i];
+    }
+    return null;
+  }
+
+  async function applyWireFiles(files) {
+    var list = Array.isArray(files) ? files : [];
+    if (!list.length) return;
+    var input = findFileInput();
+    if (!input) {
+      var attach = findAttachButton();
+      if (attach) Ops.clickEl(attach);
+      input = await Ops.waitFor(findFileInput, { timeoutMs: 10000, message: 'ATTACH_UNSUPPORTED' });
+    }
+    if (!input) rpcErr('ATTACH_UNSUPPORTED', 'file input not found');
+    var n = Ops.setFileInputFiles(input, list);
+    var names = list.map(function (f) {
+      return f && f.name;
+    }).filter(Boolean);
+    await Ops.waitAttachChips(findComposerFooter() || document, n, {
+      timeoutMs: 120000,
+      names: names,
+      fileInput: input,
+      allowSpinner: true,
+      message: 'ATTACH_TIMEOUT'
+    });
   }
 
   async function submitComposerText(text) {
@@ -1069,6 +1137,7 @@
     modifier: 'chatgpt',
     fenceTag: 'chatgpt',
     composer: findComposerToolbar,
+    exportData: exportDataFromApi,
     chatId: chatIdFromUrl,
     title: findTitle,
     model: findModel,
@@ -1119,43 +1188,47 @@
         try {
           var chatId = args && args.chatId ? String(args.chatId) : '';
           if (!chatId) {
+            var exported = await exportDataFromApi();
+            if (exported && exported.messages && exported.messages.length) {
+              return Object.assign({ platform: 'chatgpt', url: location.href }, exported);
+            }
             if (ctx && typeof ctx.getData === 'function') {
               var live = await ctx.getData();
               return Object.assign({ platform: 'chatgpt', url: location.href }, live || {});
             }
             rpcErr('BAD_REQUEST', 'chatId required');
           }
-          if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
-            var same = await ctx.getData();
-            var u = findUserMeta();
+          try {
+            var payload = await getChatPayload(chatId);
             return Object.assign(
               {
                 platform: 'chatgpt',
-                url: location.href,
-                chatId: chatId,
-                title: findTitle(),
-                model: findModel(),
-                userName: u.userName,
-                userHandle: u.userHandle,
-                userEmail: u.userEmail
+                url: chatId === currentChatId() ? location.href : location.origin + '/c/' + chatId
               },
-              same || {}
+              payload
             );
+          } catch (apiErr) {
+            if (apiErr && apiErr.code === 'NOT_FOUND') throw apiErr;
+            if (apiErr && apiErr.code === 'UNAUTHORIZED') throw apiErr;
+            if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
+              var onPage = await ctx.getData();
+              var u = findUserMeta();
+              return Object.assign(
+                {
+                  platform: 'chatgpt',
+                  url: location.href,
+                  chatId: chatId,
+                  title: findTitle(),
+                  model: findModel(),
+                  userName: u.userName,
+                  userHandle: u.userHandle,
+                  userEmail: u.userEmail
+                },
+                onPage || {}
+              );
+            }
+            throw apiErr;
           }
-          var conv = await fetchConversation(chatId);
-          var user = await sessionUser();
-          var meta = findUserMeta();
-          return {
-            platform: 'chatgpt',
-            url: location.origin + '/c/' + chatId,
-            title: conv.title || '',
-            chatId: chatId,
-            model: conv.default_model_slug || '',
-            userName: meta.userName || user.name || '',
-            userHandle: meta.userHandle || '',
-            userEmail: meta.userEmail || user.email || '',
-            messages: mappingToMessages(conv)
-          };
         } catch (err) {
           hostErr(err);
         }
@@ -1180,6 +1253,7 @@
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
+          if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(args.text);
           await waitAssistantTurn(turnsBefore, { timeoutMs: 180000 });
           return {
@@ -1199,6 +1273,7 @@
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           var title = Ops.testTitle ? Ops.testTitle(args && args.title) : '[ce-test] chat';
           await ensureNewChat();
+          if (args.files && args.files.length) await applyWireFiles(args.files);
           await submitComposerText(text);
           var chatId = await Ops.waitFor(
             function () {

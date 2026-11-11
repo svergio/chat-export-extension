@@ -36,6 +36,10 @@
     return m ? m[1] : '';
   }
 
+  function isCopilotMarketingPage() {
+    return /^\/features\/copilot(?:\/|$)/i.test(location.pathname);
+  }
+
   function chatUrl(id) {
     return location.origin + '/copilot/c/' + id;
   }
@@ -160,6 +164,62 @@
       });
     }
     return out;
+  }
+
+  function chatPayloadFromApi(data, chatId) {
+    var thread = (data && data.thread) || {};
+    var userMeta = document.querySelector('meta[name="user-login"]');
+    return {
+      platform: 'copilot',
+      url: chatUrl(chatId),
+      title: thread.name || '',
+      chatId: chatId,
+      model: thread.autoPickedModel || '',
+      userName: (userMeta && userMeta.content) || '',
+      userHandle: (userMeta && userMeta.content) || '',
+      userEmail: '',
+      messages: mapApiMessages((data && data.messages) || [])
+    };
+  }
+
+  async function tryFetchThreadPayload(chatId, opts) {
+    opts = opts || {};
+    var res = await apiFetch(
+      '/github/chat/threads/' + encodeURIComponent(chatId) + '/messages',
+      { tryNextHostOn404: true }
+    );
+    if (res.status === 404) {
+      if (opts.notFoundIsError) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+      return null;
+    }
+    if (res.status === 401 || res.status === 403) {
+      rpcErr('UNAUTHORIZED', 'Copilot get ' + res.status);
+    }
+    if (!res.ok) {
+      var t = await res.text();
+      rpcErr('HOST_ERROR', 'messages ' + res.status + ' ' + t.slice(0, 160));
+    }
+    var data = await res.json();
+    var payload = chatPayloadFromApi(data, chatId);
+    if (!payload.messages.length) return null;
+    return payload;
+  }
+
+  async function exportData() {
+    var chatId = currentChatId();
+    if (!chatId) return null;
+    try {
+      var payload = await tryFetchThreadPayload(chatId);
+      if (!payload) return null;
+      return {
+        title: payload.title,
+        model: payload.model,
+        messages: payload.messages
+      };
+    } catch (e) {
+      if (e && e.code === 'UNAUTHORIZED') throw e;
+      return null;
+    }
   }
 
   function listFromDom(query) {
@@ -993,7 +1053,9 @@
   CE.definePlatform({
     id: 'copilot',
     modifier: 'copilot',
+    exportData: exportData,
     active: function () {
+      if (isCopilotMarketingPage()) return false;
       return textareaVisible(findChatTextarea());
     },
     composer: function () {
@@ -1009,21 +1071,22 @@
         (ask && ask.parentElement) ||
         form;
       var extra = toolbar.querySelector('[class*="extra"]');
-      // Square Primer icon chips live in extra (repos / attach). Sit with them,
-      // not as a toolbar sibling before Auto.
+      // Square Primer icon chips live in extra (repos / attach); our chips join the
+      // same flex row and copy the attach chip class (32x32). Layout in styles.css.
       if (extra) {
+        var iconChip = attach || extra.querySelector('button[class*="IconButton"]') || ask;
         var afterChip =
-          wrapChildOf(extra, attach) ||
+          wrapChildOf(extra, iconChip) ||
           (function () {
             var btns = extra.querySelectorAll('button');
-            return btns.length ? btns[btns.length - 1] : null;
+            return btns.length ? wrapChildOf(extra, btns[btns.length - 1]) : null;
           })();
         return {
           el: extra,
           insertAfter: afterChip,
           beforeChild: null,
-          nativeFrom: attach || ask,
-          nativeIconFrom: attach || ask
+          nativeFrom: iconChip,
+          nativeIconFrom: iconChip
         };
       }
       var actions = toolbar.querySelector('[class*="actions"]');
@@ -1174,69 +1237,45 @@
       },
       get: async function (args, ctx) {
         try {
-          var chatId = args && args.chatId ? String(args.chatId) : '';
-          if (!chatId) {
-            if (ctx && typeof ctx.getData === 'function') {
-              var live = await ctx.getData();
-              return Object.assign({ platform: 'copilot', url: location.href }, live || {});
-            }
-            rpcErr('BAD_REQUEST', 'chatId required');
-          }
-          if (chatId === currentChatId() && ctx && typeof ctx.getData === 'function') {
-            var same = await ctx.getData();
-            return Object.assign({ platform: 'copilot', url: location.href }, same || {}, {
-              chatId: chatId
-            });
-          }
+          var chatId = args && args.chatId ? String(args.chatId) : currentChatId();
+          if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           try {
-            var res = await apiFetch(
-              '/github/chat/threads/' + encodeURIComponent(chatId) + '/messages',
-              { tryNextHostOn404: true }
-            );
-            if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
-            if (res.status === 401 || res.status === 403) {
-              rpcErr('UNAUTHORIZED', 'Copilot get ' + res.status);
-            }
-            if (!res.ok) {
-              var t = await res.text();
-              rpcErr('HOST_ERROR', 'messages ' + res.status + ' ' + t.slice(0, 160));
-            }
-            var data = await res.json();
-            var thread = (data && data.thread) || {};
-            var userMeta = document.querySelector('meta[name="user-login"]');
-            return {
-              platform: 'copilot',
-              url: chatUrl(chatId),
-              title: thread.name || '',
-              chatId: chatId,
-              model: thread.autoPickedModel || '',
-              userName: (userMeta && userMeta.content) || '',
-              userHandle: (userMeta && userMeta.content) || '',
-              userEmail: '',
-              messages: mapApiMessages((data && data.messages) || [])
-            };
+            var fromApi = await tryFetchThreadPayload(chatId, { notFoundIsError: true });
+            if (fromApi) return fromApi;
           } catch (apiErr) {
             if (apiErr && apiErr.code === 'NOT_FOUND') throw apiErr;
             if (apiErr && apiErr.code === 'UNAUTHORIZED') throw apiErr;
-            if (Ops.softNavigate) Ops.softNavigate('/copilot/c/' + chatId);
-            else {
-              history.pushState({}, '', '/copilot/c/' + chatId);
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            }
-            await Ops.waitFor(
-              function () {
-                return currentChatId() === chatId && findChatTextarea();
-              },
-              { timeoutMs: 20000, message: 'Copilot navigate timeout' }
-            );
-            if (ctx && typeof ctx.getData === 'function') {
-              var fallback = await ctx.getData();
-              return Object.assign({ platform: 'copilot', url: location.href }, fallback || {}, {
-                chatId: chatId
-              });
-            }
-            throw apiErr;
+            if (apiErr && apiErr.code && apiErr.code !== 'HOST_ERROR') throw apiErr;
           }
+          if (currentChatId() === chatId && ctx && typeof ctx.getData === 'function') {
+            var live = await ctx.getData();
+            return Object.assign({ platform: 'copilot', url: location.href }, live || {}, {
+              chatId: chatId
+            });
+          }
+          if (Ops.softNavigate) Ops.softNavigate('/copilot/c/' + chatId);
+          else {
+            history.pushState({}, '', '/copilot/c/' + chatId);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }
+          await Ops.waitFor(
+            function () {
+              return currentChatId() === chatId && findChatTextarea();
+            },
+            { timeoutMs: 20000, message: 'Copilot navigate timeout' }
+          );
+          var afterNav = await tryFetchThreadPayload(chatId, { notFoundIsError: true }).catch(function (e) {
+            if (e && e.code === 'NOT_FOUND') throw e;
+            return null;
+          });
+          if (afterNav) return afterNav;
+          if (ctx && typeof ctx.getData === 'function') {
+            var fallback = await ctx.getData();
+            return Object.assign({ platform: 'copilot', url: location.href }, fallback || {}, {
+              chatId: chatId
+            });
+          }
+          rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
         } catch (err) {
           hostErr(err);
         }

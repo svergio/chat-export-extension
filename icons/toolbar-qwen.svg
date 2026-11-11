@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <filter id="markGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#FFFFFF" flood-opacity="0.55"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="sticker" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#FFFFFF" flood-opacity="0.9"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <g transform="translate(20,20) scale(3.67)" fill="#615ced" filter="url(#markGlow)">
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2c2.2 0 4.1 1.1 5.2 2.8-1.5.9-2.6 2.5-2.9 4.4-.3-.1-.7-.2-1.1-.2-1.8 0-3.3 1-4.1 2.4A4.28 4.28 0 0 0 7.2 9.5 7.98 7.98 0 0 1 12 4.2ZM6.7 12.6c.5-2 2.1-3.6 4.1-4.1.4 2.1 1.9 3.8 3.9 4.6-.9 1.3-2.4 2.2-4.1 2.4a7.08 7.08 0 0 1-3.9-2.9Zm10.6 0a7.08 7.08 0 0 1-3.9 2.9c1.7-.2 3.2-1.1 4.1-2.4 1.3-.5 2.3-1.5 2.9-2.8.3 1 .4 2.1.2 3.2-.5-.4-1.1-.7-1.8-.9.4-.8.6-1.7.5-2Zm-3.3 4.5c-.8 1.1-2.1 1.8-3.5 1.8s-2.7-.7-3.5-1.8c1.5.3 3.1.3 4.6 0 1.2-.3 2.2-.9 2.9-1.8l-.5 1.8Z"/>
+  </g>
+  <g transform="translate(62,62) scale(2.55)" fill="none" stroke="#FFFFFF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" filter="url(#sticker)">
+    <path d="M4 20h4l10.5-10.5a2.828 2.828 0 1 0-4-4L4 16v4"/>
+    <path d="M13.5 6.5l4 4"/>
+    <path d="M16 22l5-5"/>
+    <path d="M21 21.5V17h-4.5"/>
+  </g>
+</svg>
