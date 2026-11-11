@@ -40,7 +40,11 @@
 
   function currentChatId() {
     var m = location.pathname.match(/\/(?:search|session)\/([^/?#]+)/);
-    return m ? decodeURIComponent(m[1]) : '';
+    if (!m) return '';
+    var id = decodeURIComponent(m[1]);
+    // Transitional SPA route before the real session/search id lands.
+    if (!id || id === 'new') return '';
+    return id;
   }
 
   function isThreadRoute() {
@@ -251,20 +255,20 @@
     return false;
   }
 
-  function apiHeaders(extra) {
-    return Object.assign(
-      {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'x-app-apiclient': 'default',
-        'x-app-apiversion': API_VERSION
-      },
-      extra || {}
-    );
+  function apiHeaders(extra, withJsonBody) {
+    var headers = {
+      Accept: 'application/json',
+      'x-app-apiclient': 'default',
+      'x-app-apiversion': API_VERSION
+    };
+    // Some Perplexity GETs return empty/403 when Content-Type is forced.
+    if (withJsonBody) headers['Content-Type'] = 'application/json';
+    return Object.assign(headers, extra || {});
   }
 
   async function apiFetch(path, opts) {
     opts = opts || {};
+    var method = opts.method || 'GET';
     var url = path;
     if (path.indexOf('http') !== 0) {
       if (path.indexOf('?') >= 0) {
@@ -274,9 +278,9 @@
       }
     }
     return fetch(url, {
-      method: opts.method || 'GET',
+      method: method,
       credentials: 'include',
-      headers: apiHeaders(opts.headers),
+      headers: apiHeaders(opts.headers, !!opts.body || method !== 'GET'),
       body: opts.body
     });
   }
@@ -387,7 +391,13 @@
       if (res.status === 403 || res.status === 404) continue;
       if (!res.ok) continue;
       var data = await res.json();
-      if (data && (data.entries || []).length) return { data: data, chatId: candidates[i] };
+      var entries = (data && data.entries) || [];
+      if (!entries.length && data && data.first_entry) entries = [data.first_entry];
+      if (!entries.length && data && data.latest_entry) entries = [data.latest_entry];
+      if (data && entries.length) {
+        if (!data.entries || !data.entries.length) data.entries = entries;
+        return { data: data, chatId: candidates[i] };
+      }
     }
     return null;
   }
@@ -514,13 +524,15 @@
       var el = findComposerInput();
       return el && visible(el) ? el : null;
     }, { timeoutMs: 15000, message: 'Perplexity composer timeout' });
-    if (Ops.fillEditable) Ops.fillEditable(input, text);
+    // TipTap/ProseMirror ignores plain textContent from the isolated world.
+    if (Ops.fillRichComposer) await Ops.fillRichComposer(input, text);
+    else if (Ops.fillEditable) Ops.fillEditable(input, text);
     else if (Ops.typeEditable) await Ops.typeEditable(input, text);
     else {
       input.textContent = text;
       input.dispatchEvent(new InputEvent('input', { bubbles: true }));
     }
-    await Ops.sleep(150);
+    await Ops.sleep(200);
     return input;
   }
 
@@ -528,10 +540,13 @@
     var turnsBefore = turnNodes().length;
     var input = await fillComposer(text);
     var send = await Ops.waitFor(function () {
-      var btn = findSendButton(document);
-      if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true') return null;
-      return btn;
-    }, { timeoutMs: 12000, message: 'Perplexity send enable timeout' });
+      var btn =
+        findSendButton(document) ||
+        findByLabel('button', /отправ|send/i, document);
+      if (!btn || btn.closest('.chat-export-fmt, .chat-export-dl, .chat-export-menu')) return null;
+      if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return null;
+      return visible(btn) ? btn : null;
+    }, { timeoutMs: 20000, message: 'Perplexity send enable timeout' });
     if (Ops.ensureComposerSubmitted) {
       await Ops.ensureComposerSubmitted({
         send: send,
@@ -731,22 +746,32 @@
         try {
           var chatId = args && args.chatId ? String(args.chatId) : '';
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
+          if (currentChatId() && currentChatId() !== chatId) {
+            await navigateToChat(chatId);
+          }
           var loaded = await loadThreadApi(chatId);
+          if (!loaded && currentChatId()) loaded = await loadThreadApi(currentChatId());
           if (!loaded) rpcErr('NOT_FOUND', 'thread not found: ' + chatId);
           var entry = (loaded.data.entries && loaded.data.entries[0]) || {};
           var token = entry.read_write_token;
           var entryUuid = entry.uuid || entry.entry_uuid;
-          var cached = threadTokenCache[chatId];
+          var cached =
+            threadTokenCache[chatId] ||
+            threadTokenCache[loaded.chatId] ||
+            (entry.context_uuid && threadTokenCache[entry.context_uuid]);
           if (!token && cached) {
             token = cached.read_write_token;
             entryUuid = entryUuid || cached.entry_uuid;
           }
           if (!token || !entryUuid) rpcErr('HOST_ERROR', 'delete tokens missing');
+          messagesFromApiData(loaded.data, 'perplexity');
           var res = await apiFetch('/rest/thread/delete_thread_by_entry_uuid' + API_QS, {
             method: 'DELETE',
             body: JSON.stringify({ entry_uuid: entryUuid, read_write_token: token })
           });
-          if (res.status === 404) rpcErr('NOT_FOUND', 'thread not found: ' + chatId);
+          if (res.status === 404) {
+            rpcErr('NOT_FOUND', 'delete rejected for: ' + chatId + ' (guest/anonymous threads may be undeletable)');
+          }
           if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'delete ' + res.status);
           if (!res.ok) await failFromResponse(res, 'delete');
           return { deleted: true, chatId: chatId };

@@ -46,18 +46,26 @@
     return null;
   }
 
+  function composerActionNodes(scope) {
+    return scope.querySelectorAll('button, [role="button"], .ds-button');
+  }
+
   function findSendButton() {
     var input = findComposerInput();
     if (!input) return null;
-    var root = input.closest('[class*="ds-textarea"]') || input.parentElement;
-    var scope = root && root.parentElement ? root.parentElement : document;
-    var btns = scope.querySelectorAll('button');
+    var shell = input.closest('._77cefa5, ._9996a53, [class*="ds-textarea"]') || input.parentElement;
+    var scope = shell && shell.parentElement ? shell.parentElement : document;
+    var btns = composerActionNodes(scope);
     var i;
     var best = null;
     for (i = 0; i < btns.length; i++) {
       if (!visible(btns[i])) continue;
+      if (btns[i].closest('[data-chat-export], .chat-export-fmt, .chat-export-dl, .chat-export-menu')) continue;
+      var cls = String(btns[i].className || '');
       var blob = labelOf(btns[i]);
       if (/отправ|send|submit/i.test(blob)) return btns[i];
+      if (/\bds-button--primary\b/.test(cls) && /\bds-button--circle\b/.test(cls)) return btns[i];
+      if (!best && /\bds-button--primary\b/.test(cls)) best = btns[i];
       if (!best && btns[i].querySelector('svg')) best = btns[i];
     }
     return best;
@@ -67,13 +75,14 @@
     var scope = document;
     var input = findComposerInput();
     if (input) {
-      var root = input.closest('[class*="ds-textarea"]');
-      if (root && root.parentElement) scope = root.parentElement;
+      var shell = input.closest('._77cefa5, ._9996a53, [class*="ds-textarea"]');
+      if (shell && shell.parentElement) scope = shell.parentElement;
     }
-    var btns = scope.querySelectorAll('button');
+    var btns = composerActionNodes(scope);
     var i;
     for (i = 0; i < btns.length; i++) {
       if (!visible(btns[i])) continue;
+      if (btns[i].closest('[data-chat-export], .chat-export-fmt, .chat-export-dl, .chat-export-menu')) continue;
       var blob = labelOf(btns[i]);
       if (/stop|останов|прерв/i.test(blob)) return btns[i];
     }
@@ -520,7 +529,7 @@
             var j;
             for (j = 0; j < cfgs.length; j++) {
               if (cfgs[j] && cfgs[j].enabled !== false && cfgs[j].model_type) {
-                models.push(String(cfgs[j].model_type));
+                models.push({ id: String(cfgs[j].model_type), label: String(cfgs[j].model_type) });
               }
             }
           }
@@ -529,35 +538,57 @@
     } catch (e) {}
     return {
       platform: 'deepseek',
-      models: models.length ? models : undefined,
-      modes: ['deepthink', 'search'],
-      attach: false
+      projectsSupported: false,
+      models: models,
+      modes: [
+        { id: 'deepthink', label: 'DeepThink', kind: 'toggle' },
+        { id: 'search', label: 'Search', kind: 'toggle' }
+      ],
+      tools: [],
+      attach: { supported: false, multiple: false, accept: [] }
     };
   }
 
   async function navigateToChat(chatId) {
-    if (currentChatId() === chatId) return;
+    if (currentChatId() === chatId && visible(findComposerInput())) return;
     var path = '/a/chat/s/' + chatId;
+    var target = location.origin + path;
     if (Ops.softNavigate) Ops.softNavigate(path);
     else {
       history.pushState({}, '', path);
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
-    await Ops.waitFor(
-      function () {
-        return currentChatId() === chatId && visible(findComposerInput());
-      },
-      { timeoutMs: 30000, message: 'DeepSeek navigate timeout' }
-    );
+    var softOk = false;
+    try {
+      await Ops.waitFor(
+        function () {
+          return currentChatId() === chatId && visible(findComposerInput()) ? true : null;
+        },
+        { timeoutMs: 4000, message: 'DeepSeek soft navigate timeout' }
+      );
+      softOk = location.pathname.indexOf('/a/chat/s/' + chatId) === 0;
+    } catch (e) {}
+    if (!softOk) {
+      location.assign(target);
+      await Ops.waitFor(
+        function () {
+          return currentChatId() === chatId && visible(findComposerInput()) ? true : null;
+        },
+        { timeoutMs: 30000, message: 'DeepSeek navigate timeout' }
+      );
+    }
   }
 
   async function submitComposer(text) {
     var ta = findComposerInput();
     if (!ta) rpcErr('HOST_ERROR', 'composer not found');
-    ta.focus();
-    ta.value = text;
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
-    ta.dispatchEvent(new Event('change', { bubbles: true }));
+    if (Ops.fillEditable) Ops.fillEditable(ta, text);
+    else {
+      ta.focus();
+      ta.value = text;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+      ta.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     var send = findSendButton();
     if (send && !send.disabled) {
       send.click();
@@ -565,6 +596,45 @@
     }
     ta.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true })
+    );
+  }
+
+  function findNewChatControl() {
+    var nodes = document.querySelectorAll('button, [role="button"], a, [tabindex]');
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      if (!visible(nodes[i])) continue;
+      var blob = labelOf(nodes[i]);
+      if (/^новый чат$|^new chat$/i.test(blob)) return nodes[i];
+    }
+    return null;
+  }
+
+  async function ensureHomeComposer() {
+    if (location.pathname === '/' && visible(findComposerInput()) && !currentChatId()) return;
+    var neu = findNewChatControl();
+    if (neu) neu.click();
+    else if (Ops.softNavigate) Ops.softNavigate('/');
+    else {
+      history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    try {
+      await Ops.waitFor(
+        function () {
+          return location.pathname === '/' && visible(findComposerInput()) && !currentChatId() ? true : null;
+        },
+        { timeoutMs: 8000, message: 'DeepSeek home soft timeout' }
+      );
+      return;
+    } catch (e) {}
+    // Hard nav is last resort: it drops the extension message port mid-RPC.
+    location.assign(location.origin + '/');
+    await Ops.waitFor(
+      function () {
+        return location.pathname === '/' && visible(findComposerInput()) ? true : null;
+      },
+      { timeoutMs: 30000, message: 'DeepSeek home timeout' }
     );
   }
 
@@ -768,12 +838,19 @@
         try {
           var text = String((args && args.text) || '').trim();
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
-          var chatId = await createSession();
-          await navigateToChat(chatId);
+          // Home composer owns session creation; soft-nav to /a/chat/s/:id often bounces back to /
+          await ensureHomeComposer();
           await waitForIdle();
           var before = turnCount();
           await submitComposer(text);
           await waitForReply(before);
+          await Ops.waitFor(
+            function () {
+              return currentChatId() || null;
+            },
+            { timeoutMs: 30000, message: 'DeepSeek chat id timeout' }
+          );
+          var chatId = currentChatId();
           return {
             platform: 'deepseek',
             chatId: chatId,
