@@ -497,6 +497,12 @@
   }
 
   function findSendButton(input) {
+    var quick =
+      document.querySelector('button[data-testid="dmComposerSendButton"]') ||
+      document.querySelector('button[data-testid="grokComposerSendButton"]');
+    if (quick && visible(quick) && !quick.disabled && quick.getAttribute('aria-disabled') !== 'true') {
+      return quick;
+    }
     var node = input && input.parentElement;
     for (var depth = 0; node && depth < 6; depth++) {
       var btns = node.querySelectorAll('button');
@@ -633,12 +639,32 @@
     await Ops.ensureComposerSubmitted({
       send: findSendButton(input),
       input: input,
+      timeoutMs: 12000,
       message: 'Grok X submit failed',
       isDone: function () {
-        return isGenerating() || turnCount() > turnsBefore ? true : null;
+        if (isGenerating()) return true;
+        if (turnCount() > turnsBefore) return true;
+        if (chatIdFromUrl()) return true;
+        return null;
       }
     });
     return turnsBefore;
+  }
+
+  async function waitConversationIdAfterSubmit() {
+    return Ops.waitFor(
+      function () {
+        var id = chatIdFromUrl();
+        if (id) return id;
+        var rows = historyRows();
+        var i;
+        for (i = 0; i < rows.length; i++) {
+          if (rows[i].id) return rows[i].id;
+        }
+        return turnCount() > 0 ? null : null;
+      },
+      { timeoutMs: 90000, message: 'Grok X chatId timeout' }
+    );
   }
 
   async function waitAssistantReply(turnsBefore, timeoutMs) {
@@ -819,11 +845,9 @@
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await ensureNewChat();
           await submitComposerText(text);
-          var chatId = await Ops.waitFor(chatIdFromUrl, { timeoutMs: 90000, message: 'Grok X chatId timeout' }).catch(
-            function () {
-              rpcErr('TIMEOUT', 'Grok X chatId timeout');
-            }
-          );
+          var chatId = await waitConversationIdAfterSubmit().catch(function () {
+            rpcErr('TIMEOUT', 'Grok X chatId timeout');
+          });
           return {
             platform: PLATFORM,
             chatId: chatId,

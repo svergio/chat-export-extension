@@ -454,9 +454,8 @@
   function htmlToMarkdown(root) {
     if (!root) return '';
     if (typeof root === 'string') {
-      var wrap = document.createElement('div');
-      wrap.innerHTML = root;
-      return htmlToMarkdown(wrap).trim();
+      var doc = new DOMParser().parseFromString(root, 'text/html');
+      return htmlToMarkdown(doc.body || doc.documentElement).trim();
     }
 
     function walk(node, ctx) {

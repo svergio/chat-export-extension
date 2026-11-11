@@ -423,9 +423,8 @@
     function htmlToMarkdown(root) {
       if (!root) return "";
       if (typeof root === "string") {
-        var wrap = document.createElement("div");
-        wrap.innerHTML = root;
-        return htmlToMarkdown(wrap).trim();
+        var doc = new DOMParser().parseFromString(root, "text/html");
+        return htmlToMarkdown(doc.body || doc.documentElement).trim();
       }
       function walk(node, ctx) {
         if (!node) return "";
@@ -2424,6 +2423,7 @@
     "label.allowProjects": "Allow project management",
     "label.rpcTimeout": "Operation timeout (sec)",
     "label.browserLabel": "Browser label",
+    "label.browserId": "Browser id (per Chrome profile)",
     "label.platforms": "Platforms",
     "label.destructive": "Allow deleting chats and projects",
     "label.faq": "FAQ",
@@ -2469,6 +2469,7 @@
     "key.placeholder": "Generate ceb_ token\u2026",
     "key.hint": "The extension mints a ceb_ token per browser. Legacy cek_ tokens still work. On connect the token is enrolled on the local server.",
     "key.hintId": "Id:",
+    "browser.hint": "Each Chrome profile needs its own ceb_ token and shows up separately on the dashboard Browsers page.",
     "faq.lead": "Before connecting the local server, read the FAQ:",
     "faq.agree": "I understand and agree",
     "faq.1": "The extension and server run only locally on your computer. No telemetry, no external servers, data is not sent anywhere.",
@@ -2501,6 +2502,7 @@
     "label.allowProjects": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u0443\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043F\u0440\u043E\u0435\u043A\u0442\u0430\u043C\u0438",
     "label.rpcTimeout": "\u0422\u0430\u0439\u043C\u0430\u0443\u0442 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0439 (\u0441\u0435\u043A)",
     "label.browserLabel": "\u041C\u0435\u0442\u043A\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430",
+    "label.browserId": "Id \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 (\u043D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome)",
     "label.platforms": "\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u044B",
     "label.destructive": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0435 \u0447\u0430\u0442\u043E\u0432 \u0438 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432",
     "label.faq": "FAQ",
@@ -2546,6 +2548,7 @@
     "key.placeholder": "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u0442\u043E\u043A\u0435\u043D ceb_\u2026",
     "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0421\u0442\u0430\u0440\u044B\u0435 cek_ \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u0440\u0430\u0431\u043E\u0447\u0438\u043C\u0438. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
     "key.hintId": "Id:",
+    "browser.hint": "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0440\u043E\u0444\u0438\u043B\u044F Chrome \u0441\u0432\u043E\u0439 \u0442\u043E\u043A\u0435\u043D ceb_ \u0438 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 Browsers \u0432 \u0434\u0430\u0448\u0431\u043E\u0440\u0434\u0435.",
     "faq.lead": "\u041F\u0435\u0440\u0435\u0434 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\u043C \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u0441\u0435\u0440\u0432\u0435\u0440\u0430 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0439\u0442\u0435 FAQ:",
     "faq.agree": "\u041F\u043E\u043D\u0438\u043C\u0430\u044E \u0438 \u0441\u043E\u0433\u043B\u0430\u0441\u0435\u043D",
     "faq.1": "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435 \u0438 \u0441\u0435\u0440\u0432\u0435\u0440 \u0440\u0430\u0431\u043E\u0442\u0430\u044E\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435. \u041D\u0435\u0442 \u0442\u0435\u043B\u0435\u043C\u0435\u0442\u0440\u0438\u0438, \u043D\u0435\u0442 \u0432\u043D\u0435\u0448\u043D\u0438\u0445 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u0432, \u0434\u0430\u043D\u043D\u044B\u0435 \u043D\u0438\u043A\u0443\u0434\u0430 \u043D\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u044F\u044E\u0442\u0441\u044F.",
@@ -2596,8 +2599,26 @@
   // src/settings.js
   var DEFAULT_HOST = "127.0.0.1";
   var DEFAULT_PORT = 8765;
-  var PLATFORMS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
-  var UI_SKINS = Object.freeze(["chatgpt", "grok", "grok-x", "copilot", "claude"]);
+  var PLATFORMS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
+  var UI_SKINS = Object.freeze([
+    "chatgpt",
+    "grok",
+    "grok-x",
+    "copilot",
+    "claude",
+    "qwen",
+    "deepseek",
+    "perplexity"
+  ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
   var STORAGE_KEYS = Object.freeze({
@@ -2616,7 +2637,10 @@
       grok: true,
       "grok-x": true,
       copilot: true,
-      claude: true
+      claude: true,
+      qwen: true,
+      deepseek: true,
+      perplexity: true
     }),
     allowCreate: true,
     allowDestructive: false,

@@ -977,6 +977,49 @@
     ).catch(function () {});
   }
 
+  function findFileInput() {
+    var footer = findComposerFooter();
+    if (footer) {
+      var inp = footer.querySelector('input[type="file"]');
+      if (inp) return inp;
+    }
+    return document.querySelector('input[type="file"]');
+  }
+
+  function findAttachButton() {
+    var footer = findComposerFooter();
+    if (!footer) return null;
+    var btns = footer.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      var blob = btnBlob(btns[i]);
+      if (/файл|file|attach|прикреп|добавить/i.test(blob)) return btns[i];
+    }
+    return null;
+  }
+
+  async function applyWireFiles(files) {
+    var list = Array.isArray(files) ? files : [];
+    if (!list.length) return;
+    var input = findFileInput();
+    if (!input) {
+      var attach = findAttachButton();
+      if (attach) Ops.clickEl(attach);
+      input = await Ops.waitFor(findFileInput, { timeoutMs: 10000, message: 'ATTACH_UNSUPPORTED' });
+    }
+    if (!input) rpcErr('ATTACH_UNSUPPORTED', 'file input not found');
+    var n = Ops.setFileInputFiles(input, list);
+    var names = list.map(function (f) {
+      return f && f.name;
+    }).filter(Boolean);
+    await Ops.waitAttachChips(findComposerFooter() || document, n, {
+      timeoutMs: 120000,
+      names: names,
+      fileInput: input,
+      allowSpinner: true,
+      message: 'ATTACH_TIMEOUT'
+    });
+  }
+
   async function submitComposerText(text) {
     var body = String(text || '').trim();
     if (!body) rpcErr('BAD_REQUEST', 'text is required');
@@ -1180,6 +1223,7 @@
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
+          if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(args.text);
           await waitAssistantTurn(turnsBefore, { timeoutMs: 180000 });
           return {
@@ -1199,6 +1243,7 @@
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           var title = Ops.testTitle ? Ops.testTitle(args && args.title) : '[ce-test] chat';
           await ensureNewChat();
+          if (args.files && args.files.length) await applyWireFiles(args.files);
           await submitComposerText(text);
           var chatId = await Ops.waitFor(
             function () {
