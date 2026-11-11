@@ -152,8 +152,8 @@ function editableHasText(el, value) {
   var cur = String((el && (el.innerText || el.textContent)) || '').replace(/\u00a0/g, ' ').trim();
   var want = String(value || '').replace(/\u00a0/g, ' ').trim();
   if (!want) return !!cur;
-  if (cur === want) return true;
-  return cur.indexOf(want.slice(0, Math.min(24, want.length))) >= 0;
+  // Exact match only — loose prefix match caused stacked paste+insertText (duplicate bubbles).
+  return cur === want;
 }
 
 export function fillRichComposer(el, text) {
@@ -165,7 +165,7 @@ export function fillRichComposer(el, text) {
   } catch (e) {}
   selectEditableContents(el);
 
-  // TipTap / ProseMirror usually accept paste + beforeinput better than textContent from isolated world.
+  // TipTap / ProseMirror: try one path at a time; stop when composer holds exact text.
   try {
     var dt = new view.DataTransfer();
     dt.setData('text/plain', value);
@@ -185,26 +185,6 @@ export function fillRichComposer(el, text) {
     el.dispatchEvent(pasteEv);
   } catch (e2) {}
   if (editableHasText(el, value)) return 'paste';
-
-  try {
-    el.dispatchEvent(
-      new view.InputEvent('beforeinput', {
-        bubbles: true,
-        cancelable: true,
-        data: value,
-        inputType: 'insertFromPaste'
-      })
-    );
-    el.dispatchEvent(
-      new view.InputEvent('input', {
-        bubbles: true,
-        cancelable: true,
-        data: value,
-        inputType: 'insertFromPaste'
-      })
-    );
-  } catch (e3) {}
-  if (editableHasText(el, value)) return 'beforeinput';
 
   try {
     selectEditableContents(el);
@@ -288,9 +268,33 @@ export async function ensureComposerSubmitted(opts) {
   var timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : 5000;
   if (send) clickEl(send);
   try {
-    await waitFor(isDone, { timeoutMs: 1200, intervalMs: 100, message: 'click submit pending' });
+    await waitFor(isDone, { timeoutMs: 2000, intervalMs: 100, message: 'click submit pending' });
     return 'click';
   } catch (e1) {}
+  try {
+    if (isDone()) return 'click-late';
+  } catch (eLate) {}
+  // First click already started submit — do not Enter + re-click (duplicate user bubbles).
+  if (send && (send.disabled || send.getAttribute('aria-disabled') === 'true')) {
+    await waitFor(isDone, {
+      timeoutMs: timeoutMs,
+      intervalMs: 150,
+      message: opts.message || 'composer submit failed'
+    });
+    return 'click-disabled';
+  }
+  var emptied = false;
+  try {
+    emptied = !!(input && !String((input.innerText || input.textContent) || '').trim());
+  } catch (eEmpty) {}
+  if (emptied) {
+    await waitFor(isDone, {
+      timeoutMs: timeoutMs,
+      intervalMs: 150,
+      message: opts.message || 'composer submit failed'
+    });
+    return 'cleared';
+  }
   if (input) dispatchEnter(input);
   if (send && !(send.disabled || send.getAttribute('aria-disabled') === 'true')) {
     clickEl(send);
