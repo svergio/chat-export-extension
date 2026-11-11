@@ -4,6 +4,9 @@
   "version": "1.4.0",
   "description": "Export Grok (grok.com + X), ChatGPT, Claude, and GitHub Copilot chats to Markdown, YAML, JSON, HTML, and PDF.",
   "permissions": ["downloads", "tabs", "storage", "alarms", "scripting"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"
+  },
   "background": {
     "service_worker": "background.js"
   },

@@ -15,7 +15,6 @@
     "preact": "^11.2.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.2",
-    "happy-dom": "^17.4.4"
+    "esbuild": "^0.28.2"
   }
 }
