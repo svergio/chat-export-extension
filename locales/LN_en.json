@@ -119,7 +119,7 @@
   "tos.agree": "I understand the risks and agree to the Terms of Use",
   "faq.lead": "Advanced Mode Terms (Local MCP Gateway & Agent Automation):",
   "faq.agree": "I understand the automation risks and agree to Advanced Mode Terms",
-  "faq.1": "Enabling the Local MCP Gateway allows external AI agents connected to 127.0.0.1 to list, read, create, send, and (if enabled) delete chats in your logged-in browser tabs.",
+  "faq.1": "Enabling the Local MCP Gateway allows external AI agents (Cursor, Claude Desktop, LangChain-based local LLM agents, and other MCP clients) connected to 127.0.0.1 to list, read, create, send, and (if enabled) delete chats in your logged-in browser tabs.",
   "faq.2": "Higher Account Restriction Risk: Automated prompt sending (chat_ask / chats_create) and batch operations act directly on your live accounts and carry elevated risk of rate limits, CAPTCHAs, or account suspension by providers.",
   "faq.3": "Local Loopback Only: The extension and server communicate strictly over 127.0.0.1 using per-browser ceb_ tokens. Site passwords and cookies are never extracted or sent to the agent.",
   "faq.4": "Permission Gates: Creating/sending chats can be toggled off, and destructive actions (deleting chats or projects) are disabled by default and require explicit confirmation.",

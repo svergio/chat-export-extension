@@ -20,6 +20,10 @@ Regenerate: `npm run licenses` (uses `npx license-checker`; not added as a repo 
 | fontkit (bundled UMD) | MIT | `vendor/fontkit.umd.min.js` (shipped in extension zip) |
 | Noto Sans (font) | OFL-1.1 | `vendor/NotoSans-Regular.ttf` (shipped in extension zip) |
 
+## Optional integrations (not dependencies)
+
+Examples of **external MCP clients** you may wire to `http://127.0.0.1:8765/mcp`: **Cursor**, **Claude Desktop**, and **LangChain**-based local agents. They are not npm dependencies; the extension runs standalone in Chrome without them.
+
 ---
 
 _Generated for chat-export-extension@2.0.6. Product license: MIT._

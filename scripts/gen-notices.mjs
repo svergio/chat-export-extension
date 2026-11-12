@@ -60,7 +60,7 @@ ${vendRows.join('\n')}
 
 ## Optional integrations (not dependencies)
 
-Cursor, Claude Desktop, Open WebUI, local LLM stacks (e.g. Bonsai-27B), BibLLMsteak, and the NodeRed maintainer workspace are **optional** MCP clients or docs only. The extension runs standalone in Chrome without them.
+Examples of **external MCP clients** you may wire to \`http://127.0.0.1:8765/mcp\`: **Cursor**, **Claude Desktop**, and **LangChain**-based local agents. They are not npm dependencies; the extension runs standalone in Chrome without them.
 
 ---
 

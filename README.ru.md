@@ -6,7 +6,7 @@
   <img src="docs/media/demo-export.gif" alt="Экспорт на ChatGPT, Grok и Claude — формат и скачивание" width="720" />
 </p>
 
-Экспорт и управление **веб-чатами** на восьми площадках (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — в вашем браузере, под вашими правилами. Расширение добавляет панель экспорта на сайтах провайдеров, скачивает **Markdown, YAML, JSON, HTML и PDF** локально и подключается к [локальному MCP-серверу](https://github.com/svergio/chat-export-server), чтобы внешние MCP-клиенты могли листать, экспортировать, создавать чаты и задавать вопросы **без API-ключей** вендоров.
+Экспорт и управление **веб-чатами** на восьми площадках (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — в вашем браузере, под вашими правилами. Расширение добавляет панель экспорта на сайтах провайдеров, скачивает **Markdown, YAML, JSON, HTML и PDF** локально и подключается к [локальному MCP-серверу](https://github.com/svergio/chat-export-server), чтобы агенты в **Cursor**, **Claude Desktop** и других MCP-клиентах могли листать, экспортировать, создавать чаты и задавать вопросы **без API-ключей** вендоров.
 
 **Чем отличается от официального экспорта ChatGPT:** у OpenAI это один zip *всех* чатов в JSON после запроса и ожидания. Здесь — экспорт *текущего* чата в Markdown или PDF (и YAML/JSON/HTML) в один клик: без выгрузки всего аккаунта и без ожидания bulk-архива. Тот же локальный сценарий «один чат — один файл» на остальных семи площадках.
 
@@ -14,7 +14,7 @@
 
 ## Автономный продукт
 
-Три публичных репозитория (extension, server, dashboard). Ручной экспорт — только расширение. MCP и автоматизация — `chat-export-server` и **мост расширения** в вкладках Chrome, **без** Chrome DevTools MCP. Сервер можно поднять **нативно**, в **Docker / Colima** или **Kubernetes**. MCP-клиент подключаете вы сами; в состав продукта он не входит.
+Три публичных репозитория (extension, server, dashboard). Ручной экспорт — только расширение. MCP и автоматизация — `chat-export-server` и **мост расширения** в вкладках Chrome, **без** Chrome DevTools MCP. Сервер можно поднять **нативно**, в **Docker / Colima** или **Kubernetes**. MCP-клиент выбираете вы — типичные варианты: **Cursor** (расширение Chrome + MCP; листинг в маркетплейсе Cursor на согласовании), **Claude Desktop** и MCP-интеграции Claude (подача на модерацию в процессе), локальные агенты на **LangChain**. В состав продукта клиенты не входят.
 
 **Zip для установки:** [chat-export-extension-2.0.6.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.6/chat-export-extension-2.0.6.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.0.6](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.6).
 
@@ -108,7 +108,7 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 
 **Двухуровневое пользовательское соглашение ([LEGAL.md](LEGAL.md)).** Так как Chat Export взаимодействует с веб-интерфейсами и внутренними API страниц в вашей активной сессии, в расширении предусмотрено двухэтапное согласие с условиями:
 1. **Уровень 1 (Общие условия и предупреждение о рисках)** при первом открытии попапа — уведомляет о поставке ПО «КАК ЕСТЬ» по лицензии MIT и предупреждает о риске лимитов или блокировки аккаунта со стороны провайдеров при сборе DOM или запросах к внутренним API.
-2. **Уровень 2 (Расширенный режим / локальный MCP-шлюз)** при открытии раздела `Расширенные` — охватывает управление вкладками через внешние MCP-клиенты, подключённые к [chat-export-server](https://github.com/svergio/chat-export-server). Создание и особенно удаление консервативны по умолчанию: `allowDestructive` в расширении выключен (`false`), сервер согласован, удаление требует `confirm: true`.
+2. **Уровень 2 (Расширенный режим / локальный MCP-шлюз)** при открытии раздела `Расширенные` — охватывает автоматизацию через внешние MCP-клиенты (**Cursor**, **Claude Desktop**, локальный агент вроде **LangChain MCP**), подключённые к [chat-export-server](https://github.com/svergio/chat-export-server). Создание и особенно удаление консервативны по умолчанию: `allowDestructive` в расширении выключен (`false`), сервер согласован, удаление требует `confirm: true`.
 
 **Хрупкость.** Экспорт и автоматизация читают живой DOM (иногда in-page API). Редизайн сайта может сломать content script overnight. Пишите в [issues](https://github.com/svergio/chat-export-extension/issues); чеклисты платформ и локалей — в [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -145,7 +145,9 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 
 Сторонние лицензии: [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md); обновление: `npm run licenses`.
 
-Ядро продукта: три публичных репозитория на GitHub (см. выше). Документация: [вики расширения](https://github.com/svergio/chat-export-extension/wiki).
+**Опциональные MCP-клиенты (не в составе продукта):** [Cursor](https://cursor.com) · [Claude Desktop](https://claude.ai/download) · [LangChain](https://www.langchain.com/) и любой Streamable HTTP MCP-клиент на `http://127.0.0.1:8765/mcp`. Расширение работает автономно без них.
+
+Ядро продукта: три публичных репозитория на GitHub (см. выше). Документация: [вики расширения](https://github.com/svergio/chat-export-extension/wiki) ([локальная LLM через LangChain](https://github.com/svergio/chat-export-extension/wiki/Local-LLM-Bonsai-27B-Guide-RU)).
 
 ## Лицензия
 

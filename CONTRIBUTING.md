@@ -31,7 +31,7 @@ Do **not** edit `content/<id>.js`, manifest matches, or protocol enums until rec
 
 Static marketing pages (no session): HTTP/site-map only — not full-page HTML dumps. Live MCP smoke uses **`[ce-test]`** chats only; no mass deletes on real threads.
 
-Before editing `content/*.js` for a new provider, follow the provider research checklist in this repo (see wiki Contributing).
+Before editing `content/*.js` for a new provider, follow the provider research checklist (wiki [Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing) and project Cursor rules in `.cursor/rules/` when present in your checkout).
 
 ## Add a new chat platform (provider)
 
@@ -178,7 +178,7 @@ npm run test:all         # unit + contract + protocol
 
 Protocol capability fixtures for shipped platforms live under `packages/protocol/fixtures/`. Extension content-script contract polish for newer providers (qwen / deepseek / perplexity) may still need work — see open issues.
 
-Workspace rule: `.cursor/rules/chat-export-test-branch-adversarial.mdc`.
+Adversarial test promotion: follow project Cursor rules for the `test` branch (see wiki Contributing).
 
 ## CI and promotion (`test` → `main`)
 

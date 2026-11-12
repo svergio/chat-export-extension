@@ -25,7 +25,7 @@ Before using the Chat Export extension, you must acknowledge and accept the foll
 
 Enabling the optional **Gateway for server (MCP)** in the `Advanced` panel requires a second explicit consent:
 
-1. **External Agent Control:** Turning on the Local MCP Gateway connects your browser profile over local loopback (`ws://127.0.0.1:8765/ws`) to your local `chat-export-server` instance. Connected MCP clients — such as Cursor, Claude Desktop, or local LLMs (e.g. `bonsai-27b`) — can list, read, export, create, send messages to, and (if explicitly permitted) delete chats inside your logged-in browser tabs.
+1. **External Agent Control:** Turning on the Local MCP Gateway connects your browser profile over local loopback (`ws://127.0.0.1:8765/ws`) to your local `chat-export-server` instance. Connected MCP clients — such as Cursor, Claude Desktop, or a local LLM agent (e.g. via LangChain MCP) — can list, read, export, create, send messages to, and (if explicitly permitted) delete chats inside your logged-in browser tabs.
 2. **Elevated Automation Risk:** Automated prompt submission (`chat_ask`, `chats_create`, `chats_send`) and multi-tab orchestration act directly on your live user accounts. Automated writes carry a significantly higher risk of anti-bot detection, rate-limiting, or account termination by providers compared to passive manual exports.
 3. **Permission Gates:**
    - Creating and sending chats (`allowCreate`) can be disabled at any time in the extension popup.
@@ -62,7 +62,7 @@ Enabling the optional **Gateway for server (MCP)** in the `Advanced` panel requi
 
 Включение опционального режима **Шлюз для сервера (MCP)** в разделе `Расширенные` (`Advanced`) требует второго явного согласия пользователя:
 
-1. **Управление со стороны внешних ИИ-агентов:** Включение локального MCP-шлюза соединяет ваш браузерный профиль по локальному интерфейсу (`ws://127.0.0.1:8765/ws`) с вашим локальным сервером `chat-export-server`. Подключенные MCP-клиенты — такие как Cursor, Claude Desktop или локальные LLM (например, `bonsai-27b`) — получают возможность просматривать список чатов, читать их содержимое, создавать новые диалоги, отправлять промпты и (если включено разрешение) удалять чаты в ваших открытых вкладках.
+1. **Управление со стороны внешних ИИ-агентов:** Включение локального MCP-шлюза соединяет ваш браузерный профиль по локальному интерфейсу (`ws://127.0.0.1:8765/ws`) с вашим локальным сервером `chat-export-server`. Подключенные MCP-клиенты — такие как Cursor, Claude Desktop или локальный LLM-агент (например, через LangChain MCP) — получают возможность просматривать список чатов, читать их содержимое, создавать новые диалоги, отправлять промпты и (если включено разрешение) удалять чаты в ваших открытых вкладках.
 2. **Повышенный риск при автоматизации:** Автоматическая отправка сообщений (`chat_ask`, `chats_create`, `chats_send`) и оркестрация вкладок выполняются непосредственно от лица вашей живой учетной записи. Автоматизация записи несет существенно более высокий риск срабатывания антибот-защиты, лимитов или блокировки аккаунта со стороны провайдеров по сравнению с обычным ручным экспортом.
 3. **Разграничение прав (Permission Gates):**
    - Создание чатов и отправку сообщений (`allowCreate`) можно в любой момент отключить в попапе расширения.
