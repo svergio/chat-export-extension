@@ -344,7 +344,11 @@ export function hostErr(code, message, details) {
 }
 
 var RATE_LIMIT_RE =
-  /rate.?limit|too many (requests|messages)|usage limit|message limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит/i;
+  /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota|free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит/i;
+var PAYWALL_RE =
+  /free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)/i;
+var AUTH_WALL_RE =
+  /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
 var PLATFORM_BUSY_RE =
   /heavy (load|usage|traffic)|high demand|(at|over) capacity|overloaded|temporarily unavailable|service unavailable|something went wrong|try again (later|in|shortly|soon)|перегруж|высок\S* нагрузк|временно недоступ|попробуйте (\S+ )?(позже|снова|ещ[её] раз)|что-то пошло не так/i;
 var BANNER_SELECTOR = [
@@ -357,10 +361,13 @@ var BANNER_SELECTOR = [
   '[data-testid*="toast" i]',
   '[data-testid*="error" i]',
   '[data-testid*="banner" i]',
+  '[data-testid*="upsell" i]',
+  '[data-testid*="upgrade" i]',
   '[class*="toast" i]',
   '[class*="banner" i]',
   '[class*="error" i]'
 ].join(',');
+var UPSELL_SCAN_SELECTOR = 'main button, main [role="button"], main [role="status"], main [role="alert"], main a[href*="upgrade" i], main a[href*="pricing" i]';
 var BANNER_TEXT_MAX = 400;
 var OWN_UI_SELECTOR = '[data-chat-export-bar], [data-ce-host]';
 var BUSY_OVERRIDABLE = [undefined, null, '', 'HOST_ERROR', 'TIMEOUT', 'NOT_FOUND', 'ATTACH_TIMEOUT'];
@@ -388,17 +395,34 @@ function insideHit(hits, el) {
   return false;
 }
 
+export function classifyGateKind(code, text) {
+  if (code === 'UNAUTHORIZED') return 'auth_wall';
+  if (code === 'PLATFORM_BUSY') return 'busy';
+  if (PAYWALL_RE.test(String(text || ''))) return 'paywall';
+  return 'quota';
+}
+
 export function classifyBusyText(text) {
   var t = String(text || '');
   if (!t || t.length > BANNER_TEXT_MAX) return null;
+  if (AUTH_WALL_RE.test(t)) return 'UNAUTHORIZED';
   if (RATE_LIMIT_RE.test(t)) return 'RATE_LIMIT';
   if (PLATFORM_BUSY_RE.test(t)) return 'PLATFORM_BUSY';
   return null;
 }
 
+function pushGateHit(out, el, text) {
+  var code = classifyBusyText(text);
+  if (!code) return;
+  out.push({ el: el, code: code, text: text, kind: classifyGateKind(code, text) });
+}
+
 export function findBusyBanners(root, extra) {
   root = root || document;
   var nodes = Array.prototype.slice.call(root.querySelectorAll(BANNER_SELECTOR));
+  try {
+    nodes = nodes.concat(Array.prototype.slice.call(root.querySelectorAll(UPSELL_SCAN_SELECTOR)));
+  } catch (e) {}
   if (extra) nodes = nodes.concat(Array.isArray(extra) ? extra : [extra]);
   var out = [];
   for (var i = 0; i < nodes.length; i++) {
@@ -407,20 +431,27 @@ export function findBusyBanners(root, extra) {
     if (el.closest && el.closest(OWN_UI_SELECTOR)) continue;
     if (!bannerVisible(el)) continue;
     var text = bannerText(el);
-    var code = classifyBusyText(text);
-    if (code) out.push({ el: el, code: code, text: text });
+    if (!text || text.length > BANNER_TEXT_MAX) continue;
+    pushGateHit(out, el, text);
   }
   return out;
 }
 
-export function detectBusyBanner(root, extra) {
-  var hits = findBusyBanners(root, extra);
-  for (var i = 0; i < hits.length; i++) if (hits[i].code === 'RATE_LIMIT') return hits[i];
+export function preferGateHit(hits) {
+  if (!hits || !hits.length) return null;
+  for (var i = 0; i < hits.length; i++) if (hits[i].code === 'UNAUTHORIZED') return hits[i];
+  for (var j = 0; j < hits.length; j++) if (hits[j].code === 'RATE_LIMIT') return hits[j];
   return hits[0] || null;
 }
 
+export function detectBusyBanner(root, extra) {
+  return preferGateHit(findBusyBanners(root, extra));
+}
+
 export function throwBusy(hit) {
-  hostErr(hit.code, hit.text, { retryable: true, banner: hit.text });
+  var kind = hit.kind || classifyGateKind(hit.code, hit.text);
+  var retryable = hit.code === 'PLATFORM_BUSY' || (hit.code === 'RATE_LIMIT' && kind !== 'paywall');
+  hostErr(hit.code, hit.text, { retryable: retryable, banner: hit.text, kind: kind });
 }
 
 // Banners that were already on screen before the op must not fail it: only nodes that appeared during the op count.
@@ -435,8 +466,7 @@ export async function guardBusy(run, candidates) {
     var hits = findBusyBanners(document, collect()).filter(function (h) {
       return before.indexOf(h.el) < 0;
     });
-    for (var i = 0; i < hits.length; i++) if (hits[i].code === 'RATE_LIMIT') return hits[i];
-    return hits[0] || null;
+    return preferGateHit(hits);
   }
   var result;
   try {
@@ -478,12 +508,30 @@ export function composerReady(el) {
 
 export function buildHostState(platform, state, candidates) {
   var hit = detectBusyBanner(document, candidates || null);
+  var generating = !!(state && state.generating);
+  var composerReady = !!(state && state.composerReady);
+  var code = hit ? hit.code : null;
+  var kind = hit ? hit.kind || classifyGateKind(hit.code, hit.text) : null;
+  var retryable = !hit
+    ? true
+    : hit.code === 'PLATFORM_BUSY' || (hit.code === 'RATE_LIMIT' && kind !== 'paywall');
+  var gateState = 'ok';
+  if (hit) {
+    if (code === 'UNAUTHORIZED') gateState = 'auth_wall';
+    else if (code === 'RATE_LIMIT') gateState = 'rate_limit';
+    else gateState = 'busy';
+  } else if (generating) gateState = 'generating';
+  else if (!composerReady) gateState = 'composer_blocked';
   return {
     platform: platform,
-    generating: !!(state && state.generating),
+    generating: generating,
     busy: !!hit,
     banner: hit ? hit.text : null,
-    composerReady: !!(state && state.composerReady)
+    composerReady: composerReady,
+    code: code,
+    kind: kind,
+    retryable: retryable,
+    state: gateState
   };
 }
 

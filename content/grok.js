@@ -308,7 +308,7 @@
   async function failFromResponse(res, what) {
     if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', what + ' ' + res.status);
     if (res.status === 404) rpcErr('NOT_FOUND', what + ' not found');
-    if (res.status === 429) rpcErr('RATE_LIMIT', what + ' rate limited');
+    if (res.status === 429) rpcErr('RATE_LIMIT', what + ' rate limited', { retryable: true, kind: 'http' });
     var body = '';
     try {
       body = (await res.text()).slice(0, 160);
@@ -1308,7 +1308,7 @@
           }
           var res = await apiFetch('/rest/workspaces/' + encodeURIComponent(containerId), { method: 'DELETE' });
           if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'delete project ' + res.status);
-          if (res.status === 429) rpcErr('RATE_LIMIT', 'delete project rate limited');
+          if (res.status === 429) rpcErr('RATE_LIMIT', 'delete project rate limited', { retryable: true, kind: 'http' });
           if (res.ok) return { deleted: true, containerId: containerId };
           await deleteViaDom(container);
           return { deleted: true, containerId: containerId };

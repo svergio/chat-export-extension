@@ -3911,6 +3911,7 @@
     buildHostState: () => buildHostState,
     clampLimit: () => clampLimit,
     classifyBusyText: () => classifyBusyText,
+    classifyGateKind: () => classifyGateKind,
     clickEl: () => clickEl,
     closeMenu: () => closeMenu,
     composerReady: () => composerReady,
@@ -3929,6 +3930,7 @@
     normalizeId: () => normalizeId,
     openMenu: () => openMenu,
     pickMenuItem: () => pickMenuItem,
+    preferGateHit: () => preferGateHit,
     quoteSelectionPrompt: () => quoteSelectionPrompt,
     readMenuItems: () => readMenuItems,
     setFileInputFiles: () => setFileInputFiles,
@@ -4678,7 +4680,9 @@
     if (details) err.details = details;
     throw err;
   }
-  var RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит/i;
+  var RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota|free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит/i;
+  var PAYWALL_RE = /free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)/i;
+  var AUTH_WALL_RE = /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
   var PLATFORM_BUSY_RE = /heavy (load|usage|traffic)|high demand|(at|over) capacity|overloaded|temporarily unavailable|service unavailable|something went wrong|try again (later|in|shortly|soon)|перегруж|высок\S* нагрузк|временно недоступ|попробуйте (\S+ )?(позже|снова|ещ[её] раз)|что-то пошло не так/i;
   var BANNER_SELECTOR = [
     '[role="alert"]',
@@ -4690,10 +4694,13 @@
     '[data-testid*="toast" i]',
     '[data-testid*="error" i]',
     '[data-testid*="banner" i]',
+    '[data-testid*="upsell" i]',
+    '[data-testid*="upgrade" i]',
     '[class*="toast" i]',
     '[class*="banner" i]',
     '[class*="error" i]'
   ].join(",");
+  var UPSELL_SCAN_SELECTOR = 'main button, main [role="button"], main [role="status"], main [role="alert"], main a[href*="upgrade" i], main a[href*="pricing" i]';
   var BANNER_TEXT_MAX = 400;
   var OWN_UI_SELECTOR = "[data-chat-export-bar], [data-ce-host]";
   var BUSY_OVERRIDABLE = [void 0, null, "", "HOST_ERROR", "TIMEOUT", "NOT_FOUND", "ATTACH_TIMEOUT"];
@@ -4716,16 +4723,32 @@
     }
     return false;
   }
+  function classifyGateKind(code, text) {
+    if (code === "UNAUTHORIZED") return "auth_wall";
+    if (code === "PLATFORM_BUSY") return "busy";
+    if (PAYWALL_RE.test(String(text || ""))) return "paywall";
+    return "quota";
+  }
   function classifyBusyText(text) {
     var t3 = String(text || "");
     if (!t3 || t3.length > BANNER_TEXT_MAX) return null;
+    if (AUTH_WALL_RE.test(t3)) return "UNAUTHORIZED";
     if (RATE_LIMIT_RE.test(t3)) return "RATE_LIMIT";
     if (PLATFORM_BUSY_RE.test(t3)) return "PLATFORM_BUSY";
     return null;
   }
+  function pushGateHit(out, el, text) {
+    var code = classifyBusyText(text);
+    if (!code) return;
+    out.push({ el, code, text, kind: classifyGateKind(code, text) });
+  }
   function findBusyBanners(root, extra) {
     root = root || document;
     var nodes = Array.prototype.slice.call(root.querySelectorAll(BANNER_SELECTOR));
+    try {
+      nodes = nodes.concat(Array.prototype.slice.call(root.querySelectorAll(UPSELL_SCAN_SELECTOR)));
+    } catch (e3) {
+    }
     if (extra) nodes = nodes.concat(Array.isArray(extra) ? extra : [extra]);
     var out = [];
     for (var i3 = 0; i3 < nodes.length; i3++) {
@@ -4734,18 +4757,24 @@
       if (el.closest && el.closest(OWN_UI_SELECTOR)) continue;
       if (!bannerVisible(el)) continue;
       var text = bannerText(el);
-      var code = classifyBusyText(text);
-      if (code) out.push({ el, code, text });
+      if (!text || text.length > BANNER_TEXT_MAX) continue;
+      pushGateHit(out, el, text);
     }
     return out;
   }
-  function detectBusyBanner(root, extra) {
-    var hits = findBusyBanners(root, extra);
-    for (var i3 = 0; i3 < hits.length; i3++) if (hits[i3].code === "RATE_LIMIT") return hits[i3];
+  function preferGateHit(hits) {
+    if (!hits || !hits.length) return null;
+    for (var i3 = 0; i3 < hits.length; i3++) if (hits[i3].code === "UNAUTHORIZED") return hits[i3];
+    for (var j3 = 0; j3 < hits.length; j3++) if (hits[j3].code === "RATE_LIMIT") return hits[j3];
     return hits[0] || null;
   }
+  function detectBusyBanner(root, extra) {
+    return preferGateHit(findBusyBanners(root, extra));
+  }
   function throwBusy(hit) {
-    hostErr(hit.code, hit.text, { retryable: true, banner: hit.text });
+    var kind = hit.kind || classifyGateKind(hit.code, hit.text);
+    var retryable = hit.code === "PLATFORM_BUSY" || hit.code === "RATE_LIMIT" && kind !== "paywall";
+    hostErr(hit.code, hit.text, { retryable, banner: hit.text, kind });
   }
   async function guardBusy(run, candidates) {
     var collect = typeof candidates === "function" ? candidates : function() {
@@ -4758,8 +4787,7 @@
       var hits = findBusyBanners(document, collect()).filter(function(h3) {
         return before.indexOf(h3.el) < 0;
       });
-      for (var i3 = 0; i3 < hits.length; i3++) if (hits[i3].code === "RATE_LIMIT") return hits[i3];
-      return hits[0] || null;
+      return preferGateHit(hits);
     }
     var result;
     try {
@@ -4797,12 +4825,28 @@
   }
   function buildHostState(platform, state, candidates) {
     var hit = detectBusyBanner(document, candidates || null);
+    var generating = !!(state && state.generating);
+    var composerReady2 = !!(state && state.composerReady);
+    var code = hit ? hit.code : null;
+    var kind = hit ? hit.kind || classifyGateKind(hit.code, hit.text) : null;
+    var retryable = !hit ? true : hit.code === "PLATFORM_BUSY" || hit.code === "RATE_LIMIT" && kind !== "paywall";
+    var gateState = "ok";
+    if (hit) {
+      if (code === "UNAUTHORIZED") gateState = "auth_wall";
+      else if (code === "RATE_LIMIT") gateState = "rate_limit";
+      else gateState = "busy";
+    } else if (generating) gateState = "generating";
+    else if (!composerReady2) gateState = "composer_blocked";
     return {
       platform,
-      generating: !!(state && state.generating),
+      generating,
       busy: !!hit,
       banner: hit ? hit.text : null,
-      composerReady: !!(state && state.composerReady)
+      composerReady: composerReady2,
+      code,
+      kind,
+      retryable,
+      state: gateState
     };
   }
 
