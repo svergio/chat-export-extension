@@ -10,9 +10,24 @@ Stack layout under the maintainer tree `projects/Chat Export/`:
 | Shared docs | `docs/` (platforms, site-maps, acceptance) |
 | Wiki (GitHub) | `chat-export-extension.wiki/` clone |
 
-No `Co-authored-by` trailers in commits. Open PRs against `main`; use branch `test` only for CI/test work per repo policy.
+No `Co-authored-by` trailers in commits. Open PRs against `main` for product changes; open test-hardening PRs against `test` (see **Tests** and **CI and promotion** below).
 
 Extended wiki: [Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing).
+
+## Provider research (before code)
+
+Do **not** edit `content/<id>.js`, manifest matches, or protocol enums until reconnaissance is written down.
+
+| Step | Action |
+|------|--------|
+| 1 | Logged-in tab: Chrome DevTools snapshot/DOM map (`docs/site-maps/` workflow; max 2 screenshots per task). |
+| 2 | Write `projects/Chat Export/docs/site-maps/<host>.md` — composer, chat list, `chatId` URL regex, model toggles, internal list/get/delete APIs, fragility notes (mirror `chatgpt.com.md`, `claude.ai.md`). |
+| 3 | Choose API-first vs DOM fallback per op (`list`, `get`, `exportData`, `delete` vs `create`, `send`). |
+| 4 | Pick stable platform id; wire the same id through protocol, manifest, settings, and `docs/platforms.md`. |
+
+Static marketing pages (no session): HTTP/site-map only — not full-page HTML dumps. Live MCP smoke uses **`[ce-test]`** chats only; no mass deletes on real threads.
+
+Maintainer workspace rule (NodeRed): `.cursor/rules/chat-export-provider-research.mdc`.
 
 ## Add a new chat platform (provider)
 
@@ -20,7 +35,7 @@ Pick a stable **platform id** (lowercase, hyphenated if needed, e.g. `grok-x`). 
 
 ### Step-by-step
 
-1. **Research** — capture DOM selectors and flows in `docs/site-maps/<host>.md` (see existing `grok.com.md`, `claude.ai.md`).
+1. **Research** — complete [Provider research (before code)](#provider-research-before-code); then implement from the site map.
 2. **Protocol** — add the id to `PLATFORMS` in `chat-export-server/packages/protocol/src/constants.js`; extend JSON Schema enums if needed (`schema.js`). Run server `npm run build` so `packages/protocol` is consumed.
 3. **Extension content script** — implement `CE.definePlatform({ id, hosts, ops, … })` in `chat-export-extension/content/<id>.js` (mirror `content/chatgpt.js`, `content/grok-x.js`).
 4. **Extension manifest** — add `host_permissions`, `content_scripts` `matches`, and `web_accessible_resources` entries in `manifest.json` (narrow patterns; avoid whole-site wildcards unless required).
@@ -101,19 +116,32 @@ Keep key names identical across languages so `createTranslator` and dashboard `t
 
 ## Tests (`test` branch)
 
-Unit and DOM harness tests live on the **`test`** branch (not always present on `main`). Feature PRs still target `main`; open test-only PRs against `test`, or sync `main` into `test` after merge.
+New or strengthened tests land on branch **`test`** first. Feature PRs target `main`; after merge, sync `main` → `test` and extend coverage there. Promote `test` → `main` only when CI is green on `test` (see **CI and promotion**).
 
-### Extension
+### Adversarial testing (extension)
+
+Goal: hostile but realistic inputs — parsers, settings normalization, export-bar DOM, provider contract fixtures — without multi-minute fuzz or destructive sweeps on real chats.
+
+| Area | Examples |
+|------|----------|
+| `htmlToMarkdown` / `DOMParser` | Unclosed tags, script/style stripping, nested code fences, broken tables |
+| Settings | Corrupt storage, stale `tosVersion` / `faqVersion`, bad ports, bogus UI enums |
+| DOM harness | Missing nodes, busy overlay races (deterministic waits only) |
+| Providers | Bridge start URLs and `ops` shape for all eight `PLATFORMS` ids |
+
+Keep `npm test` deterministic and **under ~15s** per job. Prefer `test/test-html-to-markdown.js`, `test/test-settings.js`, `test/test-i18n.js`, `test/test-providers-contract.js` on `test`.
+
+### Extension commands
 
 ```bash
 git fetch origin test
 git checkout test
-npm test                 # test:unit + test:dom
+npm test                 # test:unit + test:dom (see package.json)
 npm run test:unit        # options / files
 npm run test:dom         # menu / busy via test/dom-harness.js
 ```
 
-Current `test/` coverage: settings/options, file helpers, export-bar menu, busy overlay. Gaps such as `htmlToMarkdown` / `DOMParser` string paths in `src/core.js` are welcome first contributions.
+Baseline `test/` on `main`: settings/options, file helpers, export-bar menu, busy overlay. Additional adversarial files may exist only on `test` until promotion.
 
 ### Server (related)
 
@@ -126,6 +154,45 @@ npm run test:all         # unit + contract + protocol
 ```
 
 Protocol capability fixtures for shipped platforms live under `packages/protocol/fixtures/`. Extension content-script contract polish for newer providers (qwen / deepseek / perplexity) may still need work — see open issues.
+
+Workspace rule: `.cursor/rules/chat-export-test-branch-adversarial.mdc`.
+
+## CI and promotion (`test` → `main`)
+
+GitHub Actions: `.github/workflows/build-extension.yml` on **push** and **pull_request** to `main` and `test`.
+
+| Step | Command | Purpose |
+|------|---------|---------|
+| Install | `npm ci` | Reproducible deps |
+| Test | `npm test` when `test/*.js` or `test/*.test.js` exist | Gate before pack |
+| Build | `npm run build` | `dist/shared.js`, `dist/popup.js` |
+| Pack | `npm run pack` | `dist-pack/chat-export-extension-<version>.zip` (Chrome load-verify) |
+
+`dist-pack/` is gitignored locally; CI still runs `pack` so missing manifest paths or bundles fail the job. After a green `test` branch, merge `test` into `main` for release-aligned promotion.
+
+## Two-tier ToS checklist (contributors)
+
+Legal copy lives in `LEGAL.md` and wiki **Dashboard and Security** — do not rewrite ToS/SKU text in drive-by PRs. When you touch consent UI, storage, or bridge gates, verify code matches the two tiers:
+
+| Tier | Storage / API | Enforced by | Blocks without consent |
+|------|---------------|-------------|------------------------|
+| 1 — General legal / export | `tosVersion` === `TOS_VERSION` | `hasTosConsent()` | Baseline product use (export bar, settings load) |
+| 2 — Advanced MCP / bridge | `faqVersion` === `FAQ_VERSION` | `hasFaqConsent()`; `canEnableBridge()` also requires non-empty `apiKey` | `serverOn`, WebSocket bridge, automation flags |
+
+Popup must clear `serverOn` when tier 2 is missing (`src/popup/main.jsx`, `src/background/main.js`). Bump `TOS_VERSION` / `FAQ_VERSION` in `src/settings.js` only together with maintainer `LEGAL.md` and locale string updates.
+
+Regression tests (on `test`): `test/test-settings.js` (tier order), `test/test-i18n.js` (EN/RU key parity for legal strings).
+
+## MR and CI failure reports
+
+Failed GitHub Actions checks or MR/PR review **must** include a structured report — not “tests failed” without context. Use all four headings:
+
+1. **What broke** — workflow job/step, command, failing test name, key assertion lines.
+2. **Why it broke** — diff hunk, trace, contract drift, fixture, or environment (branch `test` vs `main`).
+3. **Impact** — which gate (unit, pack, platform id, ToS tier) and release risk.
+4. **Fix direction** — one concrete next file/command, or what log/SHA is still needed.
+
+NodeRed workspace rule: `.cursor/rules/chat-export-mr-review-after-tests.mdc`.
 
 ## Development pointers
 

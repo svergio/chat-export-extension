@@ -1,3 +1,5 @@
+export const TOS_VERSION = 1;
+
 export const FAQ_VERSION = 1;
 
 export const DEFAULT_HOST = '127.0.0.1';
@@ -58,6 +60,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   allowDestructive: false,
   allowProjects: true,
   rpcTimeoutS: 60,
+  tosVersion: 0,
   faqVersion: 0,
   ui: Object.freeze({
     skin: 'chatgpt',
@@ -98,6 +101,7 @@ export function normalizeSettings(raw) {
     allowProjects: s.allowProjects === false ? false : true,
     rpcTimeoutS:
       Number.isFinite(rpcRaw) && rpcRaw >= 5 && rpcRaw <= 600 ? Math.floor(rpcRaw) : 60,
+    tosVersion: Number.isFinite(Number(s.tosVersion)) ? Number(s.tosVersion) : 0,
     faqVersion: Number.isFinite(Number(s.faqVersion)) ? Number(s.faqVersion) : 0,
     ui: normalizeUi(s.ui)
   };
@@ -109,6 +113,11 @@ export function resolveUiScheme(scheme, prefersDark) {
   return prefersDark ? 'dark' : 'light';
 }
 
+export function hasTosConsent(settings) {
+  const s = normalizeSettings(settings);
+  return s.tosVersion === TOS_VERSION;
+}
+
 export function hasFaqConsent(settings) {
   const s = normalizeSettings(settings);
   return s.faqVersion === FAQ_VERSION;
@@ -116,7 +125,7 @@ export function hasFaqConsent(settings) {
 
 export function canEnableBridge(settings) {
   const s = normalizeSettings(settings);
-  return hasFaqConsent(s) && !!s.apiKey.trim();
+  return hasTosConsent(s) && hasFaqConsent(s) && !!s.apiKey.trim();
 }
 
 export function platformsEnabledList(settings) {

@@ -223,7 +223,9 @@ function App() {
 
   async function persist(next) {
     const normalized = normalizeSettings(next);
-    if (normalized.serverOn && !hasFaqConsent(normalized)) normalized.serverOn = false;
+    if (normalized.serverOn && (!hasTosConsent(normalized) || !hasFaqConsent(normalized))) {
+      normalized.serverOn = false;
+    }
     setSettings(normalized);
     setBusy(true);
     await sendBridge('saveSettings', { settings: normalized });
