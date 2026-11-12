@@ -132,7 +132,7 @@ Tips are voluntary and non-refundable. They do not buy private support SLAs.
 
 ## Contributing
 
-Platform and locale checklists (concrete paths across extension, server, dashboard): [CONTRIBUTING.md](CONTRIBUTING.md) and [wiki Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing).
+Platform and locale checklists (concrete paths across extension, server, dashboard): [CONTRIBUTING.md](CONTRIBUTING.md) · [CONTRIBUTING.ru.md](CONTRIBUTING.ru.md) · [wiki Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing).
 
 ## Dependencies
 

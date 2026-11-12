@@ -1,5 +1,7 @@
 # Contributing to Chat Export
 
+[English](CONTRIBUTING.md) | [Русский](CONTRIBUTING.ru.md)
+
 Stack layout under the maintainer tree `projects/Chat Export/`:
 
 | Repo | Path |
