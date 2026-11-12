@@ -8,7 +8,8 @@
     "pack": "node scripts/pack.mjs",
     "test:unit": "node --test test/options.test.js test/files.test.js test/test-settings.js test/test-i18n.js test/test-providers-contract.js",
     "test:dom": "node --test test/menu.test.js test/busy.test.js test/test-html-to-markdown.js",
-    "test": "npm run test:unit && npm run test:dom"
+    "test": "npm run test:unit && npm run test:dom",
+    "licenses": "node scripts/gen-notices.mjs"
   },
   "repository": {
     "type": "git",

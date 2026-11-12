@@ -1,4 +1,4 @@
-[English](README.md) | [Русский](README.ru.md) · [![Поддержать на DonationAlerts](https://img.shields.io/badge/Поддержать-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server)
+[English](README.md) | [Русский](README.ru.md) · [![Поддержать на DonationAlerts](https://img.shields.io/badge/Поддержать-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server) · [![MCP Servers](https://img.shields.io/badge/MCP_Servers-listed-2563eb)](https://mcpservers.org/ru/)
 
 # Chat Export — расширение Chrome
 
@@ -112,7 +112,9 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 
 ## Честно: ToS и хрупкость
 
-**ToS провайдеров.** Опциональный MCP-сервер управляет веб-UI так же, как вы сами (вкладки, клики, DOM). Массовая автоматизация может расходиться с правилами некоторых сервисов. Chat Export держит **создание** и особенно **удаление** консервативно: `allowDestructive` в расширении по умолчанию `false`, сервер согласован, удаление всё равно требует `confirm: true`. Эти ограничения — фича: включайте только когда реально нужны записи в UI.
+**Двухуровневое пользовательское соглашение ([LEGAL.md](LEGAL.md)).** Так как Chat Export взаимодействует с веб-интерфейсами и внутренними API страниц в вашей активной сессии, в расширении предусмотрено двухэтапное согласие с условиями:
+1. **Уровень 1 (Общие условия и предупреждение о рисках)** при первом открытии попапа — уведомляет о поставке ПО «КАК ЕСТЬ» по лицензии MIT и предупреждает о риске лимитов или блокировки аккаунта со стороны провайдеров при сборе DOM или запросах к внутренним API.
+2. **Уровень 2 (Расширенный режим / локальный MCP-шлюз)** при открытии раздела `Расширенные` — охватывает управление вкладками через внешние ИИ-агенты (Cursor, Claude Desktop и локальные LLM, включая `bonsai-27b`, через [chat-export-server](https://github.com/svergio/chat-export-server)). Создание и особенно удаление консервативны по умолчанию: `allowDestructive` в расширении выключен (`false`), сервер согласован, удаление требует `confirm: true`.
 
 **Хрупкость.** Экспорт и автоматизация читают живой DOM (иногда in-page API). Редизайн сайта может сломать content script overnight. Пишите в [issues](https://github.com/svergio/chat-export-extension/issues); чеклисты платформ и локалей — в [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -121,7 +123,7 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 | Репозиторий | Роль |
 |-------------|------|
 | [chat-export-extension](https://github.com/svergio/chat-export-extension) (этот) | MV3, content scripts, WS |
-| [chat-export-server](https://github.com/svergio/chat-export-server) | MCP, очереди, кеш |
+| [chat-export-server](https://github.com/svergio/chat-export-server) | MCP, очереди, кеш (в каталогах [MCP Servers](https://mcpservers.org/ru/) и [Glama](https://glama.ai/mcp/servers/svergio/chat-export-server)) |
 | [chat-export-dashboard](https://github.com/svergio/chat-export-dashboard) | Веб-UI оператора |
 | [Wiki](https://github.com/svergio/chat-export-extension/wiki) | Установка, инструменты, FAQ |
 
@@ -136,6 +138,20 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 ## Участие в разработке
 
 Новые платформы и языки UI: [CONTRIBUTING.md](CONTRIBUTING.md), [вики](https://github.com/svergio/chat-export-extension/wiki/Contributing-RU).
+
+## Зависимости
+
+| Слой | Стек |
+| --- | --- |
+| Расширение (этот репозиторий) | MV3 + **Preact** (esbuild); PDF в `vendor/` |
+| Опциональный сервер | [chat-export-server](https://github.com/svergio/chat-export-server) — Node 22, MCP SDK, `ws`, Zod, `@chat-export/protocol` |
+| Опциональный dashboard | [chat-export-dashboard](https://github.com/svergio/chat-export-dashboard) — React 19, `/dashboard/` |
+
+**Связка:** расширение ↔ WebSocket сервера (`/ws`, токен `ceb_`) ↔ MCP (`/mcp`) ↔ dashboard (`/dashboard/api`). Схемы протокола — в сервере, `packages/protocol/`.
+
+Сторонние лицензии: [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md); обновление: `npm run licenses`.
+
+**Не обязательны:** Cursor, Open WebUI, BibLLMsteak, Bonsai-27B, дерево NodeRed — только примеры MCP-клиентов или внутренняя документация. Три публичных репозитория на GitHub — ядро продукта; см. [вики расширения](https://github.com/svergio/chat-export-extension/wiki).
 
 ## Лицензия
 

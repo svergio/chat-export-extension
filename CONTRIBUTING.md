@@ -12,6 +12,8 @@ Stack layout under the maintainer tree `projects/Chat Export/`:
 
 No `Co-authored-by` trailers in commits. Open PRs against `main` for product changes; open test-hardening PRs against `test` (see **Tests** and **CI and promotion** below).
 
+After changing `package.json` dependencies or vendored files under `vendor/`, run `npm run licenses` and commit [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) if the table changed. Uses one-shot `npx license-checker` (not a repo dependency).
+
 Extended wiki: [Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing).
 
 ## Provider research (before code)
@@ -164,9 +166,10 @@ GitHub Actions: `.github/workflows/build-extension.yml` on **push** and **pull_r
 | Step | Command | Purpose |
 |------|---------|---------|
 | Install | `npm ci` | Reproducible deps |
-| Test | `npm test` when `test/*.js` or `test/*.test.js` exist | Gate before pack |
-| Build | `npm run build` | `dist/shared.js`, `dist/popup.js` |
-| Pack | `npm run pack` | `dist-pack/chat-export-extension-<version>.zip` (Chrome load-verify) |
+| Test | `npm test` when `test/*.js` or `test/*.test.js` exist | Gate before pack (unit + DOM + adversarial + i18n parity) |
+| Audit | `npm audit --audit-level=high` | Block high/critical dependency vulnerabilities |
+| Build | `npm run build` | `dist/shared.js`, `dist/popup.js`, `background.js` |
+| Pack & Verify | `npm run pack` | `dist-pack/chat-export-extension-<version>.zip` verified (`manifest.json`, `background.js`, `dist/*`, `locales/*`), uploaded as workflow artifact, and attached to GitHub Releases on `v*` tags |
 
 `dist-pack/` is gitignored locally; CI still runs `pack` so missing manifest paths or bundles fail the job. After a green `test` branch, merge `test` into `main` for release-aligned promotion.
 
@@ -176,10 +179,10 @@ Legal copy lives in `LEGAL.md` and wiki **Dashboard and Security** — do not re
 
 | Tier | Storage / API | Enforced by | Blocks without consent |
 |------|---------------|-------------|------------------------|
-| 1 — General legal / export | `tosVersion` === `TOS_VERSION` | `hasTosConsent()` | Baseline product use (export bar, settings load) |
-| 2 — Advanced MCP / bridge | `faqVersion` === `FAQ_VERSION` | `hasFaqConsent()`; `canEnableBridge()` also requires non-empty `apiKey` | `serverOn`, WebSocket bridge, automation flags |
+| 1 — General legal / export | `tosVersion` === `TOS_VERSION` | `hasTosConsent()` (`PrimaryTosConsent` gate + `canEnableBridge()`) | Main popup controls, `serverOn`, WebSocket bridge |
+| 2 — Advanced MCP / bridge | `faqVersion` === `FAQ_VERSION` | `hasFaqConsent()`; `canEnableBridge()` requires `hasTosConsent() && hasFaqConsent() && !!apiKey.trim()` | `serverOn`, WebSocket bridge, automation flags |
 
-Popup must clear `serverOn` when tier 2 is missing (`src/popup/main.jsx`, `src/background/main.js`). Bump `TOS_VERSION` / `FAQ_VERSION` in `src/settings.js` only together with maintainer `LEGAL.md` and locale string updates.
+Popup and background clear `serverOn` when either tier 1 or tier 2 consent is missing (`src/popup/main.jsx`, `src/background/main.js`, `src/background/bridge.js`). Bump `TOS_VERSION` / `FAQ_VERSION` in `src/settings.js` only together with maintainer `LEGAL.md` and locale string updates (`tos.title`, `tos.lead`, `tos.1`..`tos.4`, `tos.agree`, `btn.acceptTos`, `label.tos`, `faq.lead`, `faq.1`..`faq.6`, `faq.agree`, `label.faq` in `locales/LN_en.json` and `locales/LN_ru.json`).
 
 Regression tests (on `test`): `test/test-settings.js` (tier order), `test/test-i18n.js` (EN/RU key parity for legal strings).
 

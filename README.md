@@ -1,4 +1,4 @@
-[English](README.md) | [Русский](README.ru.md) · [![Support on DonationAlerts](https://img.shields.io/badge/Support-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server)
+[English](README.md) | [Русский](README.ru.md) · [![Support on DonationAlerts](https://img.shields.io/badge/Support-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server) · [![MCP Servers](https://img.shields.io/badge/MCP_Servers-listed-2563eb)](https://mcpservers.org/ru/)
 
 # Chat Export — Chrome extension
 
@@ -116,7 +116,9 @@ Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer
 
 ## Honesty: ToS and fragility
 
-**Provider ToS.** The optional MCP server drives provider web UIs the same way you would (tabs, clicks, DOM). That can conflict with some providers’ terms if you automate at scale. Chat Export keeps **create** and especially **delete** conservative by default: extension `allowDestructive` defaults to `false`, the server matches that, and delete still requires `confirm: true`. Treat those gates as a feature — turn them on only when you intend to automate writes.
+**Two-tier Terms of Use ([LEGAL.md](LEGAL.md)).** Because Chat Export interacts with live web UIs and in-page APIs inside your logged-in session, the extension enforces a two-step local consent flow:
+1. **Tier 1 (General Export Disclaimer)** on first popup open — explains that the software is provided "AS IS" under the MIT License and warns that automated DOM harvesting or internal API requests may violate provider Terms of Service or result in rate-limiting or account suspension.
+2. **Tier 2 (Advanced Mode / Local MCP Gateway)** when opening `Advanced` — covers external agent automation (Cursor, Claude Desktop, and local LLMs such as `bonsai-27b` via [chat-export-server](https://github.com/svergio/chat-export-server)). Chat Export keeps **create** and especially **delete** conservative by default: extension `allowDestructive` defaults to `false`, the server matches that, and delete still requires `confirm: true`.
 
 **Fragility.** Export and automation read the live DOM (and sometimes in-page APIs). A provider UI redesign can break a content script overnight. Prefer filing [issues](https://github.com/svergio/chat-export-extension/issues); platform and locale checklists live in [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -125,7 +127,7 @@ Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer
 | Repo | Role |
 |------|------|
 | [chat-export-extension](https://github.com/svergio/chat-export-extension) (this repo) | MV3 UI, content scripts, WS bridge |
-| [chat-export-server](https://github.com/svergio/chat-export-server) | MCP, jobs, SQLite cache, hub |
+| [chat-export-server](https://github.com/svergio/chat-export-server) | MCP, jobs, SQLite cache, hub (listed on [MCP Servers](https://mcpservers.org/ru/) & [Glama](https://glama.ai/mcp/servers/svergio/chat-export-server)) |
 | [chat-export-dashboard](https://github.com/svergio/chat-export-dashboard) | React operator UI (`/dashboard`) |
 | [Wiki](https://github.com/svergio/chat-export-extension/wiki) | Install, tools, FAQ |
 
@@ -140,6 +142,20 @@ Tips are voluntary and non-refundable. They do not buy private support SLAs.
 ## Contributing
 
 Platform and locale checklists (concrete paths across extension, server, dashboard): [CONTRIBUTING.md](CONTRIBUTING.md) and [wiki Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing).
+
+## Dependencies
+
+| Layer | Stack |
+| --- | --- |
+| Extension (this repo) | Vanilla MV3 + **Preact** (bundled via esbuild); PDF helpers in `vendor/` |
+| Optional server | [chat-export-server](https://github.com/svergio/chat-export-server) — Node 22, MCP SDK, `ws`, Zod, `@chat-export/protocol` |
+| Optional dashboard | [chat-export-dashboard](https://github.com/svergio/chat-export-dashboard) — React 19 static UI at `/dashboard/` |
+
+**Wire path:** extension ↔ server WebSocket (`/ws`, `ceb_` token) ↔ MCP (`/mcp`) ↔ dashboard (same host, `/dashboard/api`). Protocol schemas live in the server repo (`packages/protocol/`).
+
+Third-party licenses: [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Regenerate after dependency bumps: `npm run licenses`.
+
+**Not required:** Cursor, Open WebUI, BibLLMsteak, Bonsai-27B, or the NodeRed maintainer workspace — optional MCP client / doc examples only. The three public GitHub repos above are the product family; see also the [extension wiki](https://github.com/svergio/chat-export-extension/wiki).
 
 ## License
 
