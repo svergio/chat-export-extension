@@ -1,9 +1,11 @@
 import {
+  TOS_VERSION,
   FAQ_VERSION,
   STORAGE_KEYS,
   canEnableBridge,
   enrollUrl,
   generateApiKey,
+  hasTosConsent,
   hasFaqConsent,
   isPlatformEnabledIn,
   loadStored,
@@ -757,9 +759,10 @@ function openSocket() {
 
 function connect() {
   clearReconnect();
-  if (!currentSettings.serverOn || !hasFaqConsent(currentSettings)) {
+  const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
+  if (!currentSettings.serverOn || !consented) {
     clearKeepalive();
-    publishStatus('offline', hasFaqConsent(currentSettings) ? '' : 'faq consent required');
+    publishStatus('offline', consented ? '' : 'faq consent required');
     return;
   }
 
@@ -821,8 +824,9 @@ function disconnect(reason) {
 
 function applySettings(settings) {
   currentSettings = normalizeSettings(settings);
+  const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
   if (!currentSettings.serverOn || !canEnableBridge(currentSettings)) {
-    disconnect(!hasFaqConsent(currentSettings) ? 'faq consent required' : '');
+    disconnect(!consented ? 'faq consent required' : '');
     return;
   }
   if (socket && socket.readyState === WebSocket.OPEN) {
@@ -853,7 +857,7 @@ export async function testConnection() {
   try {
     const ensured = await ensureLocalKey();
     const settings = ensured.settings;
-    if (!hasFaqConsent(settings)) {
+    if (!hasTosConsent(settings) || !hasFaqConsent(settings)) {
       return { ok: false, state: 'offline', detail: 'faq consent required' };
     }
     await enrollKeyToServer(settings, ensured.browserId);
@@ -996,4 +1000,4 @@ export async function startBridge() {
   } catch (e) {}
 }
 
-export { FAQ_VERSION, CONTENT_RPC_TYPE };
+export { TOS_VERSION, FAQ_VERSION, CONTENT_RPC_TYPE };

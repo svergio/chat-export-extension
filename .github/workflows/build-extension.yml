@@ -1,0 +1,42 @@
+name: Build extension
+
+on:
+  push:
+    branches: [main, test]
+  pull_request:
+    branches: [main, test]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit and DOM tests (when present)
+        run: |
+          shopt -s nullglob
+          files=(test/*.js test/*.test.js)
+          if [ ${#files[@]} -gt 0 ] && node -e "const p=require('./package.json'); process.exit(p.scripts&&p.scripts.test?0:1)"; then
+            npm test
+          else
+            echo "No test suite or test/*.js files; skipping npm test"
+          fi
+
+      - name: Build bundles
+        run: npm run build
+
+      - name: Pack extension zip
+        run: npm run pack

@@ -5,7 +5,10 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "pack": "node scripts/pack.mjs"
+    "pack": "node scripts/pack.mjs",
+    "test:unit": "node --test test/options.test.js test/files.test.js test/test-settings.js test/test-i18n.js test/test-providers-contract.js",
+    "test:dom": "node --test test/menu.test.js test/busy.test.js test/test-html-to-markdown.js",
+    "test": "npm run test:unit && npm run test:dom"
   },
   "repository": {
     "type": "git",
@@ -17,6 +20,7 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
+    "happy-dom": "^17.4.4",
     "sharp": "^0.35.5"
   }
 }

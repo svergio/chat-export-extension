@@ -8,7 +8,7 @@ import {
   rotateLocalKey,
   reconnectBridge
 } from './bridge.js';
-import { getBridgeStatus, loadStored, saveSettings, normalizeSettings, hasFaqConsent } from '../settings.js';
+import { getBridgeStatus, loadStored, saveSettings, normalizeSettings, hasTosConsent, hasFaqConsent } from '../settings.js';
 import { toolbarKindFromUrl } from '../hostSkin.js';
 
 function bytesToBase64(bytes) {
@@ -127,7 +127,7 @@ chrome.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
   }
   if (action === 'saveSettings') {
     var next = normalizeSettings(msg.settings);
-    if (next.serverOn && !hasFaqConsent(next)) next.serverOn = false;
+    if (next.serverOn && (!hasTosConsent(next) || !hasFaqConsent(next))) next.serverOn = false;
     saveSettings(next).then(function (saved) {
       pushSettingsIfConnected();
       sendResponse({ ok: true, settings: saved });

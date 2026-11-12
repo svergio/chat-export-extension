@@ -2,7 +2,5 @@
 scripts/node_modules/
 .serena/
 *.log
-test/
-*.test.js
 node_modules/
 dist-pack/
