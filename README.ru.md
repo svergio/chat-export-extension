@@ -131,7 +131,7 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 
 ## Участие в разработке
 
-Новые платформы и языки UI: [CONTRIBUTING.md](CONTRIBUTING.md), [вики](https://github.com/svergio/chat-export-extension/wiki/Contributing-RU).
+Новые платформы и языки UI: [CONTRIBUTING.ru.md](CONTRIBUTING.ru.md) · [CONTRIBUTING.md](CONTRIBUTING.md) · [вики](https://github.com/svergio/chat-export-extension/wiki/Contributing-RU).
 
 ## Зависимости
 
