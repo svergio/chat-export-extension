@@ -4249,6 +4249,14 @@
       el.dispatchEvent(new KeyboardEvent("keyup", init));
     }
   }
+  function composerHasDraft(input) {
+    if (!input) return false;
+    var tag = String(input.tagName || "").toUpperCase();
+    if (tag === "TEXTAREA" || tag === "INPUT") {
+      return !!String(input.value || "").trim();
+    }
+    return !!String(input.innerText || input.textContent || "").trim();
+  }
   async function ensureComposerSubmitted(opts) {
     opts = opts || {};
     var send = opts.send;
@@ -4276,7 +4284,7 @@
     }
     var emptied = false;
     try {
-      emptied = !!(input && !String(input.innerText || input.textContent || "").trim());
+      emptied = !!(input && !composerHasDraft(input));
     } catch (eEmpty) {
     }
     if (emptied) {

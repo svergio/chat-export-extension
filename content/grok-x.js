@@ -449,7 +449,8 @@
   };
   var DELETE_RE = /удалить|delete/i;
   var HISTORY_RE = /^(История|History)/i;
-  var SEND_RE = /send|отправ|submit|grok something|спросить/i;
+  var SEND_RE = /send|отправ|submit|grok something|спроси|ask grok|ask anything|что-нибудь/i;
+  var GROK_MODE_MENU_SKIP = /grok\.com|перейти/i;
   var MORE_SELECTOR =
     'button[aria-haspopup="menu"], button[aria-label*="more" i], button[aria-label*="ещ" i], button[aria-label*="действ" i], button[aria-label*="actions" i]';
 
@@ -740,6 +741,13 @@
     if (quick && visible(quick) && !quick.disabled && quick.getAttribute('aria-disabled') !== 'true') {
       return quick;
     }
+    var byAria =
+      document.querySelector('button[aria-label*="Спросите" i]') ||
+      document.querySelector('button[aria-label*="Ask Grok" i]') ||
+      document.querySelector('button[aria-label*="Ask anything" i]');
+    if (byAria && visible(byAria) && !byAria.closest('[data-chat-export-bar]')) {
+      if (!byAria.disabled && byAria.getAttribute('aria-disabled') !== 'true') return byAria;
+    }
     var node = input && input.parentElement;
     for (var depth = 0; node && depth < 6; depth++) {
       var btns = node.querySelectorAll('button');
@@ -747,12 +755,173 @@
         var b = btns[i];
         if (b.closest('[data-chat-export-bar]') || !visible(b)) continue;
         var blob = (b.getAttribute('data-testid') || '') + ' ' + labelOf(b);
-        if (/voice|голос|attach|файл|file|mode|режим/i.test(blob)) continue;
+        if (/voice|голос|attach|файл|file|mode|режим|быстр|fast|think|истор|history/i.test(blob)) continue;
         if (SEND_RE.test(blob) || b.getAttribute('type') === 'submit') return b;
       }
       node = node.parentElement;
     }
-    return null;
+    var root = (input && input.closest('main')) || activeRoot() || document;
+    var ta = input || findComposerTextarea(root) || composerInput();
+    if (!ta) return null;
+    var taR = ta.getBoundingClientRect();
+    var best = null;
+    var bestX = -1;
+    var all = root.querySelectorAll('button');
+    var j;
+    var btn;
+    var br;
+    var blob2;
+    for (j = 0; j < all.length; j++) {
+      btn = all[j];
+      if (!visible(btn) || btn.closest('[data-chat-export-bar]')) continue;
+      blob2 = labelOf(btn);
+      if (/voice|голос|attach|файл|file|режим|истор|history|приват|private|экспорт|export|download/i.test(blob2)) continue;
+      if (/^(Создавайте|Create|Последние|Recent|Редактирование|Edit)/i.test((btn.textContent || '').replace(/\s+/g, ' ').trim())) continue;
+      br = btn.getBoundingClientRect();
+      if (Math.abs(br.y - taR.y) > 55) continue;
+      if (br.x < taR.right - 40) continue;
+      if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') continue;
+      if (!SEND_RE.test(blob2) && !btn.querySelector('svg')) continue;
+      if (br.x > bestX) {
+        bestX = br.x;
+        best = btn;
+      }
+    }
+    return best;
+  }
+
+  function findFileInput(root) {
+    root = root || activeRoot() || document;
+    var inputs = root.querySelectorAll('input[type="file"]');
+    var rich = null;
+    var image = null;
+    var k;
+    for (k = 0; k < inputs.length; k++) {
+      var inp = inputs[k];
+      var acc = inp.getAttribute('accept') || '';
+      if (inp.multiple || acc.length > 32) rich = inp;
+      else if (/image\//i.test(acc)) image = inp;
+    }
+    return rich || image || inputs[0] || null;
+  }
+
+  function findFocusedToggle() {
+    return (
+      document.querySelector('button[aria-label*="Сфокусирован" i]') ||
+      document.querySelector('button[aria-label*="Focused" i]')
+    );
+  }
+
+  async function applyWireFiles(files) {
+    var list = Array.isArray(files) ? files : [];
+    if (!list.length) return;
+    var root = activeRoot() || document;
+    var input = findFileInput(root);
+    if (!input) {
+      var attachBtn =
+        root.querySelector('button[aria-label*="Выбрать файлы" i]') ||
+        root.querySelector('button[aria-label*="Choose files" i]') ||
+        root.querySelector('button[aria-label*="Attach" i]') ||
+        root.querySelector('button[aria-label*="файл" i]');
+      if (attachBtn) Ops.clickEl(attachBtn);
+      input = await Ops.waitFor(
+        function () {
+          return findFileInput(activeRoot() || document);
+        },
+        { timeoutMs: 8000, message: 'ATTACH_UNSUPPORTED' }
+      ).catch(function () {
+        return null;
+      });
+    }
+    if (!input) rpcErr('ATTACH_UNSUPPORTED', 'file input not found');
+    var n = Ops.setFileInputFiles(input, list);
+    var names = list.map(function (f) {
+      return f && f.name;
+    }).filter(Boolean);
+    await Ops.waitAttachChips(root, n, {
+      timeoutMs: 120000,
+      names: names,
+      fileInput: input,
+      allowSpinner: true,
+      message: 'ATTACH_TIMEOUT'
+    });
+  }
+
+  async function applyModeChoice(wanted) {
+    var root = activeRoot();
+    if (!root) rpcErr('HOST_ERROR', 'composer root not found');
+    var chip = findModeChip(root);
+    if (!chip) rpcErr('OPTION_NOT_FOUND', 'mode: ' + wanted);
+    var cur = findModel(root);
+    if (Ops.matchOption && Ops.matchOption([{ id: Ops.normalizeId(cur), label: cur }], wanted)) return;
+    var menu = await Ops.openMenu(chip, { message: 'Grok X mode menu did not open' });
+    var items = Ops.readMenuItems ? Ops.readMenuItems(menu) : [];
+    var picked = Ops.matchOption ? Ops.matchOption(items, wanted) : null;
+    var label = picked && (picked.label || picked.id);
+    if (!label || GROK_MODE_MENU_SKIP.test(String(label))) {
+      Ops.closeMenu(document);
+      rpcErr('OPTION_NOT_FOUND', 'mode: ' + wanted);
+    }
+    if (!Ops.pickMenuItem(menu, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'))) {
+      Ops.closeMenu(document);
+      rpcErr('OPTION_NOT_FOUND', 'mode: ' + wanted);
+    }
+    await Ops.waitFor(
+      function () {
+        var now = findModel(activeRoot());
+        return Ops.matchOption && Ops.matchOption([{ id: Ops.normalizeId(now), label: now }], wanted) ? true : null;
+      },
+      { timeoutMs: 8000, message: 'Grok X mode verify timeout' }
+    ).catch(function () {
+      rpcErr('HOST_ERROR', 'Grok X mode verify timeout');
+    });
+    Ops.closeMenu(document);
+  }
+
+  async function applyFocusedToggle(wantedOn) {
+    var btn = findFocusedToggle();
+    if (!btn) rpcErr('OPTION_NOT_FOUND', 'toggle: focused');
+    var on = btn.getAttribute('aria-pressed') === 'true' || btn.getAttribute('aria-checked') === 'true';
+    if (!!wantedOn !== on) Ops.clickEl(btn);
+  }
+
+  async function applyOptions(args) {
+    args = args || {};
+    if (args.model != null && String(args.model).trim()) {
+      rpcErr('OPTION_NOT_FOUND', 'model not supported on ' + PLATFORM, { supported: false });
+    }
+    if (args.mode != null && String(args.mode).trim()) {
+      await applyModeChoice(args.mode);
+    }
+    if (args.toggles && args.toggles.length) {
+      var t;
+      for (t = 0; t < args.toggles.length; t++) {
+        var slug = Ops.normalizeId ? Ops.normalizeId(args.toggles[t]) : String(args.toggles[t]);
+        if (slug === 'focused') await applyFocusedToggle(true);
+        else rpcErr('OPTION_NOT_FOUND', 'toggle: ' + args.toggles[t]);
+      }
+    }
+    if (args.files && args.files.length) await applyWireFiles(args.files);
+    return {};
+  }
+
+  async function snapshotConversationIds() {
+    var known = {};
+    var cur = chatIdFromUrl();
+    if (cur) known[cur] = true;
+    try {
+      var rows = await fetchHistoryRows(40);
+      var i;
+      for (i = 0; i < rows.length; i++) {
+        if (rows[i].id) known[rows[i].id] = true;
+      }
+    } catch (e) {}
+    var dom = historyRows();
+    var j;
+    for (j = 0; j < dom.length; j++) {
+      if (dom[j].id) known[dom[j].id] = true;
+    }
+    return known;
   }
 
   function historyRows() {
@@ -873,8 +1042,13 @@
     var turnsBefore = turnCount();
     Ops.fillEditable(input, body);
     await Ops.sleep(200);
+    var send = findSendButton(input);
+    if (!send) {
+      await Ops.sleep(150);
+      send = findSendButton(input);
+    }
     await Ops.ensureComposerSubmitted({
-      send: findSendButton(input),
+      send: send,
       input: input,
       timeoutMs: 12000,
       message: 'Grok X submit failed',
@@ -888,20 +1062,35 @@
     return turnsBefore;
   }
 
-  async function waitConversationIdAfterSubmit() {
-    return Ops.waitFor(
-      function () {
-        var id = chatIdFromUrl();
-        if (id) return id;
-        var rows = historyRows();
-        var i;
-        for (i = 0; i < rows.length; i++) {
-          if (rows[i].id) return rows[i].id;
-        }
-        return turnCount() > 0 ? null : null;
-      },
-      { timeoutMs: 90000, message: 'Grok X chatId timeout' }
-    );
+  async function waitConversationIdAfterSubmit(opts) {
+    opts = opts || {};
+    var known = opts.knownIds || {};
+    var turnsBefore = opts.turnsBefore;
+    var timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : 90000;
+    var started = Date.now();
+    var apiAt = 0;
+    while (Date.now() - started < timeoutMs) {
+      var id = chatIdFromUrl();
+      if (id && (!known[id] || (turnsBefore != null && turnCount() > turnsBefore))) return id;
+      if (Date.now() >= apiAt) {
+        apiAt = Date.now() + 1800;
+        try {
+          var rows = await fetchHistoryRows(8);
+          var i;
+          for (i = 0; i < rows.length; i++) {
+            if (rows[i].id && !known[rows[i].id]) return rows[i].id;
+          }
+        } catch (e) {}
+      }
+      var domRows = historyRows();
+      var j;
+      for (j = 0; j < domRows.length; j++) {
+        if (domRows[j].id && !known[domRows[j].id]) return domRows[j].id;
+      }
+      if (turnsBefore != null && turnCount() > turnsBefore && id) return id;
+      await Ops.sleep(300);
+    }
+    rpcErr('TIMEOUT', 'Grok X chatId timeout');
   }
 
   async function waitAssistantReply(turnsBefore, timeoutMs) {
@@ -1141,10 +1330,10 @@
           var text = String((args && args.text) || '').trim();
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await ensureNewChat();
-          await submitComposerText(text);
-          var chatId = await waitConversationIdAfterSubmit().catch(function () {
-            rpcErr('TIMEOUT', 'Grok X chatId timeout');
-          });
+          var knownIds = await snapshotConversationIds();
+          await applyOptions(args);
+          var turnsBefore = await submitComposerText(text);
+          var chatId = await waitConversationIdAfterSubmit({ knownIds: knownIds, turnsBefore: turnsBefore });
           return {
             platform: PLATFORM,
             chatId: chatId,
@@ -1160,7 +1349,10 @@
         try {
           var chatId = requireChatId(args);
           if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
-          await sendInChat(chatId, args.text);
+          await navigateToChat(chatId);
+          await applyOptions(args);
+          var turnsBefore = await submitComposerText(args.text);
+          await waitAssistantReply(turnsBefore, 180000);
           return {
             platform: PLATFORM,
             chatId: chatId,
@@ -1228,15 +1420,22 @@
           var root = activeRoot();
           var model = root ? findModel(root) : '';
           var id = model && Ops.normalizeId ? Ops.normalizeId(model) : model;
-          var models = model ? [{ id: id, label: model, kind: 'model' }] : [];
+          var modes = model ? [{ id: id, label: model, kind: 'mode' }] : [];
+          var toggles = [];
+          if (findFocusedToggle()) toggles.push({ id: 'focused', label: 'Focused', kind: 'toggle' });
+          var fileInput = findFileInput(root || document);
+          var accept = fileInput ? String(fileInput.getAttribute('accept') || '').split(',').filter(Boolean) : [];
           return {
             platform: PLATFORM,
             projectsSupported: false,
-            models: models,
-            modes: models.slice(),
-            toggles: [],
+            models: [],
+            modes: modes,
+            toggles: toggles,
             tools: [],
-            current: model ? { model: id, mode: id, toggles: [] } : {},
+            attach: fileInput
+              ? { supported: true, multiple: !!fileInput.multiple, accept: accept }
+              : { supported: false, multiple: false, accept: [] },
+            current: model ? { mode: id, toggles: [] } : {},
             detectedAt: new Date().toISOString()
           };
         } catch (err) {
