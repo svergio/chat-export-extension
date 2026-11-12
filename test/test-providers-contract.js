@@ -29,6 +29,20 @@ test('bridge registers all 8 platforms with start URLs and content bundles', () 
   }
 });
 
+test('bridge handles tabs.ensure as light op without content rpc', () => {
+  assert.match(bridgeSrc, /op === ['"]tabs\.ensure['"]/);
+  assert.match(bridgeSrc, /created:\s*!!ensured\.created/);
+  assert.match(bridgeSrc, /return \{\s*tabId:\s*tab\.id,\s*created:\s*true\s*\}/);
+  const ensureIdx = bridgeSrc.indexOf("op === 'tabs.ensure'");
+  const contentRpcIdx = bridgeSrc.indexOf('CONTENT_RPC_TYPE', ensureIdx);
+  assert.ok(ensureIdx > 0, 'tabs.ensure branch');
+  assert.ok(contentRpcIdx > ensureIdx, 'content rpc after light branch');
+  const lightSlice = bridgeSrc.slice(ensureIdx, contentRpcIdx);
+  assert.doesNotMatch(lightSlice, /sendMessageAsync/);
+  assert.match(lightSlice, /ensurePlatformTab/);
+  assert.match(lightSlice, /scheduleTabsSync/);
+});
+
 test('manifest host_permissions cover provider origins', () => {
   const hosts = manifest.host_permissions || [];
   const need = [

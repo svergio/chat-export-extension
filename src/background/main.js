@@ -3,7 +3,7 @@ import {
   startBridge,
   testConnection,
   getRuntimeState,
-  pushSettingsIfConnected,
+  commitSavedSettings,
   ensureLocalKey,
   rotateLocalKey,
   reconnectBridge
@@ -132,7 +132,7 @@ chrome.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
     var next = normalizeSettings(msg.settings);
     if (next.serverOn && (!hasTosConsent(next) || !hasFaqConsent(next))) next.serverOn = false;
     saveSettings(next).then(function (saved) {
-      pushSettingsIfConnected();
+      commitSavedSettings(saved);
       sendResponse({ ok: true, settings: saved });
     });
     return true;

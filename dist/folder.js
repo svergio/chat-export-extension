@@ -144,6 +144,13 @@
     for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, "0");
     return "b-" + hex;
   }
+  function settingsJson(settings) {
+    return JSON.stringify(normalizeSettings(settings));
+  }
+  function settingsNeedRewrite(raw) {
+    if (raw == null || typeof raw !== "object") return true;
+    return JSON.stringify(raw) !== settingsJson(raw);
+  }
   function loadStored() {
     return new Promise(function(resolve) {
       chrome.storage.local.get([STORAGE_KEYS.browserId, STORAGE_KEYS.settings], function(got) {
@@ -152,9 +159,14 @@
           browserId = newBrowserId();
           chrome.storage.local.set({ [STORAGE_KEYS.browserId]: browserId });
         }
+        const raw = got && got[STORAGE_KEYS.settings];
+        const settings = normalizeSettings(raw);
+        if (settingsNeedRewrite(raw)) {
+          chrome.storage.local.set({ [STORAGE_KEYS.settings]: settings });
+        }
         resolve({
           browserId,
-          settings: normalizeSettings(got && got[STORAGE_KEYS.settings])
+          settings
         });
       });
     });
@@ -341,7 +353,7 @@
     "key.copied": "Key copied",
     "key.copyFailed": "Copy failed",
     "key.placeholder": "Generate ceb_ token\u2026",
-    "key.hint": "The extension mints a ceb_ token per browser. Legacy cek_ tokens still work. On connect the token is enrolled on the local server.",
+    "key.hint": "The extension mints a ceb_ token per browser. Rotating or re-enrolling replaces the previous token \u2014 old ceb_/cek_ keys for this browser stop working. On connect the token is registered on the local server.",
     "key.hintId": "Id:",
     "browser.hint": "Each Chrome profile needs its own ceb_ token and shows up separately on the dashboard Browsers page.",
     "tos.title": "Terms of Use & Risk Disclaimer",
@@ -482,7 +494,7 @@
     "key.copied": "\u041A\u043B\u044E\u0447 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D",
     "key.copyFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
     "key.placeholder": "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u0442\u043E\u043A\u0435\u043D ceb_\u2026",
-    "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0421\u0442\u0430\u0440\u044B\u0435 cek_ \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u0440\u0430\u0431\u043E\u0447\u0438\u043C\u0438. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
+    "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0420\u043E\u0442\u0430\u0446\u0438\u044F \u0438\u043B\u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u0430\u044F \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u0437\u0430\u043C\u0435\u043D\u044F\u0435\u0442 \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0442\u043E\u043A\u0435\u043D \u2014 \u0441\u0442\u0430\u0440\u044B\u0435 ceb_/cek_ \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 \u043F\u0435\u0440\u0435\u0441\u0442\u0430\u044E\u0442 \u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
     "key.hintId": "Id:",
     "browser.hint": "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0440\u043E\u0444\u0438\u043B\u044F Chrome \u0441\u0432\u043E\u0439 \u0442\u043E\u043A\u0435\u043D ceb_ \u0438 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 Browsers \u0432 \u0434\u0430\u0448\u0431\u043E\u0440\u0434\u0435.",
     "tos.title": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F \u0438 \u043F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435 \u043E \u0440\u0438\u0441\u043A\u0430\u0445",
@@ -597,8 +609,12 @@
       return s.put(handle, KEY);
     });
   }
+  function canPickFolder() {
+    const g = typeof globalThis !== "undefined" ? globalThis : self;
+    return typeof g.showDirectoryPicker === "function";
+  }
   function fsSupported() {
-    return typeof self.showDirectoryPicker === "function";
+    return canPickFolder();
   }
 
   // src/folder/main.js

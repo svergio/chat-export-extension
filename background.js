@@ -196,6 +196,46 @@
     const safe = Number.isFinite(p) && p > 0 ? Math.floor(p) : DEFAULT_PORT;
     return "http://" + h + ":" + safe + "/enroll";
   }
+  function mergeSettingsPatch(existing, patch) {
+    const base = existing && typeof existing === "object" ? existing : {};
+    const p = patch && typeof patch === "object" ? patch : {};
+    const merged = Object.assign({}, base, p);
+    if (base.ui || p.ui) {
+      merged.ui = Object.assign({}, base.ui || {}, p.ui || {});
+    }
+    if (base.platforms || p.platforms) {
+      merged.platforms = Object.assign({}, base.platforms || {}, p.platforms || {});
+    }
+    if (base.exportSchemas || p.exportSchemas) {
+      const be = base.exportSchemas && typeof base.exportSchemas === "object" ? base.exportSchemas : {};
+      const pe = p.exportSchemas && typeof p.exportSchemas === "object" ? p.exportSchemas : {};
+      merged.exportSchemas = Object.assign({}, be, pe);
+      if (be.byFormat || pe.byFormat) {
+        merged.exportSchemas.byFormat = Object.assign({}, be.byFormat || {}, pe.byFormat || {});
+      }
+    }
+    if (base.saveFolder || p.saveFolder) {
+      merged.saveFolder = Object.assign({}, base.saveFolder || {}, p.saveFolder || {});
+    }
+    const prevTos = Number(base.tosVersion);
+    const nextTos = Number(merged.tosVersion);
+    if (Number.isFinite(prevTos) && prevTos > 0 && (!Number.isFinite(nextTos) || nextTos < prevTos)) {
+      merged.tosVersion = prevTos;
+    }
+    const prevFaq = Number(base.faqVersion);
+    const nextFaq = Number(merged.faqVersion);
+    if (Number.isFinite(prevFaq) && prevFaq > 0 && (!Number.isFinite(nextFaq) || nextFaq < prevFaq)) {
+      merged.faqVersion = prevFaq;
+    }
+    return merged;
+  }
+  function settingsJson(settings) {
+    return JSON.stringify(normalizeSettings(settings));
+  }
+  function settingsNeedRewrite(raw) {
+    if (raw == null || typeof raw !== "object") return true;
+    return JSON.stringify(raw) !== settingsJson(raw);
+  }
   function loadStored() {
     return new Promise(function(resolve) {
       chrome.storage.local.get([STORAGE_KEYS.browserId, STORAGE_KEYS.settings], function(got) {
@@ -204,18 +244,27 @@
           browserId2 = newBrowserId();
           chrome.storage.local.set({ [STORAGE_KEYS.browserId]: browserId2 });
         }
+        const raw = got && got[STORAGE_KEYS.settings];
+        const settings = normalizeSettings(raw);
+        if (settingsNeedRewrite(raw)) {
+          chrome.storage.local.set({ [STORAGE_KEYS.settings]: settings });
+        }
         resolve({
           browserId: browserId2,
-          settings: normalizeSettings(got && got[STORAGE_KEYS.settings])
+          settings
         });
       });
     });
   }
   function saveSettings(settings) {
-    const next = normalizeSettings(settings);
     return new Promise(function(resolve) {
-      chrome.storage.local.set({ [STORAGE_KEYS.settings]: next }, function() {
-        resolve(next);
+      chrome.storage.local.get([STORAGE_KEYS.settings], function(got) {
+        const existing = got && got[STORAGE_KEYS.settings];
+        const merged = mergeSettingsPatch(existing, settings);
+        const next = normalizeSettings(merged);
+        chrome.storage.local.set({ [STORAGE_KEYS.settings]: next }, function() {
+          resolve(next);
+        });
       });
     });
   }
@@ -286,12 +335,22 @@
   var keepaliveTimer = null;
   var reconnectAttempt = 0;
   var intentionalClose = false;
+  var connectEpoch = 0;
   var currentSettings = normalizeSettings({});
   var browserId = "";
   var started = false;
   var tabsSyncTimer = null;
   var KEEPALIVE_ALARM = "ce-bridge-keepalive";
   var KEEPALIVE_MS = 2e4;
+  function isBridgeLiveAllowed(settings) {
+    const s = normalizeSettings(settings == null ? currentSettings : settings);
+    return !!s.serverOn && canEnableBridge(s);
+  }
+  function bridgeDeniedDetail(settings) {
+    const s = normalizeSettings(settings == null ? currentSettings : settings);
+    if (!hasTosConsent(s) || !hasFaqConsent(s)) return "faq consent required";
+    return "";
+  }
   function sleep(ms) {
     return new Promise(function(resolve) {
       setTimeout(resolve, ms);
@@ -599,20 +658,20 @@
         await chrome.tabs.reload(best.id);
         await waitTabComplete(best.id);
       }
-      return best.id;
+      return { tabId: best.id, created: false };
     }
     const start = PLATFORM_START[platform];
     if (!start) throw Object.assign(new Error("unknown platform"), { code: "BAD_REQUEST" });
     if (landing) {
       await navigateTab(landing.id, start);
       await assertCopilotSession(landing.id);
-      return landing.id;
+      return { tabId: landing.id, created: false };
     }
     const tab = await chrome.tabs.create({ url: start, active: false });
     await waitTabComplete(tab.id);
     await sleep(400);
     if (platform === "copilot") await assertCopilotSession(tab.id);
-    return tab.id;
+    return { tabId: tab.id, created: true };
   }
   function runTabLoad(tabId, start) {
     const loaded = new Promise(function(resolve) {
@@ -740,6 +799,13 @@
     const op = frame.op;
     const platform = frame.platform;
     const args = frame.args || {};
+    if (!isBridgeLiveAllowed(currentSettings)) {
+      disconnect(bridgeDeniedDetail(currentSettings));
+      return rpcResult(id, {
+        ok: false,
+        error: { code: "UNAUTHORIZED", message: "bridge disabled (serverOff or consent)" }
+      });
+    }
     if (!isPlatformEnabledIn(currentSettings, platform)) {
       return rpcResult(id, {
         ok: false,
@@ -764,11 +830,37 @@
         error: { code: "DESTRUCTIVE_DISABLED", message: "allowDestructive is off" }
       });
     }
+    if (op === "tabs.ensure") {
+      try {
+        const ensured = await ensurePlatformTab(platform, args);
+        const tab = await chrome.tabs.get(ensured.tabId);
+        const url = tab && tab.url || "";
+        scheduleTabsSync();
+        return rpcResult(id, {
+          ok: true,
+          data: {
+            tabId: ensured.tabId,
+            platform,
+            url,
+            chatId: extractChatId(platform, url),
+            title: tab && tab.title || "",
+            active: !!(tab && tab.active),
+            created: !!ensured.created
+          }
+        });
+      } catch (e) {
+        return rpcResult(id, {
+          ok: false,
+          error: { code: e.code || "HOST_ERROR", message: e.message || String(e), details: e.details }
+        });
+      }
+    }
     const msg = { type: CONTENT_RPC_TYPE, id, op, platform, args };
     const retryable = !MUTATING_OPS[op];
     let last = null;
     try {
-      const tabId = await ensurePlatformTab(platform, args);
+      const ensured = await ensurePlatformTab(platform, args);
+      const tabId = ensured.tabId;
       if (op === "chats.create" && CREATE_FRESH_TAB[platform]) await resetTabToStart(tabId, platform);
       for (let attempt = 0; attempt < 2; attempt++) {
         await ensureContentReady(tabId, platform);
@@ -851,6 +943,10 @@
     }
     if (!frame || typeof frame !== "object") return;
     if (frame.type === "welcome") {
+      if (!isBridgeLiveAllowed(currentSettings)) {
+        disconnect(bridgeDeniedDetail(currentSettings));
+        return;
+      }
       reconnectAttempt = 0;
       startKeepalive();
       publishStatus("connected", frame.serverVersion ? "server " + frame.serverVersion : "");
@@ -873,7 +969,12 @@
       });
     }
   }
-  function openSocket() {
+  function openSocket(epoch) {
+    if (epoch !== connectEpoch) return;
+    if (!isBridgeLiveAllowed(currentSettings)) {
+      disconnect(bridgeDeniedDetail(currentSettings));
+      return;
+    }
     if (socket) {
       try {
         socket.onopen = null;
@@ -896,7 +997,25 @@
     }
     socket = ws;
     ws.onopen = function() {
+      if (epoch !== connectEpoch || !isBridgeLiveAllowed(currentSettings)) {
+        intentionalClose = true;
+        try {
+          ws.close();
+        } catch (e) {
+        }
+        if (socket === ws) socket = null;
+        publishStatus("offline", bridgeDeniedDetail(currentSettings));
+        return;
+      }
       helloPayload().then(function(payload) {
+        if (epoch !== connectEpoch || !isBridgeLiveAllowed(currentSettings)) {
+          intentionalClose = true;
+          try {
+            ws.close();
+          } catch (e) {
+          }
+          return;
+        }
         sendJson(payload);
       }).catch(function() {
         publishStatus("offline", "hello failed");
@@ -923,21 +1042,28 @@
   }
   function connect() {
     clearReconnect();
-    const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
-    if (!currentSettings.serverOn || !consented) {
+    if (!isBridgeLiveAllowed(currentSettings)) {
       clearKeepalive();
-      publishStatus("offline", consented ? "" : "faq consent required");
+      publishStatus("offline", bridgeDeniedDetail(currentSettings));
       return;
     }
+    const epoch = ++connectEpoch;
     intentionalClose = false;
     publishStatus("connecting", "");
     ensureLocalKey().then(function() {
+      if (epoch !== connectEpoch || !isBridgeLiveAllowed(currentSettings)) return null;
       return enrollKeyToServer(currentSettings, browserId).catch(function() {
         return null;
       });
     }).then(function() {
-      openSocket();
+      if (epoch !== connectEpoch) return;
+      if (!isBridgeLiveAllowed(currentSettings)) {
+        disconnect(bridgeDeniedDetail(currentSettings));
+        return;
+      }
+      openSocket(epoch);
     }).catch(function(err) {
+      if (epoch !== connectEpoch) return;
       publishStatus("offline", err && err.message || "connect failed");
       scheduleReconnect();
     });
@@ -963,6 +1089,7 @@
     };
   }
   function disconnect(reason) {
+    connectEpoch += 1;
     clearReconnect();
     clearKeepalive();
     if (tabsSyncTimer) {
@@ -981,9 +1108,8 @@
   }
   function applySettings(settings) {
     currentSettings = normalizeSettings(settings);
-    const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
-    if (!currentSettings.serverOn || !canEnableBridge(currentSettings)) {
-      disconnect(!consented ? "faq consent required" : "");
+    if (!isBridgeLiveAllowed(currentSettings)) {
+      disconnect(bridgeDeniedDetail(currentSettings));
       return;
     }
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -994,11 +1120,9 @@
     reconnectAttempt = 0;
     connect();
   }
-  function pushSettingsIfConnected() {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      sendJson(settingsPayload());
-      scheduleTabsSync();
-    }
+  function commitSavedSettings(saved) {
+    applySettings(saved);
+    return normalizeSettings(saved);
   }
   function getRuntimeState() {
     return {
@@ -1580,7 +1704,7 @@
       var next = normalizeSettings(msg.settings);
       if (next.serverOn && (!hasTosConsent(next) || !hasFaqConsent(next))) next.serverOn = false;
       saveSettings(next).then(function(saved) {
-        pushSettingsIfConnected();
+        commitSavedSettings(saved);
         sendResponse({ ok: true, settings: saved });
       });
       return true;

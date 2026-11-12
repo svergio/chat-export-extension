@@ -70,3 +70,18 @@ test('saveFolder.shiftMode defaults and normalizes', () => {
     'rebind'
   );
 });
+
+test('normalizeSettings round-trip keeps tosVersion when only ui changes', () => {
+  const base = normalizeSettings({
+    tosVersion: TOS_VERSION,
+    faqVersion: FAQ_VERSION,
+    ui: { scheme: 'auto', skin: 'auto', locale: 'auto' }
+  });
+  const next = normalizeSettings(
+    Object.assign({}, base, { ui: Object.assign({}, base.ui, { scheme: 'dark' }) })
+  );
+  assert.equal(next.tosVersion, TOS_VERSION);
+  assert.equal(next.faqVersion, FAQ_VERSION);
+  assert.equal(next.ui.scheme, 'dark');
+  assert.equal(hasTosConsent(next), true);
+});
