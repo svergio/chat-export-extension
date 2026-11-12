@@ -35,6 +35,15 @@ await esbuild.build({
 });
 console.log('wrote dist/popup.js');
 
+for (const name of ['folder', 'offscreen']) {
+  await esbuild.build({
+    ...common,
+    entryPoints: [join(root, `src/${name}/main.js`)],
+    outfile: join(root, `dist/${name}.js`)
+  });
+  console.log(`wrote dist/${name}.js`);
+}
+
 const backgroundOut = join(root, 'background.js');
 await esbuild.build({
   ...common,

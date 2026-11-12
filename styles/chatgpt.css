@@ -1,0 +1,177 @@
+.chat-export-bar--chatgpt {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 2px 4px;
+  gap: 0;
+  white-space: nowrap;
+  max-width: none;
+  height: 36px;
+  color: var(--color-text-tertiary, currentColor);
+}
+
+/* Format: unpressed Thinking chip (text-tertiary, ghost hover, ring focus) */
+.chat-export-bar--chatgpt > .chat-export-fmt {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border-radius: 9999px !important;
+  border: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--color-text-tertiary, currentColor) !important;
+  font-family: -apple-system-body, ui-sans-serif, -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif !important;
+  font-size: var(--text-composer-control, 16px) !important;
+  font-weight: 400 !important;
+  line-height: 1.625 !important;
+  padding: 0 14px 0 12px !important;
+}
+
+.chat-export-bar--chatgpt > .chat-export-fmt:hover,
+.chat-export-bar--chatgpt > .chat-export-fmt.is-open,
+.chat-export-bar--chatgpt > .chat-export-dl:not(.is-super):hover {
+  background-color: var(--color-background-secondary-ghost-hover, rgba(127, 127, 127, 0.12)) !important;
+}
+
+.chat-export-bar--chatgpt > .chat-export-fmt:focus-visible,
+.chat-export-bar--chatgpt > .chat-export-dl:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--color-ring, #0285ff) !important;
+}
+
+.chat-export-bar--chatgpt .chat-export-format-text {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  height: auto !important;
+  min-height: 1em !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: 400 !important;
+  line-height: 36px !important;
+  color: inherit !important;
+}
+
+.chat-export-bar--chatgpt .chat-export-chevron {
+  flex: 0 0 auto !important;
+  width: 16px !important;
+  height: 16px !important;
+  opacity: 1 !important;
+  color: inherit !important;
+}
+
+/* Download: round attach/dictate icon button (36px, 20px icon in text-primary) */
+.chat-export-bar--chatgpt .chat-export-dl {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 9999px !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  color: var(--color-text-primary, currentColor) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.chat-export-bar--chatgpt .chat-export-dl:not(.is-super) {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.chat-export-bar--chatgpt .chat-export-dl > span {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-export-bar--chatgpt .chat-export-dl svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: inherit !important;
+}
+
+.chat-export-bar--chatgpt > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Native dropdown: bg-surface-elevated-secondary/90 + blur, 0.5px overlay ring, rounded-2xl */
+.chat-export-menu[data-chat-export-menu='chatgpt'] {
+  border: 0;
+  border-radius: 16px;
+  padding: 10px;
+  min-width: 196px;
+  font-family: -apple-system-body, ui-sans-serif, -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-menu-item {
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-menu-item.is-active {
+  background: transparent;
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-menu-item:hover,
+.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-menu-item:focus-visible {
+  background: var(--ce-menu-hover);
+  outline: none;
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-menu-sep {
+  margin: 6px 0;
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-pack {
+  border-radius: 12px;
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-pack-btn {
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  padding: 6px 10px;
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'][data-ce-scheme='dark'] {
+  --ce-menu-bg: color-mix(in srgb, var(--color-surface-elevated-secondary, #303030) 90%, transparent);
+  --ce-menu-fg: var(--color-text-primary, #ededed);
+  --ce-menu-border: transparent;
+  --ce-menu-hover: var(--color-background-secondary-ghost-hover, #ffffff1a);
+  --ce-menu-shadow: var(--shadow-dropdown-overlay, 0 0 0 0.5px #ffffff26, 0 8px 16px -4px #0000001f);
+  --ce-menu-sep: var(--color-border, #ffffff26);
+  --ce-menu-pack-bg: var(--color-background-secondary-ghost-hover, #ffffff1a);
+  --ce-menu-pack-active: var(--color-background-secondary-ghost-active, rgba(237, 237, 237, 0.16));
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'][data-ce-scheme='light'] {
+  --ce-menu-bg: color-mix(in srgb, var(--color-surface-elevated-secondary, #ffffff) 90%, transparent);
+  --ce-menu-fg: var(--color-text-primary, #0d0d0d);
+  --ce-menu-border: transparent;
+  --ce-menu-hover: var(--color-background-secondary-ghost-hover, #0000000d);
+  --ce-menu-shadow: var(--shadow-dropdown-overlay, 0 0 0 0.5px #0000001a, 0 8px 16px -4px #0000001f);
+  --ce-menu-sep: var(--color-border, #0000001a);
+  --ce-menu-pack-bg: var(--color-background-secondary-ghost-hover, #0000000d);
+  --ce-menu-pack-active: var(--color-background-secondary-ghost-active, rgba(13, 13, 13, 0.12));
+}

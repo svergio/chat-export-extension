@@ -40,6 +40,8 @@ export const EXPORT_SCHEMA_IDS = Object.freeze(['chat-export/1', 'sharegpt/1']);
 
 export const DEFAULT_EXPORT_SCHEMA_ID = 'chat-export/1';
 
+export const SHIFT_MODES = Object.freeze(['rebind', 'saveAs']);
+
 export const STORAGE_KEYS = Object.freeze({
   browserId: 'ce.browserId',
   settings: 'ce.settings',
@@ -78,8 +80,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
       pdf: null
     })
   }),
+  saveFolder: Object.freeze({ shiftMode: 'rebind' }),
   ui: Object.freeze({
-    skin: 'chatgpt',
+    skin: 'auto',
     scheme: 'auto',
     locale: 'auto'
   })
@@ -87,7 +90,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
 function normalizeUi(raw) {
   const u = raw && typeof raw === 'object' ? raw : {};
-  const skin = UI_SKINS.indexOf(u.skin) >= 0 ? u.skin : 'chatgpt';
+  const skin =
+    u.skin === 'auto' || UI_SKINS.indexOf(u.skin) >= 0 ? u.skin : 'auto';
   const scheme = UI_SCHEMES.indexOf(u.scheme) >= 0 ? u.scheme : 'auto';
   const locale = UI_LOCALES.indexOf(u.locale) >= 0 ? u.locale : 'auto';
   return { skin: skin, scheme: scheme, locale: locale };
@@ -148,6 +152,12 @@ export function normalizeSettings(raw) {
     tosVersion: Number.isFinite(Number(s.tosVersion)) ? Number(s.tosVersion) : 0,
     faqVersion: Number.isFinite(Number(s.faqVersion)) ? Number(s.faqVersion) : 0,
     exportSchemas: normalizeExportSchemas(s.exportSchemas),
+    saveFolder: {
+      shiftMode:
+        SHIFT_MODES.indexOf(s.saveFolder && s.saveFolder.shiftMode) >= 0
+          ? s.saveFolder.shiftMode
+          : 'rebind'
+    },
     ui: normalizeUi(s.ui)
   };
 }

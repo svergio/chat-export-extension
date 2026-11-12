@@ -541,7 +541,10 @@ async function injectPlatformContent(tabId, platform) {
   }
   try {
     if (chrome.scripting.insertCSS) {
-      await chrome.scripting.insertCSS({ target: { tabId: tabId }, files: ['styles.css'] });
+      await chrome.scripting.insertCSS({
+        target: { tabId: tabId },
+        files: ['styles/base.css', 'styles/' + platform + '.css']
+      });
     }
   } catch (e2) {}
   return '';

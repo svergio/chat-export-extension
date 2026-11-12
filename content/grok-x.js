@@ -6,6 +6,8 @@
 
   var PLATFORM = 'grok-x';
   var COPY_SEL = 'button[aria-label="Копировать текст"], button[aria-label="Copy text"]';
+  var FOREIGN_SEL =
+    'textarea, nav, aside, header, [role="navigation"], [data-testid="sidebarColumn"], [data-chat-export-bar], [data-ce-host], [class*="chat-export-"]';
   var CHROME_RE =
     /^(История|History|Приватный|Private|Новый чат|New chat|Связать|Сфокусированный|Focused|Закладка|Bookmark|Смотреть новые|Show new|Быстрый|Fast|Think|Мысли|Thinking)$/i;
 
@@ -123,13 +125,38 @@
       }
       return 'Анализ поста';
     }
+    var id = chatIdFromUrl();
+    if (id && titleCache[id]) return titleCache[id];
     var h1 = document.querySelector('[data-testid="primaryColumn"] h1, main h1');
     if (h1 && (h1.textContent || '').trim()) {
       var t = (h1.textContent || '').replace(/\s+/g, ' ').trim();
       if (t && !/^Grok$/i.test(t)) return t;
     }
-    var doc = (document.title || '').replace(/\s*[|\/]\s*X\s*$/i, '').replace(/\s*Grok\s*/i, '').trim();
-    return doc || 'grok-x';
+    if (id) {
+      var link = document.querySelector('a[href*="conversation=' + id + '"]');
+      var lt = link && (link.innerText || link.textContent || '').replace(/\s+/g, ' ').trim();
+      if (lt && lt.length < 160) return lt;
+    }
+    var doc = (document.title || '').replace(/\s*[|\/]\s*X\s*$/i, '').trim();
+    if (doc && !/^Grok$/i.test(doc)) return doc;
+    return firstUserText(root) || 'Grok';
+  }
+
+  var titleCache = {};
+
+  function shortTitle(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    return t.length > 80 ? t.slice(0, 80).replace(/\s+\S*$/, '') : t;
+  }
+
+  function firstUserText(root) {
+    var turns = root ? turnNodes(root) : [];
+    for (var i = 0; i < turns.length; i++) {
+      if (hasCopy(turns[i]) || isQuoteCard(turns[i])) continue;
+      var t = (turns[i].innerText || turns[i].textContent || '').replace(/\s+/g, ' ').trim();
+      if (t && !isChromeText(t)) return shortTitle(t);
+    }
+    return '';
   }
 
   function hasCopy(el) {
@@ -155,34 +182,47 @@
     return false;
   }
 
+  function isForeignNode(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (el.matches(FOREIGN_SEL)) return true;
+    return !!el.querySelector(FOREIGN_SEL);
+  }
+
+  function textChildren(el) {
+    return Array.prototype.filter.call(el.children, function (c) {
+      return !!(c.innerText || c.textContent || '').replace(/\s+/g, '').length;
+    });
+  }
+
+  // Conversation scope = highest ancestor of the first copy button that still
+  // excludes the composer, X nav and our bar; then unwrap single-child wrappers.
   function findTurnList(root) {
     if (!root) return null;
-    var copies = root.querySelectorAll(COPY_SEL);
-    if (!copies.length) {
-      // empty / landing chat: no turns yet
-      return null;
+    var first = root.querySelector(COPY_SEL);
+    if (!first) return null;
+    var scope = null;
+    var node = first.parentElement;
+    for (var i = 0; i < 24 && node && node !== root; i++) {
+      if (isForeignNode(node)) break;
+      scope = node;
+      node = node.parentElement;
     }
-    var first = copies[0];
-    var turn = first.parentElement;
-    var best = null;
-    for (var i = 0; i < 16 && turn; i++) {
-      var n = turn.querySelectorAll(COPY_SEL).length;
-      if (n === 1) best = turn;
-      if (n > 1) break;
-      turn = turn.parentElement;
+    if (!scope) return null;
+    for (var j = 0; j < 12; j++) {
+      var kids = textChildren(scope);
+      if (kids.length !== 1) break;
+      if (hasActionRow(kids[0])) break;
+      scope = kids[0];
     }
-    if (!best) return null;
-    var list = best.parentElement;
-    for (var j = 0; j < 10 && list; j++) {
-      var kids = list.children;
-      var withCopy = 0;
-      for (var k = 0; k < kids.length; k++) {
-        if (hasCopy(kids[k])) withCopy++;
-      }
-      if (withCopy >= 1 && kids.length >= 2) return list;
-      list = list.parentElement;
+    return scope;
+  }
+
+  function hasActionRow(el) {
+    var kids = el.children;
+    for (var i = 0; i < kids.length; i++) {
+      if (hasCopy(kids[i]) && !(kids[i].innerText || kids[i].textContent || '').replace(/\s+/g, '').length) return true;
     }
-    return best.parentElement;
+    return false;
   }
 
   function findQuoteNodes(root) {
@@ -217,6 +257,7 @@
       turns = Array.prototype.slice.call(list.children).filter(function (el) {
         var text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
         if (!text) return false;
+        if (isForeignNode(el)) return false;
         if (hasCopy(el)) return true;
         if (isQuoteCard(el)) return true;
         if (isChromeText(text)) return false;
@@ -556,16 +597,21 @@
     return rows;
   }
 
-  async function titleForChatId(chatId) {
+  async function titleForChatId(chatId, messages) {
     if (!chatId) return findTitle(activeRoot());
-    if (chatId === chatIdFromUrl()) return findTitle(activeRoot());
+    if (titleCache[chatId]) return titleCache[chatId];
     try {
       var rows = await fetchHistoryRows(80);
       for (var i = 0; i < rows.length; i++) {
-        if (rows[i].id === chatId && rows[i].title) return rows[i].title;
+        if (rows[i].title) titleCache[rows[i].id] = rows[i].title;
       }
     } catch (e) {}
-    return chatId;
+    if (titleCache[chatId]) return titleCache[chatId];
+    var list = messages || [];
+    for (var j = 0; j < list.length; j++) {
+      if (list[j].role === 'user' && list[j].text) return shortTitle(list[j].text);
+    }
+    return chatId === chatIdFromUrl() ? findTitle(activeRoot()) : chatId;
   }
 
   function webResultsToLinks(webResults) {
@@ -612,8 +658,16 @@
 
   function messagesFromApiItems(items, modelName) {
     var assistantTag = CE.modelFenceTag(modelName, 'grok');
+    // A user turn and its reply share created_at_ms and arrive newest-first.
     var sorted = (items || []).slice().sort(function (a, b) {
-      return (a.created_at_ms || 0) - (b.created_at_ms || 0);
+      var dt = (a.created_at_ms || 0) - (b.created_at_ms || 0);
+      if (dt) return dt;
+      var ds = (a.sender_type === 'User' ? 0 : 1) - (b.sender_type === 'User' ? 0 : 1);
+      if (ds) return ds;
+      var ia = String(a.chat_item_id || '');
+      var ib = String(b.chat_item_id || '');
+      if (ia.length !== ib.length) return ia.length - ib.length;
+      return ia < ib ? -1 : ia > ib ? 1 : 0;
     });
     var out = [];
     for (var i = 0; i < sorted.length; i++) {
@@ -635,10 +689,10 @@
   async function getChatPayloadFromApi(chatId) {
     var items = await fetchConversationMessages(chatId);
     var u = findUserMeta();
-    var model = findModel() || '';
+    var model = findModel(activeRoot()) || '';
     var messages = messagesFromApiItems(items, model);
     if (!messages.length) rpcErr('NOT_FOUND', 'conversation has no exportable messages: ' + chatId);
-    var title = await titleForChatId(chatId);
+    var title = await titleForChatId(chatId, messages);
     return {
       platform: PLATFORM,
       url: chatUrl(chatId),
@@ -682,19 +736,6 @@
       if (/not\s*found/i.test(String(err.error_code))) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
       rpcErr('HOST_ERROR', String(err.error_code));
     }
-  }
-
-  function ensureGrokXBarStyles() {
-    if (document.getElementById('chat-export-grok-x-bar-fix')) return;
-    var st = document.createElement('style');
-    st.id = 'chat-export-grok-x-bar-fix';
-    st.textContent =
-      '.chat-export-bar--grok-x{flex:0 0 auto;align-self:center;margin-inline:0;gap:0;white-space:nowrap;max-width:none;position:relative;z-index:6;height:32px}' +
-      '.chat-export-bar--grok-x .chat-export-fmt{height:34px!important;min-height:34px!important;max-height:34px!important;min-width:22px!important;width:max-content!important;padding:0 8px 0 12px!important;gap:4px!important;display:inline-flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;border-radius:9999px!important;border:1px solid transparent!important;background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;color:rgb(231,233,234)!important;cursor:pointer!important}' +
-      '.chat-export-bar--grok-x .chat-export-fmt:hover,.chat-export-bar--grok-x .chat-export-fmt.is-open{background-color:rgba(231,233,234,.1)!important}' +
-      '.chat-export-bar--grok-x .chat-export-format-text{display:inline-block!important;flex:0 0 auto!important;overflow:visible!important;white-space:nowrap!important;min-height:1em!important;font-size:13px!important;font-weight:700!important;line-height:34px!important;color:rgb(231,233,234)!important}' +
-      '.chat-export-bar--grok-x .chat-export-dl{width:34px!important;height:34px!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}';
-    (document.head || document.documentElement).appendChild(st);
   }
 
   function chatUrl(id) {
@@ -1203,8 +1244,48 @@
     if (chip) found.nativeFrom = chip;
     found.nativeClass = '';
     found.nativeIconClass = '';
-    ensureGrokXBarStyles();
+    keepBarBeforeVoice(found.beforeChild);
+    syncIconColor(root);
     return found;
+  }
+
+  function findAttachIcon(root) {
+    var ta = findComposerTextarea(root);
+    var box = ta;
+    for (var i = 0; i < 10 && box && box !== root; i++) {
+      box = box.parentElement;
+      if (!box) break;
+      var btns = box.querySelectorAll('button');
+      for (var j = 0; j < btns.length; j++) {
+        var b = btns[j];
+        if (b.getAttribute('aria-label') || b.closest('[data-chat-export-bar]')) continue;
+        var svg = b.querySelector('svg');
+        if (svg && visible(b)) return svg;
+      }
+    }
+    return null;
+  }
+
+  function syncIconColor(root) {
+    var bar = document.querySelector('[' + CE.BAR_ATTR + '="' + PLATFORM + '"]');
+    if (!bar) return;
+    var svg = findAttachIcon(root);
+    var color = svg ? getComputedStyle(svg).color : '';
+    if (bar.style.getPropertyValue('--ce-gx-icon') === color) return;
+    if (color) bar.style.setProperty('--ce-gx-icon', color);
+    else bar.style.removeProperty('--ce-gx-icon');
+  }
+
+  // X renders the mode chip after the voice button is already mounted, so a bar
+  // placed early ends up first in the row; move it back next to the voice button.
+  function keepBarBeforeVoice(voiceBtn) {
+    if (!voiceBtn || !voiceBtn.parentNode) return;
+    var bar = document.querySelector('[' + CE.BAR_ATTR + '="' + PLATFORM + '"]');
+    var host = bar && bar.parentElement;
+    if (!host || host.getAttribute('data-ce-host') !== PLATFORM) return;
+    if (host.parentNode !== voiceBtn.parentNode || host.nextElementSibling === voiceBtn) return;
+    if (document.querySelector('[data-chat-export-menu="' + PLATFORM + '"]')) return;
+    voiceBtn.parentNode.insertBefore(host, voiceBtn);
   }
 
   CE.definePlatform({
@@ -1212,6 +1293,7 @@
     modifier: 'grok-x',
     fenceTag: 'grok',
     maxSteps: 40,
+    exportData: exportDataFromApi,
     composer: composer,
     chatId: chatIdFromUrl,
     title: function () {
@@ -1459,21 +1541,4 @@
       }
     }
   });
-
-  ensureGrokXBarStyles();
-
-  var platformEntry = CE.platforms && CE.platforms[PLATFORM];
-  if (platformEntry && typeof platformEntry.getData === 'function') {
-    var domGetData = platformEntry.getData;
-    platformEntry.getData = function () {
-      return exportDataFromApi()
-        .then(function (fromApi) {
-          if (fromApi && fromApi.messages && fromApi.messages.length) return fromApi;
-          return domGetData();
-        })
-        .catch(function () {
-          return domGetData();
-        });
-    };
-  }
 })();

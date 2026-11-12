@@ -1,0 +1,117 @@
+.chat-export-bar--deepseek {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 6px 0 0 !important;
+}
+
+.chat-export-bar--deepseek > .chat-export-fmt,
+.chat-export-bar--deepseek > .chat-export-dl {
+  box-sizing: border-box !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.12)) !important;
+  background: transparent !important;
+  color: var(--dsw-alias-label-primary, #f9fafb) !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 24px !important;
+  box-shadow: none !important;
+  outline: none !important;
+  opacity: 1 !important;
+  transition: border 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.chat-export-bar--deepseek > .chat-export-dl {
+  min-width: 34px !important;
+  width: 34px !important;
+  padding: 0 !important;
+}
+
+.chat-export-bar--deepseek > .chat-export-fmt:hover,
+.chat-export-bar--deepseek > .chat-export-fmt.is-open,
+.chat-export-bar--deepseek > .chat-export-dl:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.08)) !important;
+  border-color: var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.12)) !important;
+  color: var(--dsw-alias-label-primary, #f9fafb) !important;
+}
+
+.chat-export-bar--deepseek > .chat-export-fmt:focus-visible,
+.chat-export-bar--deepseek > .chat-export-dl:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-button-primary-fill, #5686fe) !important;
+}
+
+.chat-export-bar--deepseek > .chat-export-dl[aria-busy='true'] {
+  opacity: 0.55 !important;
+}
+
+.chat-export-bar--deepseek .chat-export-format-text {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 24px !important;
+}
+
+.chat-export-bar--deepseek .chat-export-chevron {
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 1;
+}
+
+.chat-export-bar--deepseek .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--deepseek .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-menu[data-chat-export-menu='deepseek'] {
+  --ce-menu-bg: var(--dsw-specific-menu, #353638);
+  --ce-menu-fg: var(--dsw-alias-label-primary, #f9fafb);
+  --ce-menu-border: transparent;
+  --ce-menu-hover: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.08));
+  --ce-menu-shadow: 0 0 1px rgba(0, 0, 0, 0.2), 0 0 4px rgba(0, 0, 0, 0.02), 0 12px 32px rgba(0, 0, 0, 0.08);
+  --ce-menu-sep: var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.12));
+  --ce-menu-pack-bg: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.08));
+  --ce-menu-pack-active: var(--dsw-alias-interactive-bg-active, rgba(255, 255, 255, 0.14));
+  padding: 4px;
+  border-radius: 12px;
+  font-family: inherit;
+}
+
+.chat-export-menu[data-chat-export-menu='deepseek'] .chat-export-menu-item {
+  min-height: 24px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.chat-export-menu[data-chat-export-menu='deepseek'] .chat-export-menu-sep {
+  margin: 4px 8px;
+}
+
+.chat-export-menu[data-chat-export-menu='deepseek'] .chat-export-pack {
+  border-radius: 8px;
+}
+
+.chat-export-menu[data-chat-export-menu='deepseek'] .chat-export-pack-btn {
+  border-radius: 6px;
+  font-weight: 500;
+}

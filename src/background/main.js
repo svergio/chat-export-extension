@@ -10,6 +10,9 @@ import {
 } from './bridge.js';
 import { getBridgeStatus, loadStored, saveSettings, normalizeSettings, hasTosConsent, hasFaqConsent } from '../settings.js';
 import { toolbarKindFromUrl } from '../hostSkin.js';
+import { registerSaveHandlers } from './save.js';
+
+registerSaveHandlers();
 
 function bytesToBase64(bytes) {
   var chunk = 0x8000;

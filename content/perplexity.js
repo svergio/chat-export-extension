@@ -114,11 +114,12 @@
       input.parentElement;
     if (!slot) return null;
     var send = findSendButton(slot);
+    if (!model && !send) return null;
     return {
       el: slot,
       insertAfter: model || send,
-      nativeFrom: model || send,
-      nativeIconFrom: model || send
+      nativeFrom: model || null,
+      nativeIconFrom: model || null
     };
   }
 

@@ -1,20 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <defs>
-    <filter id="markGlow" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#FFFFFF" flood-opacity="0.55"/>
-      <feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.45"/>
-    </filter>
-    <filter id="sticker" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#FFFFFF" flood-opacity="0.9"/>
-      <feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#000000" flood-opacity="0.55"/>
-    </filter>
-  </defs>
-  <!-- Official grok.com mark: circle + diagonal slash (raster source: grok-mark-black.png) -->
-  <image href="grok-mark-black.png" x="4" y="4" width="120" height="120" filter="url(#markGlow)"/>
-  <g transform="translate(62,62) scale(2.55)" fill="none" stroke="#FFFFFF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" filter="url(#sticker)">
-    <path d="M4 20h4l10.5-10.5a2.828 2.828 0 1 0-4-4L4 16v4"/>
-    <path d="M13.5 6.5l4 4"/>
-    <path d="M16 22l5-5"/>
-    <path d="M21 21.5V17h-4.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <g fill="#111111" stroke="#ffffff" stroke-width="0.35" paint-order="stroke fill">
+    <g transform="scale(0.046875)">
+      <path d="M210.484 312.759L343.465 210.383C349.984 205.364 359.302 207.322 362.408 215.117C378.758 256.231 371.454 305.64 338.925 339.563C306.397 373.487 261.137 380.927 219.768 363.983L174.577 385.803C239.394 432.008 318.104 420.581 367.289 369.251C406.303 328.564 418.386 273.104 407.088 223.091L407.19 223.198C390.807 149.726 411.218 120.359 453.03 60.3072C454.02 58.8833 455.01 57.4595 456 56L400.978 113.382V113.204L210.45 312.794"/>
+      <path d="M183.042 337.641C136.519 291.294 144.54 219.567 184.236 178.203C213.59 147.59 261.683 135.096 303.666 153.464L348.755 131.75C340.632 125.627 330.221 119.042 318.275 114.414C264.277 91.2407 199.63 102.774 155.735 148.516C113.513 192.549 100.236 260.254 123.036 318.027C140.069 361.206 112.148 391.748 84.0229 422.575C74.0561 433.503 64.0553 444.431 56 456L183.007 337.677"/>
+    </g>
   </g>
 </svg>

@@ -263,18 +263,32 @@
     );
   }
 
+  function firstTextChild(slot) {
+    var kids = slot.children;
+    for (var i = 0; i < kids.length; i++) {
+      if (kids[i].hasAttribute('data-ce-host')) continue;
+      if ((kids[i].textContent || '').trim()) return kids[i];
+    }
+    return null;
+  }
+
+  // Native classes are not copied: the bar sits before these nodes, so a copied
+  // .qwen-thinking-selector / .record-btn would win document.querySelector lookups.
   function findComposerToolbar() {
     var slot = document.querySelector('.message-input-right-button') || document.querySelector('#message-input-container');
     if (!slot) return null;
     var thinking = slot.querySelector('.qwen-thinking-selector');
-    var voice = document.querySelector('#voice-input-button, button.record-btn');
-    var send = findSendButton();
+    // The chip renders after first mount; the core keeps an existing bar, so re-seat it.
+    var host = slot.querySelector(':scope > [data-ce-host="qwen"]');
+    if (host && thinking && thinking.parentElement === slot && host.nextElementSibling !== thinking) {
+      slot.insertBefore(host, thinking);
+    }
     return {
       el: slot,
-      beforeChild: thinking || null,
-      insertAfter: voice && voice.parentElement === slot ? voice : null,
-      nativeFrom: send || voice || thinking,
-      nativeIconFrom: voice || send
+      beforeChild: thinking || firstTextChild(slot),
+      insertAfter: null,
+      nativeFrom: null,
+      nativeIconFrom: null
     };
   }
 

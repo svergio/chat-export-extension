@@ -43,7 +43,7 @@ Pick a stable **platform id** (lowercase, hyphenated if needed, e.g. `grok-x`). 
 2. **Protocol** — add the id to `PLATFORMS` in `chat-export-server/packages/protocol/src/constants.js`; extend JSON Schema enums if needed (`schema.js`). Run server `npm run build` so `packages/protocol` is consumed.
 3. **Extension content script** — implement `CE.definePlatform({ id, hosts, ops, … })` in `chat-export-extension/content/<id>.js` (mirror `content/chatgpt.js`, `content/grok-x.js`).
 4. **Extension manifest** — add `host_permissions`, `content_scripts` `matches`, and `web_accessible_resources` entries in `manifest.json` (narrow patterns; avoid whole-site wildcards unless required).
-5. **Shared UI** — bar/modifier CSS in `styles.css` (`data-platform` / skin class if needed); rebuild `npm run build` → updates `dist/shared.js`, `dist/popup.js`.
+5. **Shared UI** — bar/modifier CSS in `styles/base.css` and `styles/<platform>.css`; rebuild `npm run build` → updates `dist/shared.js`, `dist/popup.js`.
 6. **Extension settings** — default toggle in `src/settings.js` (`PLATFORMS`, `DEFAULT_SETTINGS.platforms`) and duplicated lists in `background.js` until unified build absorbs it.
 7. **Server enablement** — platform id is validated against protocol `PLATFORMS`; server `config.json` `settings.platformsEnabled` and extension bridge `platformsEnabled` must include the new id.
 8. **MCP** — ops flow through existing tools (`chats_list`, `chat_ask`, …) with `platform` argument; no new MCP tool unless the surface is genuinely different.
@@ -58,7 +58,7 @@ Pick a stable **platform id** (lowercase, hyphenated if needed, e.g. `grok-x`). 
 | RPC / op validation | `chat-export-server/packages/protocol/src/schema.js` | Platform enum, op args if new |
 | Content implementation | `chat-export-extension/content/<platform>.js` | `CE.definePlatform`, `ops.*` |
 | MV3 wiring | `chat-export-extension/manifest.json` | permissions, content_scripts |
-| Export bar chrome | `chat-export-extension/styles.css` | Platform-specific layout |
+| Export bar chrome | `chat-export-extension/styles/*.css` | Platform-specific layout |
 | Build output | `chat-export-extension/dist/*` | Run `npm run build` after src edits |
 | Bridge defaults | `chat-export-extension/src/settings.js`, `background.js` | `PLATFORMS`, `platforms.<id>` |
 | Popup platform toggles | `chat-export-extension/src/popup/main.jsx` | Uses `PLATFORMS` from settings module |

@@ -1,4 +1,4 @@
-import { h, render } from 'preact';
+import { h, Fragment, render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import {
   TOS_VERSION,
@@ -7,6 +7,7 @@ import {
   DEFAULT_SETTINGS,
   EXPORT_FORMAT_IDS,
   EXPORT_SCHEMA_IDS,
+  SHIFT_MODES,
   hasTosConsent,
   hasFaqConsent,
   normalizeSettings,
@@ -21,6 +22,7 @@ import {
   PLATFORM_ICONS,
   IconChevron
 } from './skin-icons.jsx';
+import { resolveUiDataSkinForPopup, SKIN_AUTO_FALLBACK } from '../skinResolve.js';
 
 const ISSUES_URL = 'https://github.com/svergio/chat-export-extension/issues';
 
@@ -80,10 +82,10 @@ function usePrefersDark() {
   return dark;
 }
 
-function applyDocumentTheme(skin, scheme, prefersDark) {
+function applyDocumentTheme(dataSkin, scheme, prefersDark) {
   const resolved = resolveUiScheme(scheme, prefersDark);
   const root = document.documentElement;
-  root.dataset.skin = skin || 'chatgpt';
+  root.dataset.skin = dataSkin || SKIN_AUTO_FALLBACK;
   root.dataset.scheme = resolved;
   root.style.colorScheme = resolved;
 }
@@ -170,6 +172,19 @@ function ToneLine({ tone, text }) {
   return <p class={'ce-tone ce-tone--' + (tone || 'muted')}>{text}</p>;
 }
 
+function IconFolder({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5H12.5A1.5 1.5 0 0 1 14 6v6.5A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-8Z"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linejoin="round"
+      />
+    </svg>
+  );
+}
+
 function PrimaryTosConsent({ onAccept, busy, t, localeSetting, onSetLocale }) {
   const [checked, setChecked] = useState(false);
   const currentLoc = localeSetting || 'auto';
@@ -213,8 +228,10 @@ function PrimaryTosConsent({ onAccept, busy, t, localeSetting, onSetLocale }) {
               return <li key={key}>{renderWithIssuesLink(t(key))}</li>;
             })}
           </ul>
-          <label class="ce-check">
+          <label class="ce-check" htmlFor="ce-tos-agree">
             <input
+              id="ce-tos-agree"
+              name="ce-tos-agree"
               type="checkbox"
               checked={checked}
               onChange={(e) => setChecked(e.currentTarget.checked)}
@@ -246,8 +263,14 @@ function AdvancedFaqConsent({ consented, onConsent, busy, t }) {
           return <li key={key}>{renderWithIssuesLink(t(key))}</li>;
         })}
       </ul>
-      <label class="ce-check">
-        <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.currentTarget.checked)} />
+      <label class="ce-check" htmlFor="ce-faq-agree">
+        <input
+          id="ce-faq-agree"
+          name="ce-faq-agree"
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => setChecked(e.currentTarget.checked)}
+        />
         <span>{t('faq.agree')}</span>
       </label>
       <button
@@ -269,13 +292,19 @@ function App() {
   const [browserId, setBrowserId] = useState('');
   const [tone, setTone] = useState({ kind: '', text: '' });
   const [busy, setBusy] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [skinOpen, setSkinOpen] = useState(false);
   const [schemeOpen, setSchemeOpen] = useState(false);
   const [localeOpen, setLocaleOpen] = useState(false);
+  const [shiftOpen, setShiftOpen] = useState(false);
+  const [schemaDefaultOpen, setSchemaDefaultOpen] = useState(false);
+  const [formatMenuOpen, setFormatMenuOpen] = useState(null);
+  const [folderStatus, setFolderStatus] = useState({ state: 'none', name: null });
+  const [resolvedDataSkin, setResolvedDataSkin] = useState(SKIN_AUTO_FALLBACK);
   const prefersDark = usePrefersDark();
 
-  const ui = settings.ui || { skin: 'chatgpt', scheme: 'auto', locale: 'auto' };
+  const ui = settings.ui || { skin: 'auto', scheme: 'auto', locale: 'auto' };
   const localeCode = resolveLocale(ui.locale);
   const t = useMemo(() => createTranslator(localeCode), [localeCode]);
 
@@ -305,8 +334,43 @@ function App() {
   }, [refresh]);
 
   useEffect(() => {
-    applyDocumentTheme(ui.skin, ui.scheme, prefersDark);
+    let cancelled = false;
+    resolveUiDataSkinForPopup(ui).then(function (dataSkin) {
+      if (cancelled) return;
+      setResolvedDataSkin(dataSkin);
+      applyDocumentTheme(dataSkin, ui.scheme, prefersDark);
+    });
+    return function () {
+      cancelled = true;
+    };
   }, [ui.skin, ui.scheme, prefersDark]);
+
+  const refreshFolderStatus = useCallback(async function () {
+    const res = await sendBridge('folderStatus');
+    if (res && res.ok && res.state) {
+      setFolderStatus({ state: res.state, name: res.name || null });
+    } else if (res && res.ok) {
+      setFolderStatus({ state: 'none', name: null });
+    } else {
+      setFolderStatus({ state: 'unsupported', name: null });
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshFolderStatus();
+    function onMessage(msg) {
+      if (msg && msg.type === 'ce-folder-changed') {
+        setFolderStatus({
+          state: msg.state || 'none',
+          name: msg.name != null ? msg.name : null
+        });
+      }
+    }
+    chrome.runtime.onMessage.addListener(onMessage);
+    return function () {
+      chrome.runtime.onMessage.removeListener(onMessage);
+    };
+  }, [refreshFolderStatus]);
 
   async function persist(next) {
     const normalized = normalizeSettings(next);
@@ -383,6 +447,44 @@ function App() {
     setSkinOpen(which === 'skin');
     setSchemeOpen(which === 'scheme');
     setLocaleOpen(which === 'locale');
+    setShiftOpen(which === 'shift');
+    setSchemaDefaultOpen(which === 'schemaDefault');
+    setFormatMenuOpen(which && String(which).indexOf('fmt:') === 0 ? String(which).slice(4) : null);
+  }
+
+  async function onFolderPick(mode) {
+    await sendBridge('folderPick', { mode: mode });
+  }
+
+  async function onFolderForget() {
+    const res = await sendBridge('folderForget');
+    if (res && res.ok) {
+      setFolderStatus({ state: 'none', name: null });
+    } else {
+      await refreshFolderStatus();
+    }
+  }
+
+  function folderPathDisplay() {
+    const state = folderStatus.state || 'none';
+    if (state === 'granted' || state === 'prompt') {
+      const name = folderStatus.name ? String(folderStatus.name) : '';
+      return name ? '…/' + name : '…/';
+    }
+    return '';
+  }
+
+  function folderPathPlaceholder() {
+    const state = folderStatus.state || 'none';
+    if (state === 'unsupported') return t('saveFolder.unsupported');
+    if (state === 'none') return t('saveFolder.none');
+    return '';
+  }
+
+  function onFolderPathActivate() {
+    if (!folderPickable || busy) return;
+    if (folderState === 'none') onFolderPick('pick');
+    else onFolderPick(folderState === 'prompt' ? 'grant' : 'rebind');
   }
 
   if (!ready) {
@@ -405,7 +507,23 @@ function App() {
   const statusLabel = t('status.' + statusState(status));
   const skinOpt = SKIN_OPTIONS.find((o) => o.id === ui.skin) || SKIN_OPTIONS[0];
   const SkinIcon = skinOpt.Icon;
+  const skinValueLabel =
+    ui.skin === 'auto' ? (
+      <Fragment>
+        {t('skin.auto')}
+        <span class="ce-skin-auto-resolve"> — {t('skin.' + resolvedDataSkin)}</span>
+      </Fragment>
+    ) : (
+      t('skin.' + skinOpt.id)
+    );
   const gatewayOn = !!settings.serverOn;
+  const shiftMode = (settings.saveFolder && settings.saveFolder.shiftMode) || 'rebind';
+  const schemaDefault = (settings.exportSchemas && settings.exportSchemas.default) || 'chat-export/1';
+  const folderState = folderStatus.state || 'none';
+  const folderPickable = folderState !== 'unsupported';
+  const folderPathValue = folderPathDisplay();
+  const folderPathEmpty = !folderPathValue;
+  const folderPathTitle = folderPathEmpty ? folderPathPlaceholder() : folderPathValue;
 
   return (
     <div class="ce-wrap">
@@ -451,7 +569,7 @@ function App() {
             open={skinOpen}
             setOpen={(v) => (v ? closeMenusExcept('skin') : setSkinOpen(false))}
             leading={<SkinIcon size={15} />}
-            valueLabel={t('skin.' + skinOpt.id)}
+            valueLabel={skinValueLabel}
           >
             {SKIN_OPTIONS.map(function (opt) {
               const active = ui.skin === opt.id;
@@ -533,6 +651,225 @@ function App() {
 
         <button
           type="button"
+          class={'ce-advanced-toggle' + (exportOpen ? ' is-open' : '')}
+          aria-expanded={exportOpen ? 'true' : 'false'}
+          onClick={() => setExportOpen(!exportOpen)}
+        >
+          <IconChevron size={12} />
+          <span>{exportOpen ? t('btn.hideExportSettings') : t('btn.showExportSettings')}</span>
+        </button>
+
+        {exportOpen ? (
+          <div class="ce-advanced-panel ce-export-panel">
+            <div class="ce-field">
+              <span>{t('label.saveFolder')}</span>
+              <div class="ce-save-folder">
+                <div
+                  class={
+                    'ce-save-folder-path' +
+                    (folderState === 'prompt' ? ' is-warn' : '') +
+                    (folderPathEmpty ? ' is-empty' : '') +
+                    (folderPickable && !busy ? ' is-clickable' : '')
+                  }
+                  role={folderPickable ? 'button' : undefined}
+                  tabIndex={folderPickable && !busy ? 0 : undefined}
+                  title={folderPathTitle}
+                  onClick={() => onFolderPathActivate()}
+                  onKeyDown={(e) => {
+                    if (!folderPickable || busy) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onFolderPathActivate();
+                    }
+                  }}
+                >
+                  <span class="ce-save-folder-path-icon">
+                    <IconFolder size={14} />
+                  </span>
+                  <input
+                    id="ce-save-folder-path"
+                    name="ce-save-folder-path"
+                    type="text"
+                    readOnly
+                    tabIndex={-1}
+                    value={folderPathValue}
+                    placeholder={folderPathPlaceholder()}
+                  />
+                </div>
+                {folderState === 'prompt' ? (
+                  <p class="ce-hint ce-save-folder-prompt">{t('saveFolder.prompt')}</p>
+                ) : null}
+                {folderPickable ? (
+                  <div class="ce-save-folder-actions">
+                    {folderState === 'none' ? (
+                      <button
+                        type="button"
+                        class="ce-btn ce-btn--solid"
+                        disabled={busy}
+                        onClick={() => onFolderPick('pick')}
+                      >
+                        {t('btn.chooseFolder')}
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          class="ce-btn ce-btn--solid"
+                          disabled={busy}
+                          onClick={() => onFolderPick(folderState === 'prompt' ? 'grant' : 'rebind')}
+                        >
+                          {t('btn.changeFolder')}
+                        </button>
+                        <button
+                          type="button"
+                          class="ce-btn"
+                          disabled={busy}
+                          onClick={() => onFolderForget()}
+                        >
+                          {t('btn.forgetFolder')}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <SelectMenu
+              label={t('label.shiftMode')}
+              ariaLabel={t('label.shiftMode')}
+              disabled={busy}
+              open={shiftOpen}
+              setOpen={(v) => (v ? closeMenusExcept('shift') : setShiftOpen(false))}
+              valueLabel={t('shiftMode.' + shiftMode)}
+            >
+              {SHIFT_MODES.map(function (id) {
+                const active = shiftMode === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="option"
+                    aria-selected={active ? 'true' : 'false'}
+                    class={'ce-select-item' + (active ? ' is-active' : '')}
+                    onClick={() => {
+                      const saveFolder = Object.assign({}, settings.saveFolder || {}, { shiftMode: id });
+                      persist(Object.assign({}, settings, { saveFolder: saveFolder }));
+                      setShiftOpen(false);
+                    }}
+                  >
+                    <span>{t('shiftMode.' + id)}</span>
+                  </button>
+                );
+              })}
+            </SelectMenu>
+            <p class="ce-hint ce-hint--tight">{t('hint.shiftMode')}</p>
+
+            <SelectMenu
+              label={t('label.schemaDefault')}
+              ariaLabel={t('label.schemaDefault')}
+              disabled={busy}
+              open={schemaDefaultOpen}
+              setOpen={(v) => (v ? closeMenusExcept('schemaDefault') : setSchemaDefaultOpen(false))}
+              valueLabel={t('schema.' + schemaDefault)}
+            >
+              {EXPORT_SCHEMA_IDS.map(function (id) {
+                const active = schemaDefault === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="option"
+                    aria-selected={active ? 'true' : 'false'}
+                    class={'ce-select-item' + (active ? ' is-active' : '')}
+                    onClick={() => {
+                      const exportSchemas = normalizeExportSchemas(
+                        Object.assign({}, settings.exportSchemas, { default: id })
+                      );
+                      persist(Object.assign({}, settings, { exportSchemas: exportSchemas }));
+                      setSchemaDefaultOpen(false);
+                    }}
+                  >
+                    <span>{t('schema.' + id)}</span>
+                  </button>
+                );
+              })}
+            </SelectMenu>
+
+            <div class="ce-field">
+              <span>{t('label.schemaPerFormat')}</span>
+              {EXPORT_FORMAT_IDS.map(function (fmt) {
+                const cur =
+                  settings.exportSchemas &&
+                  settings.exportSchemas.byFormat &&
+                  settings.exportSchemas.byFormat[fmt];
+                const menuKey = 'fmt:' + fmt;
+                const open = formatMenuOpen === fmt;
+                return (
+                  <SelectMenu
+                    key={fmt}
+                    label={t('format.' + fmt)}
+                    ariaLabel={t('format.' + fmt)}
+                    disabled={busy}
+                    open={open}
+                    setOpen={(v) => (v ? closeMenusExcept(menuKey) : setFormatMenuOpen(null))}
+                    valueLabel={cur ? t('schema.' + cur) : t('schema.inherit')}
+                  >
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={!cur ? 'true' : 'false'}
+                      class={'ce-select-item' + (!cur ? ' is-active' : '')}
+                      onClick={() => {
+                        const byFormat = Object.assign(
+                          {},
+                          (settings.exportSchemas && settings.exportSchemas.byFormat) || {},
+                          { [fmt]: null }
+                        );
+                        const exportSchemas = normalizeExportSchemas(
+                          Object.assign({}, settings.exportSchemas, { byFormat: byFormat })
+                        );
+                        persist(Object.assign({}, settings, { exportSchemas: exportSchemas }));
+                        setFormatMenuOpen(null);
+                      }}
+                    >
+                      <span>{t('schema.inherit')}</span>
+                    </button>
+                    {EXPORT_SCHEMA_IDS.map(function (id) {
+                      const active = cur === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          role="option"
+                          aria-selected={active ? 'true' : 'false'}
+                          class={'ce-select-item' + (active ? ' is-active' : '')}
+                          onClick={() => {
+                            const byFormat = Object.assign(
+                              {},
+                              (settings.exportSchemas && settings.exportSchemas.byFormat) || {},
+                              { [fmt]: id }
+                            );
+                            const exportSchemas = normalizeExportSchemas(
+                              Object.assign({}, settings.exportSchemas, { byFormat: byFormat })
+                            );
+                            persist(Object.assign({}, settings, { exportSchemas: exportSchemas }));
+                            setFormatMenuOpen(null);
+                          }}
+                        >
+                          <span>{t('schema.' + id)}</span>
+                        </button>
+                      );
+                    })}
+                  </SelectMenu>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        <button
+          type="button"
           class={'ce-advanced-toggle' + (advancedOpen ? ' is-open' : '')}
           aria-expanded={advancedOpen ? 'true' : 'false'}
           onClick={() => setAdvancedOpen(!advancedOpen)}
@@ -569,9 +906,11 @@ function App() {
             </label>
 
             <div class="ce-host-port">
-              <label class="ce-field">
+              <label class="ce-field" htmlFor="ce-host">
                 <span>{t('label.host')}</span>
                 <input
+                  id="ce-host"
+                  name="ce-host"
                   type="text"
                   spellcheck={false}
                   value={settings.host}
@@ -582,9 +921,11 @@ function App() {
                   onBlur={() => persist(settings)}
                 />
               </label>
-              <label class="ce-field">
+              <label class="ce-field" htmlFor="ce-port">
                 <span>{t('label.port')}</span>
                 <input
+                  id="ce-port"
+                  name="ce-port"
                   type="number"
                   min="1"
                   max="65535"
@@ -602,9 +943,11 @@ function App() {
               </label>
             </div>
 
-            <label class="ce-field">
+            <label class="ce-field" htmlFor="ce-browser-label">
               <span>{t('label.browserLabel')}</span>
               <input
+                id="ce-browser-label"
+                name="ce-browser-label"
                 type="text"
                 value={settings.browserLabel}
                 onChange={(e) =>
@@ -614,15 +957,24 @@ function App() {
               />
             </label>
 
-            <label class="ce-field">
+            <label class="ce-field" htmlFor="ce-browser-id">
               <span>{t('label.browserId')}</span>
-              <input type="text" readOnly spellcheck={false} value={browserId || '—'} />
+              <input
+                id="ce-browser-id"
+                name="ce-browser-id"
+                type="text"
+                readOnly
+                spellcheck={false}
+                value={browserId || '—'}
+              />
               <p class="ce-hint">{t('browser.hint')}</p>
             </label>
 
             <div class="ce-field">
-              <span>{t('label.gatewayToken')}</span>
+              <label htmlFor="ce-gateway-token">{t('label.gatewayToken')}</label>
               <input
+                id="ce-gateway-token"
+                name="ce-gateway-token"
                 type="text"
                 autocomplete="off"
                 spellcheck={false}
@@ -705,72 +1057,11 @@ function App() {
               />
             </label>
 
-            <h2>{t('label.exportSchemas')}</h2>
-            <p class="ce-hint">{t('schema.hint')}</p>
-            <label class="ce-field">
-              <span>{t('label.schemaDefault')}</span>
-              <select
-                value={(settings.exportSchemas && settings.exportSchemas.default) || 'chat-export/1'}
-                disabled={busy}
-                onChange={(e) => {
-                  const exportSchemas = normalizeExportSchemas(
-                    Object.assign({}, settings.exportSchemas, { default: e.currentTarget.value })
-                  );
-                  persist(Object.assign({}, settings, { exportSchemas: exportSchemas }));
-                }}
-              >
-                {EXPORT_SCHEMA_IDS.map(function (id) {
-                  return (
-                    <option key={id} value={id}>
-                      {t('schema.' + id)}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            <div class="ce-field">
-              <span>{t('label.schemaByFormat')}</span>
-              {EXPORT_FORMAT_IDS.map(function (fmt) {
-                const cur =
-                  settings.exportSchemas &&
-                  settings.exportSchemas.byFormat &&
-                  settings.exportSchemas.byFormat[fmt];
-                return (
-                  <label key={fmt} class="ce-field ce-field--nested">
-                    <span>{t('format.' + fmt)}</span>
-                    <select
-                      value={cur || ''}
-                      disabled={busy}
-                      onChange={(e) => {
-                        const val = e.currentTarget.value;
-                        const byFormat = Object.assign(
-                          {},
-                          (settings.exportSchemas && settings.exportSchemas.byFormat) || {},
-                          { [fmt]: val ? val : null }
-                        );
-                        const exportSchemas = normalizeExportSchemas(
-                          Object.assign({}, settings.exportSchemas, { byFormat: byFormat })
-                        );
-                        persist(Object.assign({}, settings, { exportSchemas: exportSchemas }));
-                      }}
-                    >
-                      <option value="">{t('label.schemaInherit')}</option>
-                      {EXPORT_SCHEMA_IDS.map(function (id) {
-                        return (
-                          <option key={id} value={id}>
-                            {t('schema.' + id)}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </label>
-                );
-              })}
-            </div>
-
-            <label class="ce-field">
+            <label class="ce-field" htmlFor="ce-rpc-timeout">
               <span>{t('label.rpcTimeout')}</span>
               <input
+                id="ce-rpc-timeout"
+                name="ce-rpc-timeout"
                 type="number"
                 min="5"
                 max="600"

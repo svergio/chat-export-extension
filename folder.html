@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat Export</title>
+    <link rel="stylesheet" href="popup.css" />
+    <style>
+      html,
+      body {
+        background: var(--ce-surface);
+      }
+      body {
+        min-width: 0;
+        max-width: none;
+        min-height: 100vh;
+        font-size: 13px;
+        visibility: hidden;
+      }
+      body.is-ready {
+        visibility: visible;
+      }
+      .ce-folder {
+        padding: 0;
+      }
+      .ce-folder .ce-card {
+        min-height: 100vh;
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .ce-folder .ce-head {
+        margin-bottom: 4px;
+      }
+      .ce-folder-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .ce-folder-brand img {
+        width: 22px;
+        height: 22px;
+      }
+      .ce-folder h1 {
+        font-size: 16px;
+        color: var(--ce-ink);
+      }
+      .ce-folder .ce-lead {
+        color: var(--ce-ink);
+        margin: 4px 0 0;
+      }
+      .ce-folder-hint {
+        margin: 6px 0 10px;
+        padding: 8px 10px;
+        border-radius: var(--ce-radius-sm);
+        border: 1px solid var(--ce-line);
+        border-left: 3px solid var(--ce-accent);
+        background: var(--ce-surface-2);
+        color: var(--ce-ink);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .ce-folder-hint.is-alert {
+        border-left-color: var(--ce-warn);
+      }
+      .ce-folder .ce-btn--primary {
+        padding: 8px 14px;
+      }
+      .ce-folder-actions {
+        display: grid;
+        gap: 6px;
+      }
+      .ce-folder-msg:empty {
+        display: none;
+      }
+      .ce-folder-msg {
+        margin: 6px 0 0;
+        font-weight: 600;
+        color: var(--ce-ink);
+      }
+      .ce-folder-msg[data-tone='ok'] {
+        color: var(--ce-ok);
+      }
+      .ce-folder-msg[data-tone='warn'] {
+        color: var(--ce-warn);
+      }
+      .ce-folder-msg[data-tone='danger'] {
+        color: var(--ce-danger);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="ce-wrap ce-folder">
+      <div class="ce-card">
+        <header class="ce-head">
+          <div class="ce-folder-brand">
+            <img src="icons/icon48.png" alt="" />
+            <h1 id="title"></h1>
+          </div>
+        </header>
+        <p id="lead" class="ce-lead" hidden></p>
+        <p id="hint" class="ce-folder-hint"></p>
+        <div class="ce-folder-actions">
+          <button type="button" id="action" class="ce-btn ce-btn--primary" hidden></button>
+          <button type="button" id="cancel" class="ce-btn" hidden></button>
+        </div>
+        <p id="msg" class="ce-folder-msg" role="status"></p>
+      </div>
+    </main>
+    <script src="dist/folder.js"></script>
+  </body>
+</html>

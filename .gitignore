@@ -4,3 +4,4 @@ scripts/node_modules/
 *.log
 node_modules/
 dist-pack/
+docs/wiki-capture/

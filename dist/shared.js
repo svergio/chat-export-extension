@@ -9,7 +9,7 @@
   (function(global) {
     "use strict";
     var BAR_ATTR = "data-chat-export-bar";
-    var EXT_VERSION = "1.8.3";
+    var EXT_VERSION = global.chrome && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : "dev";
     var HTTP_RE = /^https?:\/\//i;
     var URL_KEYS = /^(url|uri|href|link|sourceUrl|canonicalUrl|webUrl|targetUrl)$/i;
     var TITLE_KEYS = /^(title|name|label|text|snippet|domain|publisher|siteName)$/i;
@@ -671,9 +671,7 @@
     };
     var FORMAT_STORE = "chat-export-formats";
     var PACK_STORE = "chat-export-pack";
-    var DIR_DB_NAME = "chat-export-fs";
-    var DIR_DB_STORE = "handles";
-    var DIR_DB_KEY = "folder";
+    var FALLBACK_DIR = "Chat Export/";
     var CRC32_TABLE = (function() {
       var table = new Uint32Array(256);
       for (var n2 = 0; n2 < 256; n2++) {
@@ -1009,7 +1007,7 @@
       var url = URL.createObjectURL(blob);
       var a3 = document.createElement("a");
       a3.href = url;
-      a3.download = filename;
+      a3.download = String(filename || "chat").split("/").pop();
       a3.style.display = "none";
       document.body.appendChild(a3);
       a3.click();
@@ -1026,29 +1024,141 @@
       }
       return btoa(parts.join(""));
     }
-    function downloadBlob(filename, data, mime) {
+    var toastHideTimer = null;
+    var toastFadeTimer = null;
+    var toastEl = null;
+    var toastTranslator = null;
+    function setToastTranslator(fn) {
+      toastTranslator = typeof fn === "function" ? fn : null;
+    }
+    function toastText(key, vars) {
+      var t3 = toastTranslator || function(k3) {
+        return k3;
+      };
+      var s3 = t3(key);
+      if (vars) {
+        var keys = Object.keys(vars);
+        for (var i3 = 0; i3 < keys.length; i3++) {
+          var p3 = keys[i3];
+          s3 = s3.split("{" + p3 + "}").join(String(vars[p3]));
+        }
+      }
+      return s3;
+    }
+    function toastSchemeFromBar() {
+      var bar = document.querySelector(".chat-export-bar[data-ce-scheme]");
+      if (bar) return bar.getAttribute("data-ce-scheme") || "dark";
+      return prefersDarkScheme() ? "dark" : "light";
+    }
+    function dismissToast() {
+      if (toastHideTimer) {
+        clearTimeout(toastHideTimer);
+        toastHideTimer = null;
+      }
+      if (!toastEl) return;
+      toastEl.classList.remove("is-visible");
+      toastEl.classList.add("is-hiding");
+      var el = toastEl;
+      if (toastFadeTimer) clearTimeout(toastFadeTimer);
+      toastFadeTimer = setTimeout(function() {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        if (toastEl === el) toastEl = null;
+        toastFadeTimer = null;
+      }, 200);
+    }
+    function showToast(text) {
+      if (!text || typeof document === "undefined") return;
+      if (toastHideTimer) {
+        clearTimeout(toastHideTimer);
+        toastHideTimer = null;
+      }
+      if (toastFadeTimer) {
+        clearTimeout(toastFadeTimer);
+        toastFadeTimer = null;
+      }
+      if (toastEl && toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
+      toastEl = document.createElement("div");
+      toastEl.className = "chat-export-toast";
+      toastEl.setAttribute("data-ce-scheme", toastSchemeFromBar());
+      toastEl.textContent = text;
+      toastEl.setAttribute("role", "status");
+      toastEl.setAttribute("aria-live", "polite");
+      toastEl.addEventListener("click", function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        dismissToast();
+      });
+      var host = document.getElementById("chat-export-toast-host");
+      if (!host) {
+        host = document.createElement("div");
+        host.id = "chat-export-toast-host";
+        host.className = "chat-export-toast-host";
+        (document.documentElement || document.body).appendChild(host);
+      }
+      host.appendChild(toastEl);
+      requestAnimationFrame(function() {
+        if (toastEl) toastEl.classList.add("is-visible");
+      });
+      toastHideTimer = setTimeout(dismissToast, 2500);
+    }
+    function exportDisplayName(job, res) {
+      if (res && res.name) return String(res.name);
+      if (!job || !job.files || !job.files.length) return "chat";
+      return String(job.files[0].name || "chat").split("/").pop();
+    }
+    function notifyExportOutcome(res, job) {
+      if (res && res.pending) return;
+      if (!res || !res.ok) {
+        showToast(toastText("toast.failed"));
+        return;
+      }
+      if (res.via === "folder" && res.folder != null && res.name) {
+        showToast(toastText("toast.saved", { folder: res.folder, name: res.name }));
+        return;
+      }
+      var name = exportDisplayName(job, res);
+      showToast(toastText("toast.downloaded", { name }));
+    }
+    function downloadBlob(filename, data, mime, opts) {
+      opts = opts || {};
+      var toastOnSuccess = !!opts.toast;
+      function toastDownloaded() {
+        if (!toastOnSuccess) return;
+        var name = String(filename || "chat").split("/").pop();
+        showToast(toastText("toast.downloaded", { name }));
+      }
       var send = function(u8) {
         if (!u8 || !u8.length) {
           fallbackAnchorDownload(filename, data, mime);
+          toastDownloaded();
           return;
         }
-        if (!global.chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+        if (!global.chrome || !chrome.runtime || !chrome.runtime.id || !chrome.runtime.sendMessage) {
           fallbackAnchorDownload(filename, u8, mime);
+          toastDownloaded();
           return;
         }
-        chrome.runtime.sendMessage(
-          {
-            type: "chat-export-download",
-            filename: String(filename || "chat").replace(/\\/g, "/").replace(/^\/+/, ""),
-            mime: mime || "application/octet-stream",
-            b64: bytesToBase64(u8)
-          },
-          function(res) {
-            if (chrome.runtime.lastError || !res || !res.ok) {
-              fallbackAnchorDownload(filename, u8, mime);
+        try {
+          chrome.runtime.sendMessage(
+            {
+              type: "chat-export-download",
+              filename: String(filename || "chat").replace(/\\/g, "/").replace(/^\/+/, ""),
+              mime: mime || "application/octet-stream",
+              b64: bytesToBase64(u8)
+            },
+            function(res) {
+              if (chrome.runtime.lastError || !res || !res.ok) {
+                fallbackAnchorDownload(filename, u8, mime);
+                toastDownloaded();
+                return;
+              }
+              toastDownloaded();
             }
-          }
-        );
+          );
+        } catch (e3) {
+          fallbackAnchorDownload(filename, u8, mime);
+          toastDownloaded();
+        }
       };
       if (typeof Blob !== "undefined" && data instanceof Blob) {
         data.arrayBuffer().then(function(ab) {
@@ -1057,6 +1167,39 @@
         return;
       }
       send(toUint8(data));
+    }
+    function toBytesAsync(data) {
+      if (typeof Blob !== "undefined" && data instanceof Blob) {
+        return data.arrayBuffer().then(function(ab) {
+          return new Uint8Array(ab);
+        });
+      }
+      return Promise.resolve(toUint8(data));
+    }
+    function saveViaExtension(job) {
+      var runtime = global.chrome && chrome.runtime;
+      if (!runtime || !runtime.id || typeof runtime.sendMessage !== "function") {
+        return Promise.resolve({ ok: false, reason: "unsupported" });
+      }
+      return Promise.all(job.files.map(function(f3) {
+        return toBytesAsync(f3.data).then(function(u8) {
+          return { name: f3.name, mime: f3.mime || "application/octet-stream", b64: bytesToBase64(u8) };
+        });
+      })).then(function(files) {
+        return new Promise(function(resolve) {
+          var msg = { type: "ce-save", pack: job.pack, subdir: job.subdir || null, files };
+          if (job.rebind) msg.rebind = true;
+          try {
+            runtime.sendMessage(msg, function(res) {
+              var err = chrome.runtime.lastError;
+              if (err || !res) resolve({ ok: false, reason: "error", error: err ? err.message : "no reply" });
+              else resolve(res);
+            });
+          } catch (e3) {
+            resolve({ ok: false, reason: "error", error: String(e3 && e3.message || e3) });
+          }
+        });
+      });
     }
     function toUint8(data) {
       if (data instanceof Uint8Array) return data;
@@ -1175,13 +1318,41 @@
         });
       });
     }
+    function entryExists(dirHandle, name, kind) {
+      var get = kind === "dir" ? dirHandle.getDirectoryHandle(name) : dirHandle.getFileHandle(name);
+      return get.then(
+        function() {
+          return true;
+        },
+        function(err) {
+          return !(err && err.name === "NotFoundError");
+        }
+      );
+    }
+    function uniqueEntryName(dirHandle, name, kind) {
+      var dot = kind === "dir" ? -1 : name.lastIndexOf(".");
+      var stem = dot > 0 ? name.slice(0, dot) : name;
+      var ext = dot > 0 ? name.slice(dot) : "";
+      function attempt(n2) {
+        var candidate = n2 ? stem + " (" + n2 + ")" + ext : name;
+        return entryExists(dirHandle, candidate, kind).then(function(taken) {
+          if (!taken || n2 >= 999) return candidate;
+          return attempt(n2 + 1);
+        });
+      }
+      return attempt(0);
+    }
     function writeToDirectory(dirHandle, filename, data, mime) {
-      return dirHandle.getFileHandle(filename, { create: true }).then(function(handle) {
-        return writeFileHandle(handle, data, mime);
+      return uniqueEntryName(dirHandle, filename, "file").then(function(name) {
+        return dirHandle.getFileHandle(name, { create: true }).then(function(handle) {
+          return writeFileHandle(handle, data, mime);
+        });
       });
     }
     function writeToSubdirectory(parentDir, folderName, files) {
-      return parentDir.getDirectoryHandle(folderName, { create: true }).then(function(sub) {
+      return uniqueEntryName(parentDir, folderName, "dir").then(function(name) {
+        return parentDir.getDirectoryHandle(name, { create: true });
+      }).then(function(sub) {
         var chain = Promise.resolve();
         files.forEach(function(f3) {
           chain = chain.then(function() {
@@ -1191,8 +1362,13 @@
         return chain;
       });
     }
+    function resolvePack(formatCount, packMode) {
+      if (packMode === "file") return "file";
+      if (packMode === "folder") return formatCount > 1 ? "folder" : "file";
+      return "zip";
+    }
     function wantsPathPicker(ev) {
-      return !!(ev && (ev.shiftKey || ev.ctrlKey || ev.metaKey));
+      return !!(ev && ev.shiftKey);
     }
     function loadPack() {
       try {
@@ -1207,61 +1383,6 @@
         localStorage.setItem(PACK_STORE, v3 === "folder" ? "folder" : "zip");
       } catch (e3) {
       }
-    }
-    function openDirDb() {
-      return new Promise(function(resolve, reject) {
-        if (!global.indexedDB) {
-          reject(new Error("no indexedDB"));
-          return;
-        }
-        var req = indexedDB.open(DIR_DB_NAME, 1);
-        req.onupgradeneeded = function() {
-          var db = req.result;
-          if (!db.objectStoreNames.contains(DIR_DB_STORE)) db.createObjectStore(DIR_DB_STORE);
-        };
-        req.onsuccess = function() {
-          resolve(req.result);
-        };
-        req.onerror = function() {
-          reject(req.error);
-        };
-      });
-    }
-    function saveDirHandle(handle) {
-      if (!handle) return Promise.resolve();
-      return openDirDb().then(function(db) {
-        return new Promise(function(resolve, reject) {
-          var tx = db.transaction(DIR_DB_STORE, "readwrite");
-          tx.objectStore(DIR_DB_STORE).put(handle, DIR_DB_KEY);
-          tx.oncomplete = function() {
-            db.close();
-            resolve();
-          };
-          tx.onerror = function() {
-            db.close();
-            reject(tx.error);
-          };
-        });
-      }).catch(function() {
-      });
-    }
-    function loadDirHandle() {
-      return openDirDb().then(function(db) {
-        return new Promise(function(resolve, reject) {
-          var tx = db.transaction(DIR_DB_STORE, "readonly");
-          var req = tx.objectStore(DIR_DB_STORE).get(DIR_DB_KEY);
-          req.onsuccess = function() {
-            db.close();
-            resolve(req.result || null);
-          };
-          req.onerror = function() {
-            db.close();
-            reject(req.error);
-          };
-        });
-      }).catch(function() {
-        return null;
-      });
     }
     function normalizeFormats(formats) {
       var src = Array.isArray(formats) ? formats : [formats || "md"];
@@ -1305,19 +1426,18 @@
       var hasSave = typeof window.showSaveFilePicker === "function";
       var hasDir = typeof window.showDirectoryPicker === "function";
       if (!hasSave && !hasDir) return Promise.resolve(null);
-      var multi = list.length > 1;
-      if (multi && pack === "folder") {
+      var mode = resolvePack(list.length, pack);
+      if (mode === "folder") {
         if (!hasDir) return Promise.resolve(null);
         return window.showDirectoryPicker({ mode: "readwrite" }).then(function(dir) {
-          saveDirHandle(dir);
           return { kind: "dir", dir };
         });
       }
-      var ext = multi ? "zip" : list[0];
+      var ext = mode === "zip" ? "zip" : list[0];
       if (!hasSave) {
         if (!hasDir) return Promise.resolve(null);
         return window.showDirectoryPicker({ mode: "readwrite" }).then(function(dir) {
-          return { kind: "dir", dir, asZip: multi };
+          return { kind: "dir", dir, asZip: mode === "zip" };
         });
       }
       return showSavePicker(suggestedBase + "." + ext, ext).then(function(handle) {
@@ -1401,41 +1521,80 @@
     }
     function exportConversation(opts) {
       var formats = normalizeFormats(opts.formats);
-      var pack = formats.length > 1 ? opts.pack === "folder" ? "folder" : "zip" : "file";
+      var pack = resolvePack(formats.length, opts.pack);
       return buildExportBundle(opts).then(function(bundle) {
         var base = bundle.base;
         var files = bundle.files;
-        var picked = opts.picked;
-        var wantZip = pack === "zip" || picked && picked.asZip || picked && picked.handles && picked.handles.zip;
-        if (picked && picked.kind === "dir" && picked.dir) {
-          if (wantZip && pack !== "folder") {
-            return writeToDirectory(picked.dir, base + ".zip", zipStore(files), BLOB_MIME.zip);
-          }
-          return writeToSubdirectory(picked.dir, base, files);
+        if (!files.length) {
+          notifyExportOutcome({ ok: false });
+          return { ok: false, reason: "empty" };
         }
-        if (picked && picked.kind === "files" && picked.handles) {
-          if (picked.handles.zip) {
-            return writeFileHandle(picked.handles.zip, zipStore(files), BLOB_MIME.zip);
-          }
-          var fileChain = Promise.resolve();
-          files.forEach(function(f3) {
-            var handle = picked.handles[f3.ext];
-            if (!handle) return;
-            fileChain = fileChain.then(function() {
-              return writeFileHandle(handle, f3.data, f3.mime);
-            });
+        if (opts.picked) return writePicked(opts.picked, pack, base, files);
+        return saveDefault(pack, base, files, !!opts.rebind);
+      });
+    }
+    function writePicked(picked, pack, base, files) {
+      var wantZip = pack === "zip" || picked.asZip || picked.handles && picked.handles.zip;
+      var pickedName = wantZip ? base + ".zip" : files.length === 1 ? files[0].filename : base;
+      var done = function() {
+        notifyExportOutcome({ ok: true, via: "picker", name: pickedName });
+        return { ok: true, via: "picker" };
+      };
+      if (picked.kind === "dir" && picked.dir) {
+        if (wantZip && pack !== "folder") {
+          return writeToDirectory(picked.dir, base + ".zip", zipStore(files), BLOB_MIME.zip).then(done);
+        }
+        if (pack === "folder") return writeToSubdirectory(picked.dir, base, files).then(done);
+        var dirChain = Promise.resolve();
+        files.forEach(function(f3) {
+          dirChain = dirChain.then(function() {
+            return writeToDirectory(picked.dir, f3.filename, f3.data, f3.mime);
           });
-          return fileChain;
+        });
+        return dirChain.then(done);
+      }
+      if (picked.kind === "files" && picked.handles) {
+        if (picked.handles.zip) {
+          return writeFileHandle(picked.handles.zip, zipStore(files), BLOB_MIME.zip).then(done);
         }
-        if (files.length > 1) {
-          downloadBlob(base + ".zip", zipStore(files), BLOB_MIME.zip);
-          return;
+        var fileChain = Promise.resolve();
+        files.forEach(function(f3) {
+          var handle = picked.handles[f3.ext];
+          if (!handle) return;
+          fileChain = fileChain.then(function() {
+            return writeFileHandle(handle, f3.data, f3.mime);
+          });
+        });
+        return fileChain.then(done);
+      }
+      return saveDefault(pack, base, files, false);
+    }
+    function saveDefault(pack, base, files, rebind) {
+      var job;
+      if (pack === "zip") {
+        job = { pack: "zip", subdir: null, files: [{ name: base + ".zip", mime: BLOB_MIME.zip, data: zipStore(files) }] };
+      } else if (pack === "folder") {
+        job = { pack: "folder", subdir: base, files: files.map(function(f3) {
+          return { name: f3.filename, mime: f3.mime, data: f3.data };
+        }) };
+      } else {
+        job = { pack: "single", subdir: null, files: [{ name: files[0].filename, mime: files[0].mime, data: files[0].data }] };
+      }
+      job.rebind = rebind;
+      return saveViaExtension(job).then(function(res) {
+        if (res && res.pending) return res;
+        if (res && res.ok) {
+          notifyExportOutcome(res, job);
+          return res;
         }
-        files.forEach(function(f3, i3) {
+        console.warn("[chat-export] folder save fell back to Downloads:", res && res.reason + (res.error ? " " + res.error : ""));
+        var prefix = FALLBACK_DIR + (job.subdir ? job.subdir + "/" : "");
+        job.files.forEach(function(f3, i3) {
           setTimeout(function() {
-            downloadBlob(f3.filename, f3.data, f3.mime);
+            downloadBlob(prefix + f3.name, f3.data, f3.mime, { toast: i3 === 0 });
           }, i3 * 250);
         });
+        return { ok: true, via: "downloads", reason: res && res.reason };
       });
     }
     function sleep2(ms) {
@@ -1688,6 +1847,42 @@
         return false;
       }
     }
+    function schemeFromWord(v3) {
+      var s3 = String(v3 || "").toLowerCase();
+      if (/\bdark\b/.test(s3)) return "dark";
+      if (/\blight\b/.test(s3)) return "light";
+      return null;
+    }
+    function hasExactClassToken(el, token) {
+      if (!el || !token) return false;
+      if (el.classList && el.classList.contains(token)) return true;
+      var parts = String(el.className || "").split(/\s+/);
+      for (var i3 = 0; i3 < parts.length; i3++) {
+        if (parts[i3] === token) return true;
+      }
+      return false;
+    }
+    function schemeFromClassTokens(el) {
+      if (hasExactClassToken(el, "dark")) return "dark";
+      if (hasExactClassToken(el, "light")) return "light";
+      return null;
+    }
+    function hostMarkerScheme() {
+      var nodes = [document.documentElement, document.body];
+      for (var i3 = 0; i3 < nodes.length; i3++) {
+        var el = nodes[i3];
+        if (!el) continue;
+        var classScheme = schemeFromClassTokens(el);
+        if (classScheme) return classScheme;
+        var attr = schemeFromWord(el.getAttribute("data-theme")) || schemeFromWord(el.getAttribute("color-scheme"));
+        if (attr) return attr;
+        if (el.style && el.style.colorScheme) {
+          var inline = schemeFromWord(el.style.colorScheme);
+          if (inline && !/\blight\s+dark\b|\bdark\s+light\b/i.test(el.style.colorScheme)) return inline;
+        }
+      }
+      return null;
+    }
     function detectHostScheme(platform) {
       var html = document.documentElement;
       var body = document.body;
@@ -1706,8 +1901,8 @@
         return prefersDarkScheme() ? "dark" : "light";
       }
       if (platform === "grok") {
-        if (/\bdark\b/.test(cls)) return "dark";
-        if (/\blight\b/.test(cls)) return "light";
+        var grokClassScheme = schemeFromClassTokens(html);
+        if (grokClassScheme) return grokClassScheme;
         try {
           var cs = getComputedStyle(html).colorScheme || "";
           if (/\bdark\b/i.test(cs)) return "dark";
@@ -1746,7 +1941,7 @@
         if (mode === "light") return "light";
         return prefersDarkScheme() ? "dark" : "light";
       }
-      return prefersDarkScheme() ? "dark" : "light";
+      return hostMarkerScheme() || (prefersDarkScheme() ? "dark" : "light");
     }
     function watchHostScheme(platform, onChange) {
       var last = detectHostScheme(platform);
@@ -1765,6 +1960,7 @@
             "class",
             "style",
             "data-theme",
+            "color-scheme",
             "data-color-mode",
             "data-mode",
             "data-light-theme",
@@ -1774,7 +1970,7 @@
         if (document.body) {
           mo.observe(document.body, {
             attributes: true,
-            attributeFilter: ["class", "style"]
+            attributeFilter: ["class", "style", "data-theme", "color-scheme"]
           });
         }
       } catch (e4) {
@@ -1859,6 +2055,11 @@
       buildExportBundle,
       exportConversation,
       downloadBlob,
+      showToast,
+      dismissToast,
+      setToastTranslator,
+      toastText,
+      notifyExportOutcome,
       zipStore,
       downloadSvg,
       chevronSvg,
@@ -1872,9 +2073,10 @@
       formatPillLabel,
       loadPack,
       savePack,
-      loadDirHandle,
+      saveViaExtension,
       openPathPicker,
       wantsPathPicker,
+      resolvePack,
       observe,
       findOverflowScroller,
       hydrateTranscript,
@@ -2421,6 +2623,16 @@
     "label.schemaDefault": "Default schema",
     "label.schemaByFormat": "Schema per format",
     "label.schemaInherit": "Use default",
+    "label.saveFolder": "Default folder",
+    "label.shiftMode": "Shift + click",
+    "label.schemaPerFormat": "Per format",
+    "schema.inherit": "As default",
+    "saveFolder.none": "Not chosen \u2014 will ask on first download",
+    "saveFolder.prompt": "Access expired \u2014 restore",
+    "saveFolder.unsupported": "Not supported \u2014 Chrome Downloads is used",
+    "shiftMode.rebind": "Choose new default folder",
+    "shiftMode.saveAs": "Ask where to save (one time)",
+    "hint.shiftMode": "Normal click saves silently into the default folder.",
     "schema.chat-export/1": "chat-export \u2014 1",
     "schema.sharegpt/1": "sharegpt \u2014 1",
     "schema.hint": "Formats on the page bar stay the same. Schema controls how MD/JSON/YAML/HTML/PDF text is shaped. Default is chat-export \u2014 1.",
@@ -2433,6 +2645,7 @@
     "label.faq": "Advanced Mode Terms & FAQ",
     "label.on": "On",
     "label.off": "Off",
+    "skin.auto": "Auto (match site)",
     "skin.chatgpt": "ChatGPT",
     "skin.grok": "Grok",
     "skin.grok-x": "X Grok",
@@ -2455,18 +2668,30 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "section.exportSettings": "Export settings",
     "bar.pack": "Pack",
     "bar.pack.folder": "Folder",
     "bar.pack.zip": "Zip",
     "bar.format": "Export format",
     "bar.download": "Download chat",
-    "bar.dl.single": "Click: Downloads. Shift or Ctrl: choose path",
-    "bar.dl.multi": "Click: export. Shift or Ctrl: choose save location",
+    "bar.dl.single": "Download {fmt}. Shift: {shiftHint}",
+    "bar.dl.multi": "Download {fmt}. Shift: {shiftHint}",
+    "toast.saved": "Saved to \xAB{folder}\xBB: {name}",
+    "toast.downloaded": "Downloaded: {name}",
+    "toast.failed": "Export failed",
+    "toast.empty": "Nothing to export yet",
+    "bar.shift.rebind": "new default folder",
+    "bar.shift.saveAs": "ask where to save",
     "btn.generate": "Generate",
     "btn.rotate": "Rotate",
     "btn.copy": "Copy",
     "btn.continue": "Continue",
     "btn.acceptTos": "Accept & Continue",
+    "btn.showExportSettings": "Export settings",
+    "btn.hideExportSettings": "Hide export settings",
+    "btn.chooseFolder": "Choose folder",
+    "btn.changeFolder": "Change folder",
+    "btn.forgetFolder": "Forget",
     "btn.showAdvanced": "Advanced",
     "btn.hideAdvanced": "Hide advanced",
     "test.connection": "Test connection",
@@ -2495,7 +2720,18 @@
     "faq.3": "Local Loopback Only: The extension and server communicate strictly over 127.0.0.1 using per-browser ceb_ tokens. Site passwords and cookies are never extracted or sent to the agent.",
     "faq.4": "Permission Gates: Creating/sending chats can be toggled off, and destructive actions (deleting chats or projects) are disabled by default and require explicit confirmation.",
     "faq.5": 'You are solely responsible for all actions performed by connected agents and for complying with provider Terms of Service. Provided "AS IS" without liability.',
-    "faq.6": "If an adapter or RPC command breaks after a provider update, open an issue at https://github.com/svergio/chat-export-extension/issues"
+    "faq.6": "If an adapter or RPC command breaks after a provider update, open an issue at https://github.com/svergio/chat-export-extension/issues",
+    "folderPage.title": "Chat Export \u2014 save folder",
+    "folderPage.pick": "Choose folder",
+    "folderPage.grant": "Restore access to \xAB{name}\xBB",
+    "folderPage.saved": "Saved to \xAB{name}\xBB",
+    "folderPage.cancelled": "Cancelled. Nothing saved.",
+    "folderPage.hint": "Choose or create a subfolder, for example Downloads/Chat Export. Chrome does not allow the Downloads, Desktop or Documents folder itself.",
+    "folderPage.pending": "The export will be saved as soon as you choose a folder.",
+    "folderPage.notPicked": "No folder chosen yet. Pick a subfolder and try again.",
+    "folderPage.cancel": "Cancel export",
+    "folderPage.pendingMany": "{count} exports will be saved as soon as you choose a folder.",
+    "folderPage.savedMany": "Saved {count} exports to \xAB{name}\xBB"
   };
 
   // locales/LN_ru.json
@@ -2528,6 +2764,16 @@
     "label.schemaDefault": "\u0421\u0445\u0435\u043C\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
     "label.schemaByFormat": "\u0421\u0445\u0435\u043C\u0430 \u043D\u0430 \u0444\u043E\u0440\u043C\u0430\u0442",
     "label.schemaInherit": "\u041A\u0430\u043A \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "label.saveFolder": "\u041F\u0430\u043F\u043A\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "label.shiftMode": "Shift + \u043A\u043B\u0438\u043A",
+    "label.schemaPerFormat": "\u041F\u043E \u0444\u043E\u0440\u043C\u0430\u0442\u0430\u043C",
+    "schema.inherit": "\u041A\u0430\u043A \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "saveFolder.none": "\u041D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430 \u2014 \u0441\u043F\u0440\u043E\u0441\u0438\u043C \u043F\u0440\u0438 \u043F\u0435\u0440\u0432\u043E\u043C \u0441\u043A\u0430\u0447\u0438\u0432\u0430\u043D\u0438\u0438",
+    "saveFolder.prompt": "\u0414\u043E\u0441\u0442\u0443\u043F \u0438\u0441\u0442\u0451\u043A \u2014 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C",
+    "saveFolder.unsupported": "\u041D\u0435 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u2014 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E\u0442\u0441\u044F \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438 Chrome",
+    "shiftMode.rebind": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043D\u043E\u0432\u0443\u044E \u043F\u0430\u043F\u043A\u0443 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "shiftMode.saveAs": "\u0421\u043F\u0440\u043E\u0441\u0438\u0442\u044C, \u043A\u0443\u0434\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C (\u0440\u0430\u0437\u043E\u0432\u043E)",
+    "hint.shiftMode": "\u041E\u0431\u044B\u0447\u043D\u044B\u0439 \u043A\u043B\u0438\u043A \u0442\u0438\u0445\u043E \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0432 \u043F\u0430\u043F\u043A\u0443 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E.",
     "schema.chat-export/1": "chat-export \u2014 1",
     "schema.sharegpt/1": "sharegpt \u2014 1",
     "schema.hint": "\u041A\u043D\u043E\u043F\u043A\u0438 \u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0432 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u043D\u0435 \u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F. \u0421\u0445\u0435\u043C\u0430 \u0437\u0430\u0434\u0430\u0451\u0442, \u043A\u0430\u043A \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442 \u0442\u0435\u043A\u0441\u0442 MD/JSON/YAML/HTML/PDF. \u0414\u0435\u0444\u043E\u043B\u0442 \u2014 chat-export \u2014 1.",
@@ -2540,6 +2786,7 @@
     "label.faq": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u0433\u043E \u0440\u0435\u0436\u0438\u043C\u0430 \u0438 FAQ",
     "label.on": "\u0412\u043A\u043B",
     "label.off": "\u0412\u044B\u043A\u043B",
+    "skin.auto": "\u0410\u0432\u0442\u043E (\u043F\u043E \u0441\u0430\u0439\u0442\u0443)",
     "skin.chatgpt": "ChatGPT",
     "skin.grok": "Grok",
     "skin.grok-x": "X Grok",
@@ -2562,18 +2809,30 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "section.exportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.pack": "\u0423\u043F\u0430\u043A\u043E\u0432\u043A\u0430",
     "bar.pack.folder": "\u041F\u0430\u043F\u043A\u0430",
     "bar.pack.zip": "\u0410\u0440\u0445\u0438\u0432",
     "bar.format": "\u0424\u043E\u0440\u043C\u0430\u0442 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.download": "\u0421\u043A\u0430\u0447\u0430\u0442\u044C \u0447\u0430\u0442",
-    "bar.dl.single": "\u041A\u043B\u0438\u043A: \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438. Shift \u0438\u043B\u0438 Ctrl: \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0443\u0442\u044C",
-    "bar.dl.multi": "\u041A\u043B\u0438\u043A: \u044D\u043A\u0441\u043F\u043E\u0440\u0442. Shift \u0438\u043B\u0438 Ctrl: \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u043C\u0435\u0441\u0442\u043E \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
+    "bar.dl.single": "\u0421\u043A\u0430\u0447\u0430\u0442\u044C {fmt}. Shift: {shiftHint}",
+    "bar.dl.multi": "\u0421\u043A\u0430\u0447\u0430\u0442\u044C {fmt}. Shift: {shiftHint}",
+    "toast.saved": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB{folder}\xBB: {name}",
+    "toast.downloaded": "\u0421\u043A\u0430\u0447\u0430\u043D\u043E: {name}",
+    "toast.failed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F",
+    "toast.empty": "\u041F\u043E\u043A\u0430 \u043D\u0435\u0447\u0435\u0433\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+    "bar.shift.rebind": "\u043D\u043E\u0432\u0430\u044F \u043F\u0430\u043F\u043A\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "bar.shift.saveAs": "\u0441\u043F\u0440\u043E\u0441\u0438\u0442\u044C, \u043A\u0443\u0434\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C",
     "btn.generate": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C",
     "btn.rotate": "\u0421\u043C\u0435\u043D\u0438\u0442\u044C",
     "btn.copy": "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
     "btn.continue": "\u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
     "btn.acceptTos": "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0438 \u043F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
+    "btn.showExportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "btn.hideExportSettings": "\u0421\u043A\u0440\u044B\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "btn.chooseFolder": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+    "btn.changeFolder": "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+    "btn.forgetFolder": "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C",
     "btn.showAdvanced": "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "btn.hideAdvanced": "\u0421\u043A\u0440\u044B\u0442\u044C \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "test.connection": "\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435",
@@ -2602,7 +2861,18 @@
     "faq.3": "\u0422\u043E\u043B\u044C\u043A\u043E \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043D\u0442\u0443\u0440: \u041E\u0431\u043C\u0435\u043D \u043C\u0435\u0436\u0434\u0443 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435\u043C \u0438 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u043C \u0438\u0434\u0435\u0442 \u0441\u0442\u0440\u043E\u0433\u043E \u0447\u0435\u0440\u0435\u0437 127.0.0.1 \u043F\u043E \u0438\u043D\u0434\u0438\u0432\u0438\u0434\u0443\u0430\u043B\u044C\u043D\u044B\u043C \u0442\u043E\u043A\u0435\u043D\u0430\u043C ceb_. \u041F\u0430\u0440\u043E\u043B\u0438 \u0438 cookies \u0441\u0430\u0439\u0442\u043E\u0432 \u043D\u0435 \u0438\u0437\u0432\u043B\u0435\u043A\u0430\u044E\u0442\u0441\u044F \u0438 \u043D\u0435 \u043F\u0435\u0440\u0435\u0434\u0430\u044E\u0442\u0441\u044F \u0430\u0433\u0435\u043D\u0442\u0443.",
     "faq.4": "\u041A\u043E\u043D\u0442\u0440\u043E\u043B\u044C \u043F\u0440\u0430\u0432: \u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0443 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439 \u043C\u043E\u0436\u043D\u043E \u043E\u0442\u043A\u043B\u044E\u0447\u0438\u0442\u044C, \u0430 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0435 \u0447\u0430\u0442\u043E\u0432 \u0438 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432 \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u043E \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E \u0438 \u0442\u0440\u0435\u0431\u0443\u0435\u0442 \u044F\u0432\u043D\u043E\u0433\u043E \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u0438\u044F.",
     "faq.5": "\u0412\u044B \u043D\u0435\u0441\u0435\u0442\u0435 \u043F\u043E\u043B\u043D\u0443\u044E \u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0441\u0442\u044C \u0437\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044F \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043D\u044B\u0445 \u0430\u0433\u0435\u043D\u0442\u043E\u0432 \u0438 \u0441\u043E\u0431\u043B\u044E\u0434\u0435\u043D\u0438\u0435 \u043F\u0440\u0430\u0432\u0438\u043B \u0441\u0435\u0440\u0432\u0438\u0441\u043E\u0432 (ToS). \u041F\u041E \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \xAB\u041A\u0410\u041A \u0415\u0421\u0422\u042C\xBB \u0431\u0435\u0437 \u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0441\u0442\u0438 \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432.",
-    "faq.6": "\u0415\u0441\u043B\u0438 \u0430\u0434\u0430\u043F\u0442\u0435\u0440 \u0438\u043B\u0438 RPC-\u043A\u043E\u043C\u0430\u043D\u0434\u0430 \u0441\u043B\u043E\u043C\u0430\u043B\u0438\u0441\u044C \u043F\u043E\u0441\u043B\u0435 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u0430\u0439\u0442\u0430, \u0441\u043E\u043E\u0431\u0449\u0438\u0442\u0435 \u0432 \u0438\u0448\u044C\u044E: https://github.com/svergio/chat-export-extension/issues"
+    "faq.6": "\u0415\u0441\u043B\u0438 \u0430\u0434\u0430\u043F\u0442\u0435\u0440 \u0438\u043B\u0438 RPC-\u043A\u043E\u043C\u0430\u043D\u0434\u0430 \u0441\u043B\u043E\u043C\u0430\u043B\u0438\u0441\u044C \u043F\u043E\u0441\u043B\u0435 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u0430\u0439\u0442\u0430, \u0441\u043E\u043E\u0431\u0449\u0438\u0442\u0435 \u0432 \u0438\u0448\u044C\u044E: https://github.com/svergio/chat-export-extension/issues",
+    "folderPage.title": "Chat Export \u2014 \u043F\u0430\u043F\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
+    "folderPage.pick": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+    "folderPage.grant": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0434\u043E\u0441\u0442\u0443\u043F \u043A \xAB{name}\xBB",
+    "folderPage.saved": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB{name}\xBB",
+    "folderPage.cancelled": "\u041E\u0442\u043C\u0435\u043D\u0435\u043D\u043E. \u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E.",
+    "folderPage.hint": "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u043B\u0438 \u0441\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043F\u043E\u0434\u043F\u0430\u043F\u043A\u0443, \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440 \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438/Chat Export. Chrome \u043D\u0435 \u0440\u0430\u0437\u0440\u0435\u0448\u0430\u0435\u0442 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0441\u0430\u043C\u0438 \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438, \u0420\u0430\u0431\u043E\u0447\u0438\u0439 \u0441\u0442\u043E\u043B \u0438\u043B\u0438 \u0414\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B.",
+    "folderPage.pending": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u0441\u044F \u0441\u0440\u0430\u0437\u0443 \u043F\u043E\u0441\u043B\u0435 \u0432\u044B\u0431\u043E\u0440\u0430 \u043F\u0430\u043F\u043A\u0438.",
+    "folderPage.notPicked": "\u041F\u0430\u043F\u043A\u0430 \u043F\u043E\u043A\u0430 \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u043E\u0434\u043F\u0430\u043F\u043A\u0443 \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430.",
+    "folderPage.cancel": "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u044D\u043A\u0441\u043F\u043E\u0440\u0442",
+    "folderPage.pendingMany": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432 \u0432 \u043E\u0447\u0435\u0440\u0435\u0434\u0438: {count}. \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u043C \u0441\u0440\u0430\u0437\u0443 \u043F\u043E\u0441\u043B\u0435 \u0432\u044B\u0431\u043E\u0440\u0430 \u043F\u0430\u043F\u043A\u0438.",
+    "folderPage.savedMany": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432: {count} \u0432 \xAB{name}\xBB"
   };
 
   // src/i18n/index.js
@@ -2671,6 +2941,7 @@
   var EXPORT_FORMAT_IDS = Object.freeze(["md", "yaml", "json", "html", "pdf"]);
   var EXPORT_SCHEMA_IDS = Object.freeze(["chat-export/1", "sharegpt/1"]);
   var DEFAULT_EXPORT_SCHEMA_ID = "chat-export/1";
+  var SHIFT_MODES = Object.freeze(["rebind", "saveAs"]);
   var STORAGE_KEYS = Object.freeze({
     browserId: "ce.browserId",
     settings: "ce.settings",
@@ -2708,15 +2979,16 @@
         pdf: null
       })
     }),
+    saveFolder: Object.freeze({ shiftMode: "rebind" }),
     ui: Object.freeze({
-      skin: "chatgpt",
+      skin: "auto",
       scheme: "auto",
       locale: "auto"
     })
   });
   function normalizeUi(raw) {
     const u3 = raw && typeof raw === "object" ? raw : {};
-    const skin = UI_SKINS.indexOf(u3.skin) >= 0 ? u3.skin : "chatgpt";
+    const skin = u3.skin === "auto" || UI_SKINS.indexOf(u3.skin) >= 0 ? u3.skin : "auto";
     const scheme = UI_SCHEMES.indexOf(u3.scheme) >= 0 ? u3.scheme : "auto";
     const locale = UI_LOCALES.indexOf(u3.locale) >= 0 ? u3.locale : "auto";
     return { skin, scheme, locale };
@@ -2764,6 +3036,9 @@
       tosVersion: Number.isFinite(Number(s3.tosVersion)) ? Number(s3.tosVersion) : 0,
       faqVersion: Number.isFinite(Number(s3.faqVersion)) ? Number(s3.faqVersion) : 0,
       exportSchemas: normalizeExportSchemas(s3.exportSchemas),
+      saveFolder: {
+        shiftMode: SHIFT_MODES.indexOf(s3.saveFolder && s3.saveFolder.shiftMode) >= 0 ? s3.saveFolder.shiftMode : "rebind"
+      },
       ui: normalizeUi(s3.ui)
     };
   }
@@ -2829,6 +3104,9 @@
       },
       /* @__PURE__ */ k("polyline", { points: "4,6 8,10 12,6" })
     );
+  }
+  function shiftModeOf(settings) {
+    return settings && settings.saveFolder && settings.saveFolder.shiftMode === "saveAs" ? "saveAs" : "rebind";
   }
   function cdsButtonParts(btn) {
     if (!btn || !btn.querySelector) return null;
@@ -2905,11 +3183,20 @@
       function onScroll() {
         place();
       }
+      function onKeydown(ev) {
+        if (ev.key !== "Escape") return;
+        ev.stopPropagation();
+        onClose();
+        const btn = formatBtnRef.current;
+        if (btn && typeof btn.focus === "function") btn.focus();
+      }
       document.addEventListener("click", onDoc, true);
+      document.addEventListener("keydown", onKeydown, true);
       window.addEventListener("resize", onScroll);
       window.addEventListener("scroll", onScroll, true);
       return () => {
         document.removeEventListener("click", onDoc, true);
+        document.removeEventListener("keydown", onKeydown, true);
         window.removeEventListener("resize", onScroll);
         window.removeEventListener("scroll", onScroll, true);
       };
@@ -2947,7 +3234,7 @@
             on ? /* @__PURE__ */ k("span", { class: "chat-export-check", "aria-hidden": "true" }, "\u2713") : null
           );
         }),
-        formats.length > 1 ? /* @__PURE__ */ k("div", null, /* @__PURE__ */ k("div", { class: "chat-export-menu-sep" }), /* @__PURE__ */ k("div", { class: "chat-export-pack", role: "radiogroup", "aria-label": t3("bar.pack") }, [
+        /* @__PURE__ */ k("div", null, /* @__PURE__ */ k("div", { class: "chat-export-menu-sep" }), /* @__PURE__ */ k("div", { class: "chat-export-pack", role: "radiogroup", "aria-label": t3("bar.pack") }, [
           { id: "folder", label: t3("bar.pack.folder") },
           { id: "zip", label: t3("bar.pack.zip") }
         ].map((spec) => /* @__PURE__ */ k(
@@ -2965,7 +3252,7 @@
             }
           },
           spec.label
-        )))) : null
+        ))))
       ),
       document.body
     );
@@ -2984,13 +3271,13 @@
       () => typeof CE2.detectHostScheme === "function" ? CE2.detectHostScheme(platform) : "dark"
     );
     const [localeCode, setLocaleCode] = d2(() => resolveLocale(getPlatformSettings().ui.locale));
-    const cachedDirRef = T2(null);
-    const cachedDirOkRef = T2(false);
+    const [shiftMode, setShiftMode] = d2(() => shiftModeOf(getPlatformSettings()));
     const lastIntentRef = T2(0);
     const t3 = w2(() => createTranslator(localeCode), [localeCode]);
     A2(() => {
       return onPlatformSettings((settings) => {
         setLocaleCode(resolveLocale(settings.ui.locale));
+        setShiftMode(shiftModeOf(settings));
       });
     }, []);
     A2(() => {
@@ -3018,19 +3305,12 @@
       return CE2.downloadSvg();
     }
     function dlTitle() {
-      if (formats.length > 1) return t3("bar.dl.multi");
-      return t3("bar.dl.single");
+      const labels = formats.map((id) => CE2.FORMAT_LABEL[id] || id).join(", ");
+      const multi = formats.length > 1;
+      const pack = CE2.resolvePack(formats.length, packMode);
+      const fmt = pack === "file" ? labels : labels + " (" + t3(pack === "folder" ? "bar.pack.folder" : "bar.pack.zip") + ")";
+      return t3(multi ? "bar.dl.multi" : "bar.dl.single").replace("{fmt}", fmt).replace("{shiftHint}", t3(shiftMode === "saveAs" ? "bar.shift.saveAs" : "bar.shift.rebind"));
     }
-    A2(() => {
-      CE2.loadDirHandle().then((h3) => {
-        cachedDirRef.current = h3 || null;
-        cachedDirOkRef.current = false;
-        if (!h3 || typeof h3.queryPermission !== "function") return;
-        return h3.queryPermission({ mode: "readwrite" }).then((state) => {
-          cachedDirOkRef.current = state === "granted";
-        });
-      });
-    }, []);
     A2(() => {
       const btn = dlBtnRef.current;
       if (!btn) return void 0;
@@ -3063,43 +3343,37 @@
       CE2.savePack(v3);
       setPackMode(v3);
     }
-    function runDownload(ev, forcePick) {
+    function runDownload(ev) {
       ev.preventDefault();
       ev.stopPropagation();
-      setMenuOpen(false);
       if (busy) return;
       const now = Date.now();
       if (now - lastIntentRef.current < 400) return;
       lastIntentRef.current = now;
       const selected = formats.slice();
-      const pack = selected.length > 1 ? packMode : "file";
-      const shiftPick = forcePick || CE2.wantsPathPicker(ev);
-      const useCachedFolder = pack === "folder" && cachedDirOkRef.current && cachedDirRef.current && !shiftPick;
-      const pickPath = shiftPick || pack === "folder" && !useCachedFolder;
-      const suggestedBase = (options.platform || "chat") + "-" + CE2.slugTitle(document.title || "chat") + "-" + CE2.dateStamp();
-      const pickerPack = pack === "folder" ? "folder" : selected.length > 1 ? "zip" : "file";
+      const pack = CE2.resolvePack(selected.length, packMode);
+      const shift = CE2.wantsPathPicker(ev);
+      const mode = shiftModeOf(getPlatformSettings());
+      const saveAs = shift && mode === "saveAs";
+      const rebind = shift && mode !== "saveAs";
       let pickedPromise = Promise.resolve(null);
-      if (useCachedFolder) {
-        pickedPromise = Promise.resolve({ kind: "dir", dir: cachedDirRef.current });
-      } else if (pickPath) {
+      if (saveAs) {
+        const suggestedBase = (options.platform || "chat") + "-" + CE2.slugTitle(document.title || "chat") + "-" + CE2.dateStamp();
         try {
-          pickedPromise = CE2.openPathPicker(selected, suggestedBase, pickerPack).then((picked) => {
-            if (picked && picked.kind === "dir" && picked.dir) {
-              cachedDirRef.current = picked.dir;
-              cachedDirOkRef.current = true;
-            }
-            return picked;
-          });
+          pickedPromise = CE2.openPathPicker(selected, suggestedBase, pack);
         } catch (err) {
-          console.error("[chat-export]", err);
-          pickedPromise = Promise.resolve(null);
+          pickedPromise = Promise.reject(err);
         }
       }
+      setMenuOpen(false);
       setBusy(true);
       Promise.all([pickedPromise, Promise.resolve().then(() => options.getData())]).then((pair) => {
         const picked = pair[0];
         const payload = pair[1];
-        if (!payload || !payload.messages || !payload.messages.length) return;
+        if (!payload || !payload.messages || !payload.messages.length) {
+          CE2.showToast(CE2.toastText("toast.empty"));
+          return;
+        }
         const settings = getPlatformSettings();
         return CE2.exportConversation({
           platform: options.platform,
@@ -3113,11 +3387,19 @@
           formats: selected,
           pack,
           picked,
+          rebind,
           exportSchemas: settings && settings.exportSchemas
         });
+      }).then((res) => {
+        if (res && res.pending) return;
+        if (res && !res.ok) {
+          console.warn("[chat-export] save failed", res);
+          CE2.showToast(CE2.toastText("toast.failed"));
+        }
       }).catch((err) => {
         if (err && err.name === "AbortError") return;
         console.error("[chat-export]", err);
+        CE2.showToast(CE2.toastText("toast.failed"));
       }).then(() => {
         setBusy(false);
       });
@@ -3168,10 +3450,7 @@
           onPointerMove: (ev) => setSuperLook(CE2.wantsPathPicker(ev)),
           onPointerDown: (ev) => setSuperLook(CE2.wantsPathPicker(ev)),
           onPointerLeave: () => setSuperLook(false),
-          onClick: (ev) => runDownload(ev, false),
-          onContextMenu: (ev) => {
-            if (ev.ctrlKey || ev.metaKey) runDownload(ev, true);
-          }
+          onClick: runDownload
         },
         /* @__PURE__ */ k(CdsPaint, { parts: cdsIcon }),
         cdsIcon ? /* @__PURE__ */ k(
@@ -3225,10 +3504,10 @@
     const host = document.createElement("div");
     host.setAttribute("data-ce-host", platform);
     host.style.display = "contents";
-    if (opts.insertAfter && opts.insertAfter.parentNode) {
-      opts.insertAfter.parentNode.insertBefore(host, opts.insertAfter.nextSibling);
-    } else if (opts.beforeChild && opts.beforeChild.parentNode) {
+    if (opts.beforeChild && opts.beforeChild.parentNode && anchor.contains(opts.beforeChild)) {
       opts.beforeChild.parentNode.insertBefore(host, opts.beforeChild);
+    } else if (opts.insertAfter && opts.insertAfter.parentNode) {
+      opts.insertAfter.parentNode.insertBefore(host, opts.insertAfter.nextSibling);
     } else if (opts.placement === "prepend") {
       anchor.insertBefore(host, anchor.firstChild);
     } else if (opts.placement === "before" && anchor.parentNode) {
@@ -3264,6 +3543,13 @@
     const host = existing.parentElement;
     existing.remove();
     if (host && host.getAttribute("data-ce-host") === id) host.remove();
+  }
+  function isRendered(el) {
+    if (!el) return false;
+    if (el.getBoundingClientRect().width > 0) return true;
+    if (getComputedStyle(el).display !== "contents") return false;
+    for (const c3 of el.children) if (c3.getBoundingClientRect().width > 0) return true;
+    return false;
   }
   function definePlatform(spec) {
     const CE2 = window.ChatExport;
@@ -3402,8 +3688,9 @@
       if (!found || !found.el) return;
       const existing = document.querySelector("[" + CE2.BAR_ATTR + '="' + id + '"]');
       const sameVer = existing && existing.getAttribute("data-chat-export-v") === CE2.EXT_VERSION;
-      const existingOk = existing && existing.isConnected && sameVer && found.el.contains(existing) && existing.getBoundingClientRect().width > 0;
+      const existingOk = existing && existing.isConnected && sameVer && found.el.contains(existing) && isRendered(existing);
       if (existingOk) return;
+      if (existing && existing.isConnected && sameVer && document.querySelector('[data-chat-export-menu="' + id + '"]')) return;
       if (existing) removeBar(CE2, id);
       const nativeFrom = found.nativeFrom || null;
       const nativeIconFrom = found.nativeIconFrom || null;
@@ -4706,6 +4993,10 @@
   // src/boot.js
   var CE = window.ChatExport;
   if (CE) {
+    let syncToastLocale = function() {
+      var settings = typeof CE.getPlatformSettings === "function" ? CE.getPlatformSettings() : {};
+      CE.setToastTranslator(createTranslator(resolveLocale(settings && settings.locale)));
+    };
     installSchemas(CE);
     CE.injectBar = injectBar;
     CE.definePlatform = definePlatform;
@@ -4717,5 +5008,18 @@
     CE.getPlatformSettings = getPlatformSettings;
     installPlatformGate();
     installRpcListener();
+    syncToastLocale();
+    if (typeof CE.onPlatformSettings === "function") {
+      CE.onPlatformSettings(syncToastLocale);
+    }
+    if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener(function(msg) {
+        if (!msg || msg.type !== "ce-saved") return;
+        var name = msg.name != null ? String(msg.name) : "";
+        if (!name) return;
+        var folder = msg.folder != null ? String(msg.folder) : "";
+        CE.showToast(CE.toastText("toast.saved", { folder, name }));
+      });
+    }
   }
 })();

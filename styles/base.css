@@ -1,0 +1,219 @@
+.chat-export-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  pointer-events: auto;
+  z-index: 5;
+}
+.chat-export-bar button {
+  cursor: pointer;
+}
+
+.chat-export-bar button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.chat-export-format-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.chat-export-chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.chat-export-bar button.is-open .chat-export-chevron {
+  transform: rotate(180deg);
+}
+
+.chat-export-menu {
+  --ce-menu-bg: #2a2a2a;
+  --ce-menu-fg: #f2f2f2;
+  --ce-menu-border: rgba(255, 255, 255, 0.08);
+  --ce-menu-hover: rgba(255, 255, 255, 0.08);
+  --ce-menu-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --ce-menu-sep: rgba(255, 255, 255, 0.1);
+  --ce-menu-pack-bg: rgba(0, 0, 0, 0.25);
+  --ce-menu-pack-active: rgba(255, 255, 255, 0.12);
+  min-width: 196px;
+  padding: 8px;
+  border-radius: 16px;
+  background: var(--ce-menu-bg);
+  color: var(--ce-menu-fg);
+  box-shadow: var(--ce-menu-shadow);
+  border: 1px solid var(--ce-menu-border);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.chat-export-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-export-menu-item:hover,
+.chat-export-menu-item.is-active {
+  background: var(--ce-menu-hover);
+}
+
+.chat-export-check {
+  opacity: 0.85;
+  font-size: 13px;
+}
+
+.chat-export-menu-sep {
+  height: 1px;
+  margin: 8px 4px;
+  background: var(--ce-menu-sep);
+}
+
+.chat-export-pack {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--ce-menu-pack-bg);
+}
+
+.chat-export-pack-btn {
+  flex: 1;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-export-pack-btn:hover,
+.chat-export-pack-btn.is-active {
+  background: var(--ce-menu-pack-active);
+}
+.chat-export-dl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.chat-export-dl.is-super,
+.chat-export-dl.is-super:hover,
+.chat-export-dl.is-super:active {
+  background-color: rgba(220, 64, 64, 0.28) !important;
+}
+
+.chat-export-dl svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.chat-export-dl[aria-busy='true'] {
+  opacity: 0.55;
+}
+
+.chat-export-bar:not(:has(button[class])) button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.chat-export-bar:not(:has(button[class])) .chat-export-dl {
+  padding: 0;
+  width: 32px;
+}
+
+.chat-export-toast-host {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483646;
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.chat-export-toast {
+  pointer-events: auto;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-export-toast.is-visible {
+  opacity: 1;
+}
+
+.chat-export-toast.is-hiding {
+  opacity: 0;
+}
+
+.chat-export-toast[data-ce-scheme='dark'] {
+  background: #2a2a2a;
+  color: #f2f2f2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-export-toast[data-ce-scheme='light'] {
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}

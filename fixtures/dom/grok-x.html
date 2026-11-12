@@ -1,7 +1,36 @@
 <!DOCTYPE html>
-<html><body>
+<html><head><title>Grok / X</title></head><body>
   <input type="file" id="grok-x-file" />
   <ul id="grok-x-mode-menu" role="menu">
     <li role="menuitem" aria-disabled="true" data-locked="true">Перейти на grok.com</li>
   </ul>
+  <div id="gx-app">
+    <header role="banner">
+      <nav role="navigation">
+        <a href="/home">Главная</a><a href="/explore">Обзор</a><a href="/notifications">Уведомления</a>
+        <a href="/i/grok">Grok</a><button>Опубликовать пост</button>
+        <button data-testid="SideNav_AccountSwitcher_Button">Svergio @SvergioM</button>
+      </nav>
+    </header>
+    <main role="main"><div><div data-testid="primaryColumn"><div>
+      <button>Смотреть новые посты</button>
+      <div id="gx-thread">
+        <div><span></span><div id="gx-list">
+          <span></span>
+          <div id="gx-user"><div>[ce-test] #15 file+focused — reply OK only</div></div>
+          <div id="gx-assistant"><div>
+            <div><p>OK</p></div>
+            <div><button aria-label="Копировать текст"><svg></svg></button><button aria-label="Like"><svg></svg></button></div>
+          </div></div>
+          <span></span>
+        </div></div>
+        <div id="gx-composer">
+          <textarea placeholder="Спросите что-нибудь"></textarea>
+          <div><div><button aria-label="Быстрый">Быстрый</button></div>
+            <div data-ce-host="grok-x"><div data-chat-export-bar="grok-x" class="chat-export-bar"><button class="chat-export-fmt">MD</button></div></div>
+            <button aria-label="Голосовой режим"><svg></svg></button></div>
+        </div>
+      </div>
+    </div></div></div></main>
+  </div>
 </body></html>

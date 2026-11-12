@@ -2,7 +2,10 @@
   'use strict';
 
   var BAR_ATTR = 'data-chat-export-bar';
-  var EXT_VERSION = '1.8.3';
+  var EXT_VERSION =
+    global.chrome && chrome.runtime && chrome.runtime.getManifest
+      ? chrome.runtime.getManifest().version
+      : 'dev';
   var HTTP_RE = /^https?:\/\//i;
   var URL_KEYS = /^(url|uri|href|link|sourceUrl|canonicalUrl|webUrl|targetUrl)$/i;
   var TITLE_KEYS = /^(title|name|label|text|snippet|domain|publisher|siteName)$/i;
@@ -732,9 +735,7 @@
   };
   var FORMAT_STORE = 'chat-export-formats';
   var PACK_STORE = 'chat-export-pack';
-  var DIR_DB_NAME = 'chat-export-fs';
-  var DIR_DB_STORE = 'handles';
-  var DIR_DB_KEY = 'folder';
+  var FALLBACK_DIR = 'Chat Export/';
   var CRC32_TABLE = (function () {
     var table = new Uint32Array(256);
     for (var n = 0; n < 256; n++) {
@@ -1101,7 +1102,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = filename;
+    a.download = String(filename || 'chat').split('/').pop();
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
@@ -1120,29 +1121,149 @@
     return btoa(parts.join(''));
   }
 
-  function downloadBlob(filename, data, mime) {
+  var toastHideTimer = null;
+  var toastFadeTimer = null;
+  var toastEl = null;
+  var toastTranslator = null;
+
+  function setToastTranslator(fn) {
+    toastTranslator = typeof fn === 'function' ? fn : null;
+  }
+
+  function toastText(key, vars) {
+    var t = toastTranslator || function (k) {
+      return k;
+    };
+    var s = t(key);
+    if (vars) {
+      var keys = Object.keys(vars);
+      for (var i = 0; i < keys.length; i++) {
+        var p = keys[i];
+        s = s.split('{' + p + '}').join(String(vars[p]));
+      }
+    }
+    return s;
+  }
+
+  function toastSchemeFromBar() {
+    var bar = document.querySelector('.chat-export-bar[data-ce-scheme]');
+    if (bar) return bar.getAttribute('data-ce-scheme') || 'dark';
+    return prefersDarkScheme() ? 'dark' : 'light';
+  }
+
+  function dismissToast() {
+    if (toastHideTimer) {
+      clearTimeout(toastHideTimer);
+      toastHideTimer = null;
+    }
+    if (!toastEl) return;
+    toastEl.classList.remove('is-visible');
+    toastEl.classList.add('is-hiding');
+    var el = toastEl;
+    if (toastFadeTimer) clearTimeout(toastFadeTimer);
+    toastFadeTimer = setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+      if (toastEl === el) toastEl = null;
+      toastFadeTimer = null;
+    }, 200);
+  }
+
+  function showToast(text) {
+    if (!text || typeof document === 'undefined') return;
+    if (toastHideTimer) {
+      clearTimeout(toastHideTimer);
+      toastHideTimer = null;
+    }
+    if (toastFadeTimer) {
+      clearTimeout(toastFadeTimer);
+      toastFadeTimer = null;
+    }
+    if (toastEl && toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
+    toastEl = document.createElement('div');
+    toastEl.className = 'chat-export-toast';
+    toastEl.setAttribute('data-ce-scheme', toastSchemeFromBar());
+    toastEl.textContent = text;
+    toastEl.setAttribute('role', 'status');
+    toastEl.setAttribute('aria-live', 'polite');
+    toastEl.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      dismissToast();
+    });
+    var host = document.getElementById('chat-export-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'chat-export-toast-host';
+      host.className = 'chat-export-toast-host';
+      (document.documentElement || document.body).appendChild(host);
+    }
+    host.appendChild(toastEl);
+    requestAnimationFrame(function () {
+      if (toastEl) toastEl.classList.add('is-visible');
+    });
+    toastHideTimer = setTimeout(dismissToast, 2500);
+  }
+
+  function exportDisplayName(job, res) {
+    if (res && res.name) return String(res.name);
+    if (!job || !job.files || !job.files.length) return 'chat';
+    return String(job.files[0].name || 'chat').split('/').pop();
+  }
+
+  function notifyExportOutcome(res, job) {
+    if (res && res.pending) return;
+    if (!res || !res.ok) {
+      showToast(toastText('toast.failed'));
+      return;
+    }
+    if (res.via === 'folder' && res.folder != null && res.name) {
+      showToast(toastText('toast.saved', { folder: res.folder, name: res.name }));
+      return;
+    }
+    var name = exportDisplayName(job, res);
+    showToast(toastText('toast.downloaded', { name: name }));
+  }
+
+  function downloadBlob(filename, data, mime, opts) {
+    opts = opts || {};
+    var toastOnSuccess = !!opts.toast;
+    function toastDownloaded() {
+      if (!toastOnSuccess) return;
+      var name = String(filename || 'chat').split('/').pop();
+      showToast(toastText('toast.downloaded', { name: name }));
+    }
     var send = function (u8) {
       if (!u8 || !u8.length) {
         fallbackAnchorDownload(filename, data, mime);
+        toastDownloaded();
         return;
       }
-      if (!global.chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+      if (!global.chrome || !chrome.runtime || !chrome.runtime.id || !chrome.runtime.sendMessage) {
         fallbackAnchorDownload(filename, u8, mime);
+        toastDownloaded();
         return;
       }
-      chrome.runtime.sendMessage(
-        {
-          type: 'chat-export-download',
-          filename: String(filename || 'chat').replace(/\\/g, '/').replace(/^\/+/, ''),
-          mime: mime || 'application/octet-stream',
-          b64: bytesToBase64(u8)
-        },
-        function (res) {
-          if (chrome.runtime.lastError || !res || !res.ok) {
-            fallbackAnchorDownload(filename, u8, mime);
+      try {
+        chrome.runtime.sendMessage(
+          {
+            type: 'chat-export-download',
+            filename: String(filename || 'chat').replace(/\\/g, '/').replace(/^\/+/, ''),
+            mime: mime || 'application/octet-stream',
+            b64: bytesToBase64(u8)
+          },
+          function (res) {
+            if (chrome.runtime.lastError || !res || !res.ok) {
+              fallbackAnchorDownload(filename, u8, mime);
+              toastDownloaded();
+              return;
+            }
+            toastDownloaded();
           }
-        }
-      );
+        );
+      } catch (e) {
+        fallbackAnchorDownload(filename, u8, mime);
+        toastDownloaded();
+      }
     };
     if (typeof Blob !== 'undefined' && data instanceof Blob) {
       data.arrayBuffer().then(function (ab) {
@@ -1151,6 +1272,39 @@
       return;
     }
     send(toUint8(data));
+  }
+
+  function toBytesAsync(data) {
+    if (typeof Blob !== 'undefined' && data instanceof Blob) {
+      return data.arrayBuffer().then(function (ab) { return new Uint8Array(ab); });
+    }
+    return Promise.resolve(toUint8(data));
+  }
+
+  function saveViaExtension(job) {
+    var runtime = global.chrome && chrome.runtime;
+    if (!runtime || !runtime.id || typeof runtime.sendMessage !== 'function') {
+      return Promise.resolve({ ok: false, reason: 'unsupported' });
+    }
+    return Promise.all(job.files.map(function (f) {
+      return toBytesAsync(f.data).then(function (u8) {
+        return { name: f.name, mime: f.mime || 'application/octet-stream', b64: bytesToBase64(u8) };
+      });
+    })).then(function (files) {
+      return new Promise(function (resolve) {
+        var msg = { type: 'ce-save', pack: job.pack, subdir: job.subdir || null, files: files };
+        if (job.rebind) msg.rebind = true;
+        try {
+          runtime.sendMessage(msg, function (res) {
+            var err = chrome.runtime.lastError;
+            if (err || !res) resolve({ ok: false, reason: 'error', error: err ? err.message : 'no reply' });
+            else resolve(res);
+          });
+        } catch (e) {
+          resolve({ ok: false, reason: 'error', error: String((e && e.message) || e) });
+        }
+      });
+    });
   }
 
   function toUint8(data) {
@@ -1280,14 +1434,40 @@
     });
   }
 
+  function entryExists(dirHandle, name, kind) {
+    var get = kind === 'dir' ? dirHandle.getDirectoryHandle(name) : dirHandle.getFileHandle(name);
+    return get.then(
+      function () { return true; },
+      function (err) { return !(err && err.name === 'NotFoundError'); }
+    );
+  }
+
+  function uniqueEntryName(dirHandle, name, kind) {
+    var dot = kind === 'dir' ? -1 : name.lastIndexOf('.');
+    var stem = dot > 0 ? name.slice(0, dot) : name;
+    var ext = dot > 0 ? name.slice(dot) : '';
+    function attempt(n) {
+      var candidate = n ? stem + ' (' + n + ')' + ext : name;
+      return entryExists(dirHandle, candidate, kind).then(function (taken) {
+        if (!taken || n >= 999) return candidate;
+        return attempt(n + 1);
+      });
+    }
+    return attempt(0);
+  }
+
   function writeToDirectory(dirHandle, filename, data, mime) {
-    return dirHandle.getFileHandle(filename, { create: true }).then(function (handle) {
-      return writeFileHandle(handle, data, mime);
+    return uniqueEntryName(dirHandle, filename, 'file').then(function (name) {
+      return dirHandle.getFileHandle(name, { create: true }).then(function (handle) {
+        return writeFileHandle(handle, data, mime);
+      });
     });
   }
 
   function writeToSubdirectory(parentDir, folderName, files) {
-    return parentDir.getDirectoryHandle(folderName, { create: true }).then(function (sub) {
+    return uniqueEntryName(parentDir, folderName, 'dir').then(function (name) {
+      return parentDir.getDirectoryHandle(name, { create: true });
+    }).then(function (sub) {
       var chain = Promise.resolve();
       files.forEach(function (f) {
         chain = chain.then(function () {
@@ -1298,8 +1478,14 @@
     });
   }
 
+  function resolvePack(formatCount, packMode) {
+    if (packMode === 'file') return 'file';
+    if (packMode === 'folder') return formatCount > 1 ? 'folder' : 'file';
+    return 'zip';
+  }
+
   function wantsPathPicker(ev) {
-    return !!(ev && (ev.shiftKey || ev.ctrlKey || ev.metaKey));
+    return !!(ev && ev.shiftKey);
   }
 
   function loadPack() {
@@ -1314,45 +1500,6 @@
     try {
       localStorage.setItem(PACK_STORE, v === 'folder' ? 'folder' : 'zip');
     } catch (e) {}
-  }
-
-  function openDirDb() {
-    return new Promise(function (resolve, reject) {
-      if (!global.indexedDB) {
-        reject(new Error('no indexedDB'));
-        return;
-      }
-      var req = indexedDB.open(DIR_DB_NAME, 1);
-      req.onupgradeneeded = function () {
-        var db = req.result;
-        if (!db.objectStoreNames.contains(DIR_DB_STORE)) db.createObjectStore(DIR_DB_STORE);
-      };
-      req.onsuccess = function () { resolve(req.result); };
-      req.onerror = function () { reject(req.error); };
-    });
-  }
-
-  function saveDirHandle(handle) {
-    if (!handle) return Promise.resolve();
-    return openDirDb().then(function (db) {
-      return new Promise(function (resolve, reject) {
-        var tx = db.transaction(DIR_DB_STORE, 'readwrite');
-        tx.objectStore(DIR_DB_STORE).put(handle, DIR_DB_KEY);
-        tx.oncomplete = function () { db.close(); resolve(); };
-        tx.onerror = function () { db.close(); reject(tx.error); };
-      });
-    }).catch(function () {});
-  }
-
-  function loadDirHandle() {
-    return openDirDb().then(function (db) {
-      return new Promise(function (resolve, reject) {
-        var tx = db.transaction(DIR_DB_STORE, 'readonly');
-        var req = tx.objectStore(DIR_DB_STORE).get(DIR_DB_KEY);
-        req.onsuccess = function () { db.close(); resolve(req.result || null); };
-        req.onerror = function () { db.close(); reject(req.error); };
-      });
-    }).catch(function () { return null; });
   }
 
   function normalizeFormats(formats) {
@@ -1401,20 +1548,19 @@
     var hasDir = typeof window.showDirectoryPicker === 'function';
     if (!hasSave && !hasDir) return Promise.resolve(null);
 
-    var multi = list.length > 1;
-    if (multi && pack === 'folder') {
+    var mode = resolvePack(list.length, pack);
+    if (mode === 'folder') {
       if (!hasDir) return Promise.resolve(null);
       return window.showDirectoryPicker({ mode: 'readwrite' }).then(function (dir) {
-        saveDirHandle(dir);
         return { kind: 'dir', dir: dir };
       });
     }
 
-    var ext = multi ? 'zip' : list[0];
+    var ext = mode === 'zip' ? 'zip' : list[0];
     if (!hasSave) {
       if (!hasDir) return Promise.resolve(null);
       return window.showDirectoryPicker({ mode: 'readwrite' }).then(function (dir) {
-        return { kind: 'dir', dir: dir, asZip: multi };
+        return { kind: 'dir', dir: dir, asZip: mode === 'zip' };
       });
     }
     return showSavePicker(suggestedBase + '.' + ext, ext).then(function (handle) {
@@ -1503,42 +1649,82 @@
 
   function exportConversation(opts) {
     var formats = normalizeFormats(opts.formats);
-    var pack = formats.length > 1 ? (opts.pack === 'folder' ? 'folder' : 'zip') : 'file';
+    var pack = resolvePack(formats.length, opts.pack);
     return buildExportBundle(opts).then(function (bundle) {
       var base = bundle.base;
       var files = bundle.files;
-      var picked = opts.picked;
-      var wantZip = pack === 'zip' || (picked && picked.asZip) || (picked && picked.handles && picked.handles.zip);
+      if (!files.length) {
+        notifyExportOutcome({ ok: false });
+        return { ok: false, reason: 'empty' };
+      }
+      if (opts.picked) return writePicked(opts.picked, pack, base, files);
+      return saveDefault(pack, base, files, !!opts.rebind);
+    });
+  }
 
-      if (picked && picked.kind === 'dir' && picked.dir) {
-        if (wantZip && pack !== 'folder') {
-          return writeToDirectory(picked.dir, base + '.zip', zipStore(files), BLOB_MIME.zip);
-        }
-        return writeToSubdirectory(picked.dir, base, files);
+  function writePicked(picked, pack, base, files) {
+    var wantZip = pack === 'zip' || picked.asZip || (picked.handles && picked.handles.zip);
+    var pickedName = wantZip ? base + '.zip' : files.length === 1 ? files[0].filename : base;
+    var done = function () {
+      notifyExportOutcome({ ok: true, via: 'picker', name: pickedName });
+      return { ok: true, via: 'picker' };
+    };
+    if (picked.kind === 'dir' && picked.dir) {
+      if (wantZip && pack !== 'folder') {
+        return writeToDirectory(picked.dir, base + '.zip', zipStore(files), BLOB_MIME.zip).then(done);
       }
-      if (picked && picked.kind === 'files' && picked.handles) {
-        if (picked.handles.zip) {
-          return writeFileHandle(picked.handles.zip, zipStore(files), BLOB_MIME.zip);
-        }
-        var fileChain = Promise.resolve();
-        files.forEach(function (f) {
-          var handle = picked.handles[f.ext];
-          if (!handle) return;
-          fileChain = fileChain.then(function () {
-            return writeFileHandle(handle, f.data, f.mime);
-          });
+      if (pack === 'folder') return writeToSubdirectory(picked.dir, base, files).then(done);
+      var dirChain = Promise.resolve();
+      files.forEach(function (f) {
+        dirChain = dirChain.then(function () {
+          return writeToDirectory(picked.dir, f.filename, f.data, f.mime);
         });
-        return fileChain;
+      });
+      return dirChain.then(done);
+    }
+    if (picked.kind === 'files' && picked.handles) {
+      if (picked.handles.zip) {
+        return writeFileHandle(picked.handles.zip, zipStore(files), BLOB_MIME.zip).then(done);
       }
-      if (files.length > 1) {
-        downloadBlob(base + '.zip', zipStore(files), BLOB_MIME.zip);
-        return;
+      var fileChain = Promise.resolve();
+      files.forEach(function (f) {
+        var handle = picked.handles[f.ext];
+        if (!handle) return;
+        fileChain = fileChain.then(function () {
+          return writeFileHandle(handle, f.data, f.mime);
+        });
+      });
+      return fileChain.then(done);
+    }
+    return saveDefault(pack, base, files, false);
+  }
+
+  function saveDefault(pack, base, files, rebind) {
+    var job;
+    if (pack === 'zip') {
+      job = { pack: 'zip', subdir: null, files: [{ name: base + '.zip', mime: BLOB_MIME.zip, data: zipStore(files) }] };
+    } else if (pack === 'folder') {
+      job = { pack: 'folder', subdir: base, files: files.map(function (f) {
+        return { name: f.filename, mime: f.mime, data: f.data };
+      }) };
+    } else {
+      job = { pack: 'single', subdir: null, files: [{ name: files[0].filename, mime: files[0].mime, data: files[0].data }] };
+    }
+    job.rebind = rebind;
+    return saveViaExtension(job).then(function (res) {
+      if (res && res.pending) return res;
+      if (res && res.ok) {
+        notifyExportOutcome(res, job);
+        return res;
       }
-      files.forEach(function (f, i) {
+      console.warn('[chat-export] folder save fell back to Downloads:', res && (res.reason + (res.error ? ' ' + res.error : '')));
+      var prefix = FALLBACK_DIR + (job.subdir ? job.subdir + '/' : '');
+      job.files.forEach(function (f, i) {
         setTimeout(function () {
-          downloadBlob(f.filename, f.data, f.mime);
+          downloadBlob(prefix + f.name, f.data, f.mime, { toast: i === 0 });
         }, i * 250);
       });
+      return { ok: true, via: 'downloads', reason: res && res.reason };
     });
   }
 
@@ -1825,6 +2011,46 @@
     }
   }
 
+  function schemeFromWord(v) {
+    var s = String(v || '').toLowerCase();
+    if (/\bdark\b/.test(s)) return 'dark';
+    if (/\blight\b/.test(s)) return 'light';
+    return null;
+  }
+
+  function hasExactClassToken(el, token) {
+    if (!el || !token) return false;
+    if (el.classList && el.classList.contains(token)) return true;
+    var parts = String(el.className || '').split(/\s+/);
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i] === token) return true;
+    }
+    return false;
+  }
+
+  function schemeFromClassTokens(el) {
+    if (hasExactClassToken(el, 'dark')) return 'dark';
+    if (hasExactClassToken(el, 'light')) return 'light';
+    return null;
+  }
+
+  function hostMarkerScheme() {
+    var nodes = [document.documentElement, document.body];
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!el) continue;
+      var classScheme = schemeFromClassTokens(el);
+      if (classScheme) return classScheme;
+      var attr = schemeFromWord(el.getAttribute('data-theme')) || schemeFromWord(el.getAttribute('color-scheme'));
+      if (attr) return attr;
+      if (el.style && el.style.colorScheme) {
+        var inline = schemeFromWord(el.style.colorScheme);
+        if (inline && !/\blight\s+dark\b|\bdark\s+light\b/i.test(el.style.colorScheme)) return inline;
+      }
+    }
+    return null;
+  }
+
   function detectHostScheme(platform) {
     var html = document.documentElement;
     var body = document.body;
@@ -1846,8 +2072,8 @@
     }
 
     if (platform === 'grok') {
-      if (/\bdark\b/.test(cls)) return 'dark';
-      if (/\blight\b/.test(cls)) return 'light';
+      var grokClassScheme = schemeFromClassTokens(html);
+      if (grokClassScheme) return grokClassScheme;
       try {
         var cs = getComputedStyle(html).colorScheme || '';
         if (/\bdark\b/i.test(cs)) return 'dark';
@@ -1892,7 +2118,7 @@
       return prefersDarkScheme() ? 'dark' : 'light';
     }
 
-    return prefersDarkScheme() ? 'dark' : 'light';
+    return hostMarkerScheme() || (prefersDarkScheme() ? 'dark' : 'light');
   }
 
   function watchHostScheme(platform, onChange) {
@@ -1914,6 +2140,7 @@
           'class',
           'style',
           'data-theme',
+          'color-scheme',
           'data-color-mode',
           'data-mode',
           'data-light-theme',
@@ -1923,7 +2150,7 @@
       if (document.body) {
         mo.observe(document.body, {
           attributes: true,
-          attributeFilter: ['class', 'style']
+          attributeFilter: ['class', 'style', 'data-theme', 'color-scheme']
         });
       }
     } catch (e4) {
@@ -2030,6 +2257,11 @@
     buildExportBundle: buildExportBundle,
     exportConversation: exportConversation,
     downloadBlob: downloadBlob,
+    showToast: showToast,
+    dismissToast: dismissToast,
+    setToastTranslator: setToastTranslator,
+    toastText: toastText,
+    notifyExportOutcome: notifyExportOutcome,
     zipStore: zipStore,
     downloadSvg: downloadSvg,
     chevronSvg: chevronSvg,
@@ -2043,9 +2275,10 @@
     formatPillLabel: formatPillLabel,
     loadPack: loadPack,
     savePack: savePack,
-    loadDirHandle: loadDirHandle,
+    saveViaExtension: saveViaExtension,
     openPathPicker: openPathPicker,
     wantsPathPicker: wantsPathPicker,
+    resolvePack: resolvePack,
     observe: observe,
     findOverflowScroller: findOverflowScroller,
     hydrateTranscript: hydrateTranscript,

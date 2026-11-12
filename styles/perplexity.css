@@ -1,0 +1,102 @@
+.chat-export-bar--perplexity {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-inline: 0 4px !important;
+  height: 32px !important;
+}
+
+.chat-export-bar--perplexity > .chat-export-fmt,
+.chat-export-bar--perplexity > .chat-export-dl {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 9999px !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+}
+
+.chat-export-bar--perplexity > .chat-export-fmt {
+  padding: 0 12px !important;
+}
+
+.chat-export-bar--perplexity > .chat-export-dl {
+  width: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+}
+
+.chat-export-bar--perplexity > .chat-export-fmt:hover,
+.chat-export-bar--perplexity > .chat-export-fmt.is-open {
+  background: color-mix(in srgb, currentColor 8%, transparent) !important;
+}
+
+.chat-export-bar--perplexity .chat-export-format-text {
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}
+
+.chat-export-bar--perplexity .chat-export-chevron {
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.chat-export-bar--perplexity .chat-export-dl:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent) !important;
+}
+
+.chat-export-bar--perplexity .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--perplexity .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-fmt:hover,
+.chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-fmt.is-open,
+.chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-dl:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent) !important;
+}
+
+.chat-export-menu[data-chat-export-menu='perplexity'][data-ce-scheme='dark'] {
+  --ce-menu-bg: rgb(21, 23, 27);
+  --ce-menu-fg: rgba(255, 255, 255, 0.93);
+  --ce-menu-border: color(srgb 0.858824 0.870588 0.890196 / 0.14);
+  --ce-menu-hover: rgba(255, 255, 255, 0.08);
+  --ce-menu-shadow: 0 1px 4px -1px color(srgb 0 0 0 / 0.14), 0 0 2px 0 color(srgb 0 0 0 / 0.19), 0 1px 2px 0 color(srgb 0 0 0 / 0.24);
+  --ce-menu-sep: color(srgb 0.858824 0.870588 0.890196 / 0.14);
+  --ce-menu-pack-bg: rgba(255, 255, 255, 0.06);
+  --ce-menu-pack-active: rgba(32, 128, 141, 0.22);
+}
+
+.chat-export-menu[data-chat-export-menu='perplexity'][data-ce-scheme='light'] {
+  --ce-menu-bg: #ffffff;
+  --ce-menu-fg: #191a1a;
+  --ce-menu-border: rgba(25, 26, 26, 0.12);
+  --ce-menu-hover: color(srgb 0.858824 0.870588 0.890196 / 0.35);
+  --ce-menu-shadow: 0 12px 40px rgba(32, 128, 141, 0.14);
+  --ce-menu-sep: rgba(25, 26, 26, 0.1);
+  --ce-menu-pack-bg: color(srgb 0.858824 0.870588 0.890196 / 0.2);
+  --ce-menu-pack-active: rgba(32, 128, 141, 0.2);
+}
+
+.chat-export-menu[data-chat-export-menu='perplexity'] .chat-export-menu-item.is-active,
+.chat-export-menu[data-chat-export-menu='perplexity'] .chat-export-pack-btn.is-active {
+  background: rgba(32, 128, 141, 0.2);
+}

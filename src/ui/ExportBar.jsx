@@ -23,6 +23,10 @@ function Chevron({ className }) {
   );
 }
 
+function shiftModeOf(settings) {
+  return settings && settings.saveFolder && settings.saveFolder.shiftMode === 'saveAs' ? 'saveAs' : 'rebind';
+}
+
 function cdsButtonParts(btn) {
   if (!btn || !btn.querySelector) return null;
   const paint = btn.querySelector('[data-cds-part="paint"]');
@@ -110,11 +114,20 @@ function FormatMenu({
     function onScroll() {
       place();
     }
+    function onKeydown(ev) {
+      if (ev.key !== 'Escape') return;
+      ev.stopPropagation();
+      onClose();
+      const btn = formatBtnRef.current;
+      if (btn && typeof btn.focus === 'function') btn.focus();
+    }
     document.addEventListener('click', onDoc, true);
+    document.addEventListener('keydown', onKeydown, true);
     window.addEventListener('resize', onScroll);
     window.addEventListener('scroll', onScroll, true);
     return () => {
       document.removeEventListener('click', onDoc, true);
+      document.removeEventListener('keydown', onKeydown, true);
       window.removeEventListener('resize', onScroll);
       window.removeEventListener('scroll', onScroll, true);
     };
@@ -153,32 +166,30 @@ function FormatMenu({
           </button>
         );
       })}
-      {formats.length > 1 ? (
-        <div>
-          <div class="chat-export-menu-sep" />
-          <div class="chat-export-pack" role="radiogroup" aria-label={t('bar.pack')}>
-            {[
-              { id: 'folder', label: t('bar.pack.folder') },
-              { id: 'zip', label: t('bar.pack.zip') }
-            ].map((spec) => (
-              <button
-                type="button"
-                role="radio"
-                aria-checked={packMode === spec.id ? 'true' : 'false'}
-                class={'chat-export-pack-btn' + (packMode === spec.id ? ' is-active' : '')}
-                data-pack={spec.id}
-                onClick={(ev) => {
-                  ev.preventDefault();
-                  ev.stopPropagation();
-                  onPack(spec.id);
-                }}
-              >
-                {spec.label}
-              </button>
-            ))}
-          </div>
+      <div>
+        <div class="chat-export-menu-sep" />
+        <div class="chat-export-pack" role="radiogroup" aria-label={t('bar.pack')}>
+          {[
+            { id: 'folder', label: t('bar.pack.folder') },
+            { id: 'zip', label: t('bar.pack.zip') }
+          ].map((spec) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked={packMode === spec.id ? 'true' : 'false'}
+              class={'chat-export-pack-btn' + (packMode === spec.id ? ' is-active' : '')}
+              data-pack={spec.id}
+              onClick={(ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                onPack(spec.id);
+              }}
+            >
+              {spec.label}
+            </button>
+          ))}
         </div>
-      ) : null}
+      </div>
     </div>,
     document.body
   );
@@ -198,8 +209,7 @@ function ExportBarInner({ options }) {
     typeof CE.detectHostScheme === 'function' ? CE.detectHostScheme(platform) : 'dark'
   );
   const [localeCode, setLocaleCode] = useState(() => resolveLocale(getPlatformSettings().ui.locale));
-  const cachedDirRef = useRef(null);
-  const cachedDirOkRef = useRef(false);
+  const [shiftMode, setShiftMode] = useState(() => shiftModeOf(getPlatformSettings()));
   const lastIntentRef = useRef(0);
 
   const t = useMemo(() => createTranslator(localeCode), [localeCode]);
@@ -207,6 +217,7 @@ function ExportBarInner({ options }) {
   useEffect(() => {
     return onPlatformSettings((settings) => {
       setLocaleCode(resolveLocale(settings.ui.locale));
+      setShiftMode(shiftModeOf(settings));
     });
   }, []);
 
@@ -239,20 +250,14 @@ function ExportBarInner({ options }) {
   }
 
   function dlTitle() {
-    if (formats.length > 1) return t('bar.dl.multi');
-    return t('bar.dl.single');
+    const labels = formats.map((id) => CE.FORMAT_LABEL[id] || id).join(', ');
+    const multi = formats.length > 1;
+    const pack = CE.resolvePack(formats.length, packMode);
+    const fmt = pack === 'file' ? labels : labels + ' (' + t(pack === 'folder' ? 'bar.pack.folder' : 'bar.pack.zip') + ')';
+    return t(multi ? 'bar.dl.multi' : 'bar.dl.single')
+      .replace('{fmt}', fmt)
+      .replace('{shiftHint}', t(shiftMode === 'saveAs' ? 'bar.shift.saveAs' : 'bar.shift.rebind'));
   }
-
-  useEffect(() => {
-    CE.loadDirHandle().then((h) => {
-      cachedDirRef.current = h || null;
-      cachedDirOkRef.current = false;
-      if (!h || typeof h.queryPermission !== 'function') return;
-      return h.queryPermission({ mode: 'readwrite' }).then((state) => {
-        cachedDirOkRef.current = state === 'granted';
-      });
-    });
-  }, []);
 
   useEffect(() => {
     const btn = dlBtnRef.current;
@@ -289,53 +294,42 @@ function ExportBarInner({ options }) {
     setPackMode(v);
   }
 
-  function runDownload(ev, forcePick) {
+  function runDownload(ev) {
     ev.preventDefault();
     ev.stopPropagation();
-    setMenuOpen(false);
     if (busy) return;
     const now = Date.now();
     if (now - lastIntentRef.current < 400) return;
     lastIntentRef.current = now;
 
     const selected = formats.slice();
-    const pack = selected.length > 1 ? packMode : 'file';
-    const shiftPick = forcePick || CE.wantsPathPicker(ev);
-    const useCachedFolder =
-      pack === 'folder' && cachedDirOkRef.current && cachedDirRef.current && !shiftPick;
-    const pickPath = shiftPick || (pack === 'folder' && !useCachedFolder);
-    const suggestedBase =
-      (options.platform || 'chat') +
-      '-' +
-      CE.slugTitle(document.title || 'chat') +
-      '-' +
-      CE.dateStamp();
-    const pickerPack = pack === 'folder' ? 'folder' : selected.length > 1 ? 'zip' : 'file';
+    const pack = CE.resolvePack(selected.length, packMode);
+    const shift = CE.wantsPathPicker(ev);
+    const mode = shiftModeOf(getPlatformSettings());
+    const saveAs = shift && mode === 'saveAs';
+    const rebind = shift && mode !== 'saveAs';
 
+    // showSaveFilePicker/showDirectoryPicker need transient user activation: call before any await.
     let pickedPromise = Promise.resolve(null);
-    if (useCachedFolder) {
-      pickedPromise = Promise.resolve({ kind: 'dir', dir: cachedDirRef.current });
-    } else if (pickPath) {
+    if (saveAs) {
+      const suggestedBase =
+        (options.platform || 'chat') + '-' + CE.slugTitle(document.title || 'chat') + '-' + CE.dateStamp();
       try {
-        pickedPromise = CE.openPathPicker(selected, suggestedBase, pickerPack).then((picked) => {
-          if (picked && picked.kind === 'dir' && picked.dir) {
-            cachedDirRef.current = picked.dir;
-            cachedDirOkRef.current = true;
-          }
-          return picked;
-        });
+        pickedPromise = CE.openPathPicker(selected, suggestedBase, pack);
       } catch (err) {
-        console.error('[chat-export]', err);
-        pickedPromise = Promise.resolve(null);
+        pickedPromise = Promise.reject(err);
       }
     }
-
+    setMenuOpen(false);
     setBusy(true);
     Promise.all([pickedPromise, Promise.resolve().then(() => options.getData())])
       .then((pair) => {
         const picked = pair[0];
         const payload = pair[1];
-        if (!payload || !payload.messages || !payload.messages.length) return;
+        if (!payload || !payload.messages || !payload.messages.length) {
+          CE.showToast(CE.toastText('toast.empty'));
+          return;
+        }
         const settings = getPlatformSettings();
         return CE.exportConversation({
           platform: options.platform,
@@ -349,12 +343,21 @@ function ExportBarInner({ options }) {
           formats: selected,
           pack: pack,
           picked: picked,
+          rebind: rebind,
           exportSchemas: settings && settings.exportSchemas
         });
+      })
+      .then((res) => {
+        if (res && res.pending) return;
+        if (res && !res.ok) {
+          console.warn('[chat-export] save failed', res);
+          CE.showToast(CE.toastText('toast.failed'));
+        }
       })
       .catch((err) => {
         if (err && err.name === 'AbortError') return;
         console.error('[chat-export]', err);
+        CE.showToast(CE.toastText('toast.failed'));
       })
       .then(() => {
         setBusy(false);
@@ -422,10 +425,7 @@ function ExportBarInner({ options }) {
         onPointerMove={(ev) => setSuperLook(CE.wantsPathPicker(ev))}
         onPointerDown={(ev) => setSuperLook(CE.wantsPathPicker(ev))}
         onPointerLeave={() => setSuperLook(false)}
-        onClick={(ev) => runDownload(ev, false)}
-        onContextMenu={(ev) => {
-          if (ev.ctrlKey || ev.metaKey) runDownload(ev, true);
-        }}
+        onClick={runDownload}
       >
         <CdsPaint parts={cdsIcon} />
         {cdsIcon ? (
@@ -480,10 +480,10 @@ export function injectBar(anchor, options) {
   host.setAttribute('data-ce-host', platform);
   host.style.display = 'contents';
 
-  if (opts.insertAfter && opts.insertAfter.parentNode) {
-    opts.insertAfter.parentNode.insertBefore(host, opts.insertAfter.nextSibling);
-  } else if (opts.beforeChild && opts.beforeChild.parentNode) {
+  if (opts.beforeChild && opts.beforeChild.parentNode && anchor.contains(opts.beforeChild)) {
     opts.beforeChild.parentNode.insertBefore(host, opts.beforeChild);
+  } else if (opts.insertAfter && opts.insertAfter.parentNode) {
+    opts.insertAfter.parentNode.insertBefore(host, opts.insertAfter.nextSibling);
   } else if (opts.placement === 'prepend') {
     anchor.insertBefore(host, anchor.firstChild);
   } else if (opts.placement === 'before' && anchor.parentNode) {
