@@ -46,7 +46,7 @@ GitHub Copilot web ≠ Bing Copilot ≠ Copilot in VS Code. Берём толь�
 - You.com, Pi, Phind, HuggingChat — не в приоритете, пока P0/P1 не закрыты.
 - Весь `github.com/*` (issues/PR/code) — не чат; только `github.com/copilot*`.
 
-IDE-агенты (Cursor, Copilot in VS Code, Windsurf) — другой surface, не этот MV3 путь. Web Copilot Chat на github.com — **да**, см. Must-have.
+IDE-агенты (редакторы с встроенным ассистентом) — другой surface, не этот MV3 путь. Web Copilot Chat на github.com — **да**, см. Must-have.
 
 ---
 
