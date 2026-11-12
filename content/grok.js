@@ -840,6 +840,58 @@
     );
   }
 
+  async function snapshotConversationIds() {
+    var known = {};
+    var cur = currentChatId();
+    if (cur) known[cur] = true;
+    try {
+      var res = await apiFetch('/rest/app-chat/conversations?pageSize=20');
+      if (res.ok) {
+        var data = await res.json();
+        var rows = (data && data.conversations) || [];
+        var i;
+        for (i = 0; i < rows.length; i++) {
+          var cid = rows[i] && (rows[i].conversationId || rows[i].id);
+          if (cid) known[String(cid)] = true;
+        }
+      }
+    } catch (e) {}
+    return known;
+  }
+
+  async function waitChatIdAfterSubmit(turnsBefore, knownIds) {
+    knownIds = knownIds || {};
+    var timeoutMs = 90000;
+    var started = Date.now();
+    var apiAt = 0;
+    while (Date.now() - started < timeoutMs) {
+      var id = currentChatId();
+      if (id && !knownIds[id]) return id;
+      if (responseTurnCount() > turnsBefore) {
+        id = currentChatId();
+        if (id) return id;
+      }
+      if (Date.now() >= apiAt) {
+        apiAt = Date.now() + 2000;
+        try {
+          var res = await apiFetch('/rest/app-chat/conversations?pageSize=5');
+          if (res.ok) {
+            var data = await res.json();
+            var rows = (data && data.conversations) || [];
+            var i;
+            for (i = 0; i < rows.length; i++) {
+              var cid = rows[i] && (rows[i].conversationId || rows[i].id);
+              cid = cid ? String(cid) : '';
+              if (cid && !knownIds[cid] && responseTurnCount() > turnsBefore) return cid;
+            }
+          }
+        } catch (e2) {}
+      }
+      await Ops.sleep(300);
+    }
+    rpcErr('TIMEOUT', 'Grok chatId timeout');
+  }
+
   async function submitComposerText(text) {
     var body = String(text || '').trim();
     if (!body) rpcErr('BAD_REQUEST', 'text is required');
@@ -851,6 +903,10 @@
     fill(input, body);
     await Ops.sleep(200);
     var send = findSendButton();
+    if (!send) {
+      await Ops.sleep(150);
+      send = findSendButton();
+    }
     var turnsBefore = responseTurnCount();
     if (Ops.ensureComposerSubmitted) {
       await Ops.ensureComposerSubmitted({
@@ -1072,20 +1128,10 @@
           var text = String((args && args.text) || '').trim();
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await ensureNewChat();
+          var knownIds = await snapshotConversationIds();
           if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(text);
-          var chatId = await Ops.waitFor(
-            function () {
-              var id = currentChatId();
-              if (id) return id;
-              if (responseTurnCount() > turnsBefore) {
-                id = currentChatId();
-                return id || null;
-              }
-              return null;
-            },
-            { timeoutMs: 90000, message: 'Grok chatId timeout' }
-          );
+          var chatId = await waitChatIdAfterSubmit(turnsBefore, knownIds);
           return {
             platform: 'grok',
             chatId: String(chatId),

@@ -259,6 +259,15 @@ export function dispatchEnter(el) {
   }
 }
 
+function composerHasDraft(input) {
+  if (!input) return false;
+  var tag = String(input.tagName || '').toUpperCase();
+  if (tag === 'TEXTAREA' || tag === 'INPUT') {
+    return !!String(input.value || '').trim();
+  }
+  return !!String((input.innerText || input.textContent) || '').trim();
+}
+
 export async function ensureComposerSubmitted(opts) {
   opts = opts || {};
   var send = opts.send;
@@ -285,7 +294,7 @@ export async function ensureComposerSubmitted(opts) {
   }
   var emptied = false;
   try {
-    emptied = !!(input && !String((input.innerText || input.textContent) || '').trim());
+    emptied = !!(input && !composerHasDraft(input));
   } catch (eEmpty) {}
   if (emptied) {
     await waitFor(isDone, {
