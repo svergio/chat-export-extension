@@ -1,6 +1,6 @@
 export const TOS_VERSION = 1;
 
-export const FAQ_VERSION = 1;
+export const FAQ_VERSION = 2;
 
 export const DEFAULT_HOST = '127.0.0.1';
 

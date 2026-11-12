@@ -150,7 +150,7 @@ npm run test:dom
 
 На ветке `test` сервера: `npm test`, `npm run test:contract`, `npm run test:all`.
 
-Правило: `.cursor/rules/chat-export-test-branch-adversarial.mdc`.
+Жёсткие тесты на ветке `test`: см. правила Cursor в проекте и вики [Contributing](https://github.com/svergio/chat-export-extension/wiki/Contributing-RU).
 
 ## CI и промоут (`test` → `main`)
 
@@ -179,7 +179,7 @@ Workflow: `.github/workflows/build-extension.yml` на push/PR в `main` и `tes
 
 ## Отчёты при падении CI / MR
 
-Не «тесты упали». Четыре блока: **что сломалось**, **почему**, **импакт**, **куда чинить**. Правило: `.cursor/rules/chat-export-mr-review-after-tests.mdc`.
+Не «тесты упали». Четыре блока: **что сломалось**, **почему**, **импакт**, **куда чинить**. См. правила Cursor проекта и вики Contributing.
 
 ## Указатели по разработке
 

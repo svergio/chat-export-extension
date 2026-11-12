@@ -2,7 +2,7 @@
 (() => {
   // src/settings.js
   var TOS_VERSION = 1;
-  var FAQ_VERSION = 1;
+  var FAQ_VERSION = 2;
   var DEFAULT_HOST = "127.0.0.1";
   var DEFAULT_PORT = 8765;
   var WS_PATH = "/ws";
