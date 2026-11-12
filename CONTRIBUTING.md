@@ -116,6 +116,24 @@ Dashboard **scheme** (`SchemePref`: `dark` | `light` | `auto`) and **skin** (`Sk
 
 Keep key names identical across languages so `createTranslator` and dashboard `t(key)` stay aligned.
 
+## Add a new export schema
+
+Schema id: `{name}/{version}` (e.g. `sharegpt/1`). Display: `{name} — {version}`. Default remains `chat-export/1`.
+
+Folder slug = id with `/` → `-` (e.g. `schemas/sharegpt-1/`). Renderers live under `src/schemas/` and register in `src/schemas/index.js` (bundled into `dist/shared.js`). Publish rules: [`schemas/README.md`](schemas/README.md).
+
+| Step | Path | Action |
+|------|------|--------|
+| 1 | `schemas/<slug>/manifest.json` | `id`, `name`, `version`, `title{en,ru}`, `formats[]`, `wikiSlug`, `description{en,ru}` |
+| 2 | `src/schemas/<slug>/render.js` | `render(format, meta, messages, ce)` for all of `md\|yaml\|json\|html\|pdf` |
+| 3 | `src/schemas/index.js` | Add to `SCHEMA_IDS` / manifests map; wire in `renderWithSchema` |
+| 4 | `src/settings.js` + protocol | `EXPORT_SCHEMA_IDS`; server `EXPORT_SCHEMAS` / `DEFAULT_EXPORT_SCHEMA` |
+| 5 | `locales/LN_en.json` + `LN_ru.json` | `schema.<id>` labels (popup only) |
+| 6 | Wiki | Mini EN+RU (`Export-Schema-<slug>`) linked from [Export-Formats](https://github.com/svergio/chat-export-extension/wiki/Export-Formats) hub |
+| 7 | `test/test-export-schemas.js` | Fixture parse asserts — **no schema without a parse test** |
+
+UX: schema picks live in the **popup** (default + per-format). The export bar stays format-only. MCP may pass `schema` on `chats_export`; server default is `settings.exportSchema`.
+
 ## Tests (`test` branch)
 
 New or strengthened tests land on branch **`test`** first. Feature PRs target `main`; after merge, sync `main` → `test` and extend coverage there. Promote `test` → `main` only when CI is green on `test` (see **CI and promotion**).
@@ -127,11 +145,12 @@ Goal: hostile but realistic inputs — parsers, settings normalization, export-b
 | Area | Examples |
 |------|----------|
 | `htmlToMarkdown` / `DOMParser` | Unclosed tags, script/style stripping, nested code fences, broken tables |
-| Settings | Corrupt storage, stale `tosVersion` / `faqVersion`, bad ports, bogus UI enums |
+| Settings | Corrupt storage, stale `tosVersion` / `faqVersion`, bad ports, bogus UI enums, `exportSchemas` normalize |
 | DOM harness | Missing nodes, busy overlay races (deterministic waits only) |
 | Providers | Bridge start URLs and `ops` shape for all eight `PLATFORMS` ids |
+| Export schemas | Fixture chats → each schema × md/json/yaml structural asserts (`test/test-export-schemas.js`) |
 
-Keep `npm test` deterministic and **under ~15s** per job. Prefer `test/test-html-to-markdown.js`, `test/test-settings.js`, `test/test-i18n.js`, `test/test-providers-contract.js` on `test`.
+Keep `npm test` deterministic and **under ~15s** per job. Prefer `test/test-html-to-markdown.js`, `test/test-settings.js`, `test/test-i18n.js`, `test/test-providers-contract.js`, `test/test-export-schemas.js` on `test`.
 
 ### Extension commands
 

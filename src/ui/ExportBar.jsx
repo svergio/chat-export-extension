@@ -336,6 +336,7 @@ function ExportBarInner({ options }) {
         const picked = pair[0];
         const payload = pair[1];
         if (!payload || !payload.messages || !payload.messages.length) return;
+        const settings = getPlatformSettings();
         return CE.exportConversation({
           platform: options.platform,
           title: payload.title,
@@ -347,7 +348,8 @@ function ExportBarInner({ options }) {
           messages: payload.messages,
           formats: selected,
           pack: pack,
-          picked: picked
+          picked: picked,
+          exportSchemas: settings && settings.exportSchemas
         });
       })
       .catch((err) => {

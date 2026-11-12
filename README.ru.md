@@ -93,6 +93,9 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 2. Выберите форматы (MD / YAML / JSON / HTML / PDF). При нескольких форматах — **Папка** или **Архив**.
 3. Иконка загрузки — тихое сохранение в «Загрузки» (Shift/Cmd = «Сохранить как»). Имя: `{platform}-{title}-{date}.{ext}`.
 
+**Как выглядит текст (семантика):** Дефолт-схема `chat-export/1` — MD-фенсы `` ```md `` (`sys` / `user:` / `assistant:` / `sources`); JSON `schema: chat-export/1` и `messages[{ role, role_tag, text, … }]`. Опционально `sharegpt/1` — ShareGPT `conversations[{ from, value }]`. Схема выбирается в попапе (Расширенные); панель на странице только форматы. Хаб и мини-страницы: **[Вики — Форматы экспорта](https://github.com/svergio/chat-export-extension/wiki/Export-Formats-RU)**.
+
+
 ## Безопасность
 
 - Всё работает **только локально**. Без телеметрии в описанном контуре.

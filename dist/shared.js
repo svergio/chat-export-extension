@@ -566,7 +566,7 @@
       }
       return escapeMdText(walk(root, {})).replace(/\n{3,}/g, "\n\n").trim();
     }
-    function yamlEscape(str) {
+    function yamlEscape2(str) {
       var s3 = String(str == null ? "" : str);
       if (s3 === "") return "''";
       if (/^[\w.@+-]+$/.test(s3) && !/^(true|false|null|yes|no|on|off)$/i.test(s3) && !/^\d/.test(s3)) {
@@ -578,7 +578,7 @@
       var s3 = String(value == null ? "" : value);
       var pad = Array(indent + 1).join(" ");
       if (!/\n/.test(s3)) {
-        return pad + key + ": " + yamlEscape(s3);
+        return pad + key + ": " + yamlEscape2(s3);
       }
       var out = [pad + key + ": |"];
       var parts = s3.replace(/\n$/, "").split("\n");
@@ -593,7 +593,7 @@
       for (var i3 = 0; i3 < keys.length; i3++) {
         var k3 = keys[i3];
         if (meta[k3] == null || meta[k3] === "") continue;
-        lines.push(k3 + ": " + yamlEscape(meta[k3]));
+        lines.push(k3 + ": " + yamlEscape2(meta[k3]));
       }
       lines.push("messages:");
       if (!messages || !messages.length) {
@@ -602,20 +602,20 @@
       }
       for (var m3 = 0; m3 < messages.length; m3++) {
         var msg = messages[m3];
-        lines.push("  - role: " + yamlEscape(msg.role));
+        lines.push("  - role: " + yamlEscape2(msg.role));
         lines.push(yamlBlock(4, "text", msg.text || ""));
         if (msg.links && msg.links.length) {
           lines.push("    links:");
           for (var L2 = 0; L2 < msg.links.length; L2++) {
-            lines.push("      - text: " + yamlEscape(msg.links[L2].text));
-            lines.push("        href: " + yamlEscape(msg.links[L2].href));
+            lines.push("      - text: " + yamlEscape2(msg.links[L2].text));
+            lines.push("        href: " + yamlEscape2(msg.links[L2].href));
           }
         }
         if (msg.sources && msg.sources.length) {
           lines.push("    sources:");
           for (var S2 = 0; S2 < msg.sources.length; S2++) {
-            lines.push("      - title: " + yamlEscape(msg.sources[S2].title));
-            lines.push("        url: " + yamlEscape(msg.sources[S2].url));
+            lines.push("      - title: " + yamlEscape2(msg.sources[S2].title));
+            lines.push("        url: " + yamlEscape2(msg.sources[S2].url));
           }
         }
       }
@@ -794,7 +794,7 @@
       if (tag === "user") return "User";
       return tag;
     }
-    function compactMeta(meta) {
+    function compactMeta2(meta) {
       var keys = ["platform", "url", "title", "exported_at", "exported", "chat_id", "model", "user_name", "user_handle", "user_email"];
       var out = {};
       for (var i3 = 0; i3 < keys.length; i3++) {
@@ -809,7 +809,7 @@
       return out;
     }
     function buildJson(meta, messages) {
-      var info = compactMeta(meta);
+      var info = compactMeta2(meta);
       var payload = { schema: "chat-export/1" };
       var infoKeys = Object.keys(info);
       for (var i3 = 0; i3 < infoKeys.length; i3++) {
@@ -828,7 +828,7 @@
       return JSON.stringify(payload, null, 2) + "\n";
     }
     function buildHtml(meta, messages) {
-      var info = compactMeta(meta);
+      var info = compactMeta2(meta);
       var dts = Object.keys(info).map(function(k3) {
         var val = String(info[k3]);
         if (/^https?:\/\//i.test(val)) {
@@ -909,7 +909,7 @@
       if (!PDFLib || !PDFLib.PDFDocument) {
         return Promise.reject(new Error("PDFLib missing"));
       }
-      var info = compactMeta(meta);
+      var info = compactMeta2(meta);
       return loadPdfFontBytes().then(function(fontBytes) {
         return PDFLib.PDFDocument.create().then(function(doc) {
           if (global.fontkit) doc.registerFontkit(global.fontkit);
@@ -1326,52 +1326,40 @@
         return { kind: "files", handles };
       });
     }
-    function buildExportFiles(base, metaMd, metaYaml, messages, formats) {
+    function resolveSchemaForFormat(ext, opts) {
+      var override = opts && opts.schema ? String(opts.schema) : "";
+      var exportSchemas = opts && opts.exportSchemas;
+      if (global.ChatExport && typeof global.ChatExport.effectiveSchemaForFormat === "function") {
+        return global.ChatExport.effectiveSchemaForFormat(exportSchemas, ext, override || null);
+      }
+      return override || "chat-export/1";
+    }
+    function renderExportFormat(ext, metaMd, metaYaml, messages, schemaId) {
+      var meta = ext === "md" ? metaMd : metaYaml;
+      if (global.ChatExport && typeof global.ChatExport.renderWithSchema === "function") {
+        return Promise.resolve(global.ChatExport.renderWithSchema(schemaId, ext, meta, messages));
+      }
+      if (ext === "md") return Promise.resolve(buildMarkdown(metaMd, messages));
+      if (ext === "yaml") return Promise.resolve(yamlDump(metaYaml, messages));
+      if (ext === "json") return Promise.resolve(buildJson(metaYaml, messages));
+      if (ext === "html") return Promise.resolve(buildHtml(metaYaml, messages));
+      if (ext === "pdf") return buildPdf(metaYaml, messages);
+      return Promise.resolve(null);
+    }
+    function buildExportFiles(base, metaMd, metaYaml, messages, formats, opts) {
       var list = normalizeFormats(formats);
       var jobs = list.map(function(ext) {
-        if (ext === "md") {
-          return Promise.resolve({
-            ext: "md",
-            filename: base + ".md",
-            data: buildMarkdown(metaMd, messages),
-            mime: BLOB_MIME.md
-          });
-        }
-        if (ext === "yaml") {
-          return Promise.resolve({
-            ext: "yaml",
-            filename: base + ".yaml",
-            data: yamlDump(metaYaml, messages),
-            mime: BLOB_MIME.yaml
-          });
-        }
-        if (ext === "json") {
-          return Promise.resolve({
-            ext: "json",
-            filename: base + ".json",
-            data: buildJson(metaYaml, messages),
-            mime: BLOB_MIME.json
-          });
-        }
-        if (ext === "html") {
-          return Promise.resolve({
-            ext: "html",
-            filename: base + ".html",
-            data: buildHtml(metaYaml, messages),
-            mime: BLOB_MIME.html
-          });
-        }
-        if (ext === "pdf") {
-          return buildPdf(metaYaml, messages).then(function(bytes) {
-            return {
-              ext: "pdf",
-              filename: base + ".pdf",
-              data: bytes,
-              mime: BLOB_MIME.pdf
-            };
-          });
-        }
-        return Promise.resolve(null);
+        var schemaId = resolveSchemaForFormat(ext, opts || {});
+        return renderExportFormat(ext, metaMd, metaYaml, messages, schemaId).then(function(data) {
+          if (data == null) return null;
+          return {
+            ext,
+            filename: base + "." + ext,
+            data,
+            mime: BLOB_MIME[ext],
+            schema: schemaId
+          };
+        });
       });
       return Promise.all(jobs).then(function(files) {
         return files.filter(Boolean);
@@ -1407,7 +1395,7 @@
         user_email: opts.userEmail || ""
       };
       var base = platform + "-" + slugTitle(title) + "-" + dateStamp(now);
-      return buildExportFiles(base, metaMd, metaYaml, messages, formats).then(function(files) {
+      return buildExportFiles(base, metaMd, metaYaml, messages, formats, opts).then(function(files) {
         return { base, files };
       });
     }
@@ -2429,6 +2417,18 @@
     "label.browserId": "Browser id (per Chrome profile)",
     "label.platforms": "Platforms",
     "label.destructive": "Allow deleting chats and projects",
+    "label.exportSchemas": "Export schemas",
+    "label.schemaDefault": "Default schema",
+    "label.schemaByFormat": "Schema per format",
+    "label.schemaInherit": "Use default",
+    "schema.chat-export/1": "chat-export \u2014 1",
+    "schema.sharegpt/1": "sharegpt \u2014 1",
+    "schema.hint": "Formats on the page bar stay the same. Schema controls how MD/JSON/YAML/HTML/PDF text is shaped. Default is chat-export \u2014 1.",
+    "format.md": "Markdown",
+    "format.yaml": "YAML",
+    "format.json": "JSON",
+    "format.html": "HTML",
+    "format.pdf": "PDF",
     "label.tos": "Legal / Terms of Use",
     "label.faq": "Advanced Mode Terms & FAQ",
     "label.on": "On",
@@ -2524,6 +2524,18 @@
     "label.browserId": "Id \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 (\u043D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome)",
     "label.platforms": "\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u044B",
     "label.destructive": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0435 \u0447\u0430\u0442\u043E\u0432 \u0438 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432",
+    "label.exportSchemas": "\u0421\u0445\u0435\u043C\u044B \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "label.schemaDefault": "\u0421\u0445\u0435\u043C\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "label.schemaByFormat": "\u0421\u0445\u0435\u043C\u0430 \u043D\u0430 \u0444\u043E\u0440\u043C\u0430\u0442",
+    "label.schemaInherit": "\u041A\u0430\u043A \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "schema.chat-export/1": "chat-export \u2014 1",
+    "schema.sharegpt/1": "sharegpt \u2014 1",
+    "schema.hint": "\u041A\u043D\u043E\u043F\u043A\u0438 \u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0432 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u043D\u0435 \u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F. \u0421\u0445\u0435\u043C\u0430 \u0437\u0430\u0434\u0430\u0451\u0442, \u043A\u0430\u043A \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442 \u0442\u0435\u043A\u0441\u0442 MD/JSON/YAML/HTML/PDF. \u0414\u0435\u0444\u043E\u043B\u0442 \u2014 chat-export \u2014 1.",
+    "format.md": "Markdown",
+    "format.yaml": "YAML",
+    "format.json": "JSON",
+    "format.html": "HTML",
+    "format.pdf": "PDF",
     "label.tos": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F / \u0420\u0438\u0441\u043A\u0438",
     "label.faq": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u0433\u043E \u0440\u0435\u0436\u0438\u043C\u0430 \u0438 FAQ",
     "label.on": "\u0412\u043A\u043B",
@@ -2656,6 +2668,9 @@
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
+  var EXPORT_FORMAT_IDS = Object.freeze(["md", "yaml", "json", "html", "pdf"]);
+  var EXPORT_SCHEMA_IDS = Object.freeze(["chat-export/1", "sharegpt/1"]);
+  var DEFAULT_EXPORT_SCHEMA_ID = "chat-export/1";
   var STORAGE_KEYS = Object.freeze({
     browserId: "ce.browserId",
     settings: "ce.settings",
@@ -2683,6 +2698,16 @@
     rpcTimeoutS: 60,
     tosVersion: 0,
     faqVersion: 0,
+    exportSchemas: Object.freeze({
+      default: DEFAULT_EXPORT_SCHEMA_ID,
+      byFormat: Object.freeze({
+        md: null,
+        yaml: null,
+        json: null,
+        html: null,
+        pdf: null
+      })
+    }),
     ui: Object.freeze({
       skin: "chatgpt",
       scheme: "auto",
@@ -2695,6 +2720,24 @@
     const scheme = UI_SCHEMES.indexOf(u3.scheme) >= 0 ? u3.scheme : "auto";
     const locale = UI_LOCALES.indexOf(u3.locale) >= 0 ? u3.locale : "auto";
     return { skin, scheme, locale };
+  }
+  function normalizeSchemaId(id) {
+    const s3 = String(id || "").trim();
+    if (EXPORT_SCHEMA_IDS.indexOf(s3) >= 0) return s3;
+    return DEFAULT_EXPORT_SCHEMA_ID;
+  }
+  function normalizeExportSchemas(raw) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    const def = normalizeSchemaId(src.default);
+    const byFormat = {};
+    const bf = src.byFormat && typeof src.byFormat === "object" ? src.byFormat : {};
+    for (let i3 = 0; i3 < EXPORT_FORMAT_IDS.length; i3++) {
+      const f3 = EXPORT_FORMAT_IDS[i3];
+      const v3 = bf[f3];
+      if (v3 == null || v3 === "" || v3 === "default") byFormat[f3] = null;
+      else byFormat[f3] = normalizeSchemaId(v3);
+    }
+    return { default: def, byFormat };
   }
   function normalizeSettings(raw) {
     const s3 = raw && typeof raw === "object" ? raw : {};
@@ -2720,6 +2763,7 @@
       rpcTimeoutS: Number.isFinite(rpcRaw) && rpcRaw >= 5 && rpcRaw <= 600 ? Math.floor(rpcRaw) : 60,
       tosVersion: Number.isFinite(Number(s3.tosVersion)) ? Number(s3.tosVersion) : 0,
       faqVersion: Number.isFinite(Number(s3.faqVersion)) ? Number(s3.faqVersion) : 0,
+      exportSchemas: normalizeExportSchemas(s3.exportSchemas),
       ui: normalizeUi(s3.ui)
     };
   }
@@ -3056,6 +3100,7 @@
         const picked = pair[0];
         const payload = pair[1];
         if (!payload || !payload.messages || !payload.messages.length) return;
+        const settings = getPlatformSettings();
         return CE2.exportConversation({
           platform: options.platform,
           title: payload.title,
@@ -3067,7 +3112,8 @@
           messages: payload.messages,
           formats: selected,
           pack,
-          picked
+          picked,
+          exportSchemas: settings && settings.exportSchemas
         });
       }).catch((err) => {
         if (err && err.name === "AbortError") return;
@@ -3483,7 +3529,16 @@
     if (!formats.length) throw new RpcError("BAD_REQUEST", "formats must be a non-empty array");
     return Promise.resolve(loadPayload(entry, args, ctx)).then(function(raw) {
       const payload = normalizePayload(entry.id, raw);
-      return CE2.buildExportBundle(Object.assign({}, payload, { formats })).then(function(bundle) {
+      const settings = typeof CE2.getPlatformSettings === "function" ? CE2.getPlatformSettings() : null;
+      const exportSchemas = args && args.exportSchemas || settings && settings.exportSchemas || null;
+      const schema = args && args.schema ? String(args.schema) : "";
+      return CE2.buildExportBundle(
+        Object.assign({}, payload, {
+          formats,
+          exportSchemas,
+          schema: schema || void 0
+        })
+      ).then(function(bundle) {
         return { files: bundle.files.map(toProtocolFile), payload };
       });
     });
@@ -4458,9 +4513,200 @@
     };
   }
 
+  // schemas/chat-export-1/manifest.json
+  var manifest_default = {
+    id: "chat-export/1",
+    name: "chat-export",
+    version: 1,
+    title: { en: "chat-export \u2014 1", ru: "chat-export \u2014 1" },
+    formats: ["md", "yaml", "json", "html", "pdf"],
+    wikiSlug: "Export-Schema-chat-export-1",
+    description: {
+      en: "Default parse-friendly fences (sys / role:) and JSON schema chat-export/1.",
+      ru: "\u0414\u0435\u0444\u043E\u043B\u0442: MD-\u0444\u0435\u043D\u0441\u044B sys/role: \u0438 JSON schema chat-export/1."
+    }
+  };
+
+  // schemas/sharegpt-1/manifest.json
+  var manifest_default2 = {
+    id: "sharegpt/1",
+    name: "sharegpt",
+    version: 1,
+    title: { en: "sharegpt \u2014 1", ru: "sharegpt \u2014 1" },
+    formats: ["md", "yaml", "json", "html", "pdf"],
+    wikiSlug: "Export-Schema-sharegpt-1",
+    description: {
+      en: "ShareGPT-style conversations[{ from, value }] for distill / fine-tune pipelines.",
+      ru: "ShareGPT-\u0441\u0442\u0438\u043B\u044C conversations[{ from, value }] \u0434\u043B\u044F distill / fine-tune."
+    }
+  };
+
+  // src/schemas/sharegpt-1/render.js
+  function roleToFrom(role, roleTag) {
+    const r3 = String(roleTag || role || "").toLowerCase();
+    if (r3 === "user" || r3 === "human") return "human";
+    return "gpt";
+  }
+  function conversations(messages) {
+    return (messages || []).map(function(msg) {
+      return {
+        from: roleToFrom(msg.role, msg.roleTag),
+        value: String(msg.text || "")
+      };
+    });
+  }
+  function compactMeta(meta) {
+    const keys = ["platform", "url", "title", "exported_at", "exported", "chat_id", "model"];
+    const out = { schema: "sharegpt/1" };
+    for (let i3 = 0; i3 < keys.length; i3++) {
+      const k3 = keys[i3];
+      if (meta[k3] == null || meta[k3] === "") continue;
+      if (k3 === "exported") {
+        if (!out.exported_at) out.exported_at = meta[k3];
+        continue;
+      }
+      out[k3] = meta[k3];
+    }
+    return out;
+  }
+  function yamlEscape(v3) {
+    const s3 = String(v3 == null ? "" : v3);
+    if (/[:#\n"'{}[\],&*?|<>=!%@`]/.test(s3) || s3 !== s3.trim()) {
+      return JSON.stringify(s3);
+    }
+    return s3;
+  }
+  function renderSharegpt(format, meta, messages, ce) {
+    const conv = conversations(messages);
+    const info = compactMeta(meta || {});
+    if (format === "json") {
+      const payload = Object.assign({}, info, { conversations: conv });
+      return JSON.stringify(payload, null, 2) + "\n";
+    }
+    if (format === "yaml") {
+      const lines = [];
+      Object.keys(info).forEach(function(k3) {
+        lines.push(k3 + ": " + yamlEscape(info[k3]));
+      });
+      lines.push("conversations:");
+      if (!conv.length) {
+        lines.push("  []");
+      } else {
+        for (let i3 = 0; i3 < conv.length; i3++) {
+          lines.push("  - from: " + yamlEscape(conv[i3].from));
+          lines.push("    value: |");
+          String(conv[i3].value).split("\n").forEach(function(line) {
+            lines.push("      " + line);
+          });
+        }
+      }
+      return lines.join("\n") + "\n";
+    }
+    if (format === "md") {
+      const parts = ["<!-- schema: sharegpt/1 -->", ""];
+      Object.keys(info).forEach(function(k3) {
+        if (k3 === "schema") return;
+        parts.push(k3 + ": " + info[k3]);
+      });
+      parts.push("");
+      for (let i3 = 0; i3 < conv.length; i3++) {
+        parts.push("### " + conv[i3].from);
+        parts.push("");
+        parts.push(conv[i3].value.trim());
+        parts.push("");
+      }
+      return parts.join("\n").replace(/\n{3,}/g, "\n\n").replace(/\n+$/, "") + "\n";
+    }
+    if (format === "html") {
+      if (ce && typeof ce.buildHtml === "function") {
+        return ce.buildHtml(meta, messages);
+      }
+      return "<!DOCTYPE html><html><body><pre>" + JSON.stringify(conv, null, 2) + "</pre></body></html>\n";
+    }
+    if (format === "pdf") {
+      if (ce && typeof ce.buildPdf === "function") {
+        return ce.buildPdf(meta, messages);
+      }
+      return Promise.reject(new Error("pdf builder missing"));
+    }
+    throw new Error("unsupported format: " + format);
+  }
+
+  // src/schemas/index.js
+  var DEFAULT_SCHEMA_ID = "chat-export/1";
+  var SCHEMA_IDS = Object.freeze(["chat-export/1", "sharegpt/1"]);
+  var SCHEMA_MANIFESTS = Object.freeze({
+    "chat-export/1": manifest_default,
+    "sharegpt/1": manifest_default2
+  });
+  var FORMAT_KEYS = ["md", "yaml", "json", "html", "pdf"];
+  function normalizeSchemaId2(id) {
+    const s3 = String(id || "").trim();
+    if (SCHEMA_IDS.indexOf(s3) >= 0) return s3;
+    return DEFAULT_SCHEMA_ID;
+  }
+  function normalizeExportSchemas2(raw) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    const def = normalizeSchemaId2(src.default);
+    const byFormat = {};
+    const bf = src.byFormat && typeof src.byFormat === "object" ? src.byFormat : {};
+    for (let i3 = 0; i3 < FORMAT_KEYS.length; i3++) {
+      const f3 = FORMAT_KEYS[i3];
+      const v3 = bf[f3];
+      if (v3 == null || v3 === "" || v3 === "default") {
+        byFormat[f3] = null;
+      } else {
+        byFormat[f3] = normalizeSchemaId2(v3);
+      }
+    }
+    return { default: def, byFormat };
+  }
+  function effectiveSchemaForFormat(exportSchemas, format, overrideSchema) {
+    if (overrideSchema) return normalizeSchemaId2(overrideSchema);
+    const es = normalizeExportSchemas2(exportSchemas);
+    const f3 = String(format || "");
+    if (es.byFormat[f3]) return es.byFormat[f3];
+    return es.default;
+  }
+  function listSchemaOptions(locale) {
+    const loc = locale === "ru" ? "ru" : "en";
+    return SCHEMA_IDS.map(function(id) {
+      const m3 = SCHEMA_MANIFESTS[id];
+      const title = m3 && m3.title && (m3.title[loc] || m3.title.en) || id.replace("/", " \u2014 ");
+      return { id, title, manifest: m3 };
+    });
+  }
+  function renderChatExport(format, meta, messages, ce) {
+    if (format === "md") return ce.buildMarkdown(meta, messages);
+    if (format === "yaml") return ce.yamlDump(meta, messages);
+    if (format === "json") return ce.buildJson(meta, messages);
+    if (format === "html") return ce.buildHtml(meta, messages);
+    if (format === "pdf") return ce.buildPdf(meta, messages);
+    throw new Error("unsupported format: " + format);
+  }
+  function renderWithSchema(schemaId, format, meta, messages, ce) {
+    const id = normalizeSchemaId2(schemaId);
+    if (id === "sharegpt/1") return renderSharegpt(format, meta, messages, ce);
+    return renderChatExport(format, meta, messages, ce);
+  }
+  function installSchemas(CE2) {
+    if (!CE2) return;
+    CE2.DEFAULT_SCHEMA_ID = DEFAULT_SCHEMA_ID;
+    CE2.SCHEMA_IDS = SCHEMA_IDS;
+    CE2.SCHEMA_MANIFESTS = SCHEMA_MANIFESTS;
+    CE2.normalizeSchemaId = normalizeSchemaId2;
+    CE2.normalizeExportSchemas = normalizeExportSchemas2;
+    CE2.effectiveSchemaForFormat = effectiveSchemaForFormat;
+    CE2.listSchemaOptions = listSchemaOptions;
+    CE2.renderWithSchema = function(schemaId, format, meta, messages) {
+      return renderWithSchema(schemaId, format, meta, messages, CE2);
+    };
+  }
+
   // src/boot.js
   var CE = window.ChatExport;
   if (CE) {
+    installSchemas(CE);
     CE.injectBar = injectBar;
     CE.definePlatform = definePlatform;
     CE.dispatchRpc = dispatchRpc;
@@ -4468,6 +4714,7 @@
     CE.Ops = helpers_exports;
     CE.isPlatformEnabled = isPlatformEnabled;
     CE.onPlatformSettings = onPlatformSettings;
+    CE.getPlatformSettings = getPlatformSettings;
     installPlatformGate();
     installRpcListener();
   }

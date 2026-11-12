@@ -246,6 +246,11 @@ async function helloPayload() {
     allowCreate: currentSettings.allowCreate !== false,
     allowDestructive: !!currentSettings.allowDestructive,
     allowProjects: currentSettings.allowProjects !== false,
+    exportSchemas: currentSettings.exportSchemas || {
+      default: 'chat-export/1',
+      byFormat: { md: null, yaml: null, json: null, html: null, pdf: null }
+    },
+    exportSchemaIds: ['chat-export/1', 'sharegpt/1'],
     tabs: await collectTabsSnapshot()
   };
 }
@@ -305,7 +310,12 @@ function settingsPayload() {
     allowCreate: currentSettings.allowCreate !== false,
     allowDestructive: !!currentSettings.allowDestructive,
     allowProjects: currentSettings.allowProjects !== false,
-    browserLabel: currentSettings.browserLabel || 'Chrome'
+    browserLabel: currentSettings.browserLabel || 'Chrome',
+    exportSchemas: currentSettings.exportSchemas || {
+      default: 'chat-export/1',
+      byFormat: { md: null, yaml: null, json: null, html: null, pdf: null }
+    },
+    exportSchemaIds: ['chat-export/1', 'sharegpt/1']
   };
 }
 
@@ -898,6 +908,11 @@ export async function testConnection() {
                 allowCreate: settings.allowCreate !== false,
                 allowDestructive: !!settings.allowDestructive,
                 allowProjects: settings.allowProjects !== false,
+                exportSchemas: settings.exportSchemas || {
+                  default: 'chat-export/1',
+                  byFormat: { md: null, yaml: null, json: null, html: null, pdf: null }
+                },
+                exportSchemaIds: ['chat-export/1', 'sharegpt/1'],
                 tabs: tabs
               })
             );

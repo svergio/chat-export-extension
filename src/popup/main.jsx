@@ -5,9 +5,12 @@ import {
   FAQ_VERSION,
   PLATFORMS,
   DEFAULT_SETTINGS,
+  EXPORT_FORMAT_IDS,
+  EXPORT_SCHEMA_IDS,
   hasTosConsent,
   hasFaqConsent,
   normalizeSettings,
+  normalizeExportSchemas,
   resolveUiScheme
 } from '../settings.js';
 import { createTranslator, faqKeys, tosKeys, resolveLocale } from '../i18n/index.js';
@@ -701,6 +704,69 @@ function App() {
                 }
               />
             </label>
+
+            <h2>{t('label.exportSchemas')}</h2>
+            <p class="ce-hint">{t('schema.hint')}</p>
+            <label class="ce-field">
+              <span>{t('label.schemaDefault')}</span>
+              <select
+                value={(settings.exportSchemas && settings.exportSchemas.default) || 'chat-export/1'}
+                disabled={busy}
+                onChange={(e) => {
+                  const exportSchemas = normalizeExportSchemas(
+                    Object.assign({}, settings.exportSchemas, { default: e.currentTarget.value })
+                  );
+                  persist(Object.assign({}, settings, { exportSchemas: exportSchemas }));
+                }}
+              >
+                {EXPORT_SCHEMA_IDS.map(function (id) {
+                  return (
+                    <option key={id} value={id}>
+                      {t('schema.' + id)}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <div class="ce-field">
+              <span>{t('label.schemaByFormat')}</span>
+              {EXPORT_FORMAT_IDS.map(function (fmt) {
+                const cur =
+                  settings.exportSchemas &&
+                  settings.exportSchemas.byFormat &&
+                  settings.exportSchemas.byFormat[fmt];
+                return (
+                  <label key={fmt} class="ce-field ce-field--nested">
+                    <span>{t('format.' + fmt)}</span>
+                    <select
+                      value={cur || ''}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const val = e.currentTarget.value;
+                        const byFormat = Object.assign(
+                          {},
+                          (settings.exportSchemas && settings.exportSchemas.byFormat) || {},
+                          { [fmt]: val ? val : null }
+                        );
+                        const exportSchemas = normalizeExportSchemas(
+                          Object.assign({}, settings.exportSchemas, { byFormat: byFormat })
+                        );
+                        persist(Object.assign({}, settings, { exportSchemas: exportSchemas }));
+                      }}
+                    >
+                      <option value="">{t('label.schemaInherit')}</option>
+                      {EXPORT_SCHEMA_IDS.map(function (id) {
+                        return (
+                          <option key={id} value={id}>
+                            {t('schema.' + id)}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </label>
+                );
+              })}
+            </div>
 
             <label class="ce-field">
               <span>{t('label.rpcTimeout')}</span>

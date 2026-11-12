@@ -1,0 +1,12 @@
+{
+  "id": "chat-export/1",
+  "name": "chat-export",
+  "version": 1,
+  "title": { "en": "chat-export — 1", "ru": "chat-export — 1" },
+  "formats": ["md", "yaml", "json", "html", "pdf"],
+  "wikiSlug": "Export-Schema-chat-export-1",
+  "description": {
+    "en": "Default parse-friendly fences (sys / role:) and JSON schema chat-export/1.",
+    "ru": "Дефолт: MD-фенсы sys/role: и JSON schema chat-export/1."
+  }
+}

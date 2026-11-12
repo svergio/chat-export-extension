@@ -93,7 +93,8 @@ Server MCP setup: [server README — Configuration](https://github.com/svergio/c
 2. Choose formats (MD / YAML / JSON / HTML / PDF). Multi-format: **Folder** or **Zip** toggle.
 3. Download icon — silent save to Downloads (Shift/Cmd = Save As). Names: `{platform}-{title}-{date}.{ext}`.
 
-Markdown uses fenced role blocks; JSON includes `schema: chat-export/1`. PDF is selectable text (including Cyrillic), not a screenshot.
+**What the files look like (semantics):** Default schema `chat-export/1` — Markdown `` ```md `` fences (`sys` / `user:` / `assistant:` / `sources`); JSON `schema: chat-export/1` with `messages[{ role, role_tag, text, … }]`. Optional `sharegpt/1` for ShareGPT-style `conversations[{ from, value }]`. Choose schema in the popup (Advanced); the page bar only picks formats. Hub + minis: **[Wiki — Export formats](https://github.com/svergio/chat-export-extension/wiki/Export-Formats)**.
+
 
 Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer tree.
 

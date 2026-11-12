@@ -1,0 +1,12 @@
+{
+  "id": "sharegpt/1",
+  "name": "sharegpt",
+  "version": 1,
+  "title": { "en": "sharegpt — 1", "ru": "sharegpt — 1" },
+  "formats": ["md", "yaml", "json", "html", "pdf"],
+  "wikiSlug": "Export-Schema-sharegpt-1",
+  "description": {
+    "en": "ShareGPT-style conversations[{ from, value }] for distill / fine-tune pipelines.",
+    "ru": "ShareGPT-стиль conversations[{ from, value }] для distill / fine-tune."
+  }
+}

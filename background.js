@@ -28,6 +28,9 @@
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
+  var EXPORT_FORMAT_IDS = Object.freeze(["md", "yaml", "json", "html", "pdf"]);
+  var EXPORT_SCHEMA_IDS = Object.freeze(["chat-export/1", "sharegpt/1"]);
+  var DEFAULT_EXPORT_SCHEMA_ID = "chat-export/1";
   var STORAGE_KEYS = Object.freeze({
     browserId: "ce.browserId",
     settings: "ce.settings",
@@ -55,6 +58,16 @@
     rpcTimeoutS: 60,
     tosVersion: 0,
     faqVersion: 0,
+    exportSchemas: Object.freeze({
+      default: DEFAULT_EXPORT_SCHEMA_ID,
+      byFormat: Object.freeze({
+        md: null,
+        yaml: null,
+        json: null,
+        html: null,
+        pdf: null
+      })
+    }),
     ui: Object.freeze({
       skin: "chatgpt",
       scheme: "auto",
@@ -67,6 +80,24 @@
     const scheme = UI_SCHEMES.indexOf(u.scheme) >= 0 ? u.scheme : "auto";
     const locale = UI_LOCALES.indexOf(u.locale) >= 0 ? u.locale : "auto";
     return { skin, scheme, locale };
+  }
+  function normalizeSchemaId(id) {
+    const s = String(id || "").trim();
+    if (EXPORT_SCHEMA_IDS.indexOf(s) >= 0) return s;
+    return DEFAULT_EXPORT_SCHEMA_ID;
+  }
+  function normalizeExportSchemas(raw) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    const def = normalizeSchemaId(src.default);
+    const byFormat = {};
+    const bf = src.byFormat && typeof src.byFormat === "object" ? src.byFormat : {};
+    for (let i = 0; i < EXPORT_FORMAT_IDS.length; i++) {
+      const f = EXPORT_FORMAT_IDS[i];
+      const v = bf[f];
+      if (v == null || v === "" || v === "default") byFormat[f] = null;
+      else byFormat[f] = normalizeSchemaId(v);
+    }
+    return { default: def, byFormat };
   }
   function normalizeSettings(raw) {
     const s = raw && typeof raw === "object" ? raw : {};
@@ -92,6 +123,7 @@
       rpcTimeoutS: Number.isFinite(rpcRaw) && rpcRaw >= 5 && rpcRaw <= 600 ? Math.floor(rpcRaw) : 60,
       tosVersion: Number.isFinite(Number(s.tosVersion)) ? Number(s.tosVersion) : 0,
       faqVersion: Number.isFinite(Number(s.faqVersion)) ? Number(s.faqVersion) : 0,
+      exportSchemas: normalizeExportSchemas(s.exportSchemas),
       ui: normalizeUi(s.ui)
     };
   }
@@ -411,6 +443,11 @@
       allowCreate: currentSettings.allowCreate !== false,
       allowDestructive: !!currentSettings.allowDestructive,
       allowProjects: currentSettings.allowProjects !== false,
+      exportSchemas: currentSettings.exportSchemas || {
+        default: "chat-export/1",
+        byFormat: { md: null, yaml: null, json: null, html: null, pdf: null }
+      },
+      exportSchemaIds: ["chat-export/1", "sharegpt/1"],
       tabs: await collectTabsSnapshot()
     };
   }
@@ -461,7 +498,12 @@
       allowCreate: currentSettings.allowCreate !== false,
       allowDestructive: !!currentSettings.allowDestructive,
       allowProjects: currentSettings.allowProjects !== false,
-      browserLabel: currentSettings.browserLabel || "Chrome"
+      browserLabel: currentSettings.browserLabel || "Chrome",
+      exportSchemas: currentSettings.exportSchemas || {
+        default: "chat-export/1",
+        byFormat: { md: null, yaml: null, json: null, html: null, pdf: null }
+      },
+      exportSchemaIds: ["chat-export/1", "sharegpt/1"]
     };
   }
   async function pushTabsIfConnected() {
@@ -1002,6 +1044,11 @@
                 allowCreate: settings.allowCreate !== false,
                 allowDestructive: !!settings.allowDestructive,
                 allowProjects: settings.allowProjects !== false,
+                exportSchemas: settings.exportSchemas || {
+                  default: "chat-export/1",
+                  byFormat: { md: null, yaml: null, json: null, html: null, pdf: null }
+                },
+                exportSchemaIds: ["chat-export/1", "sharegpt/1"],
                 tabs
               })
             );

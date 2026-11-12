@@ -452,6 +452,9 @@
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
+  var EXPORT_FORMAT_IDS = Object.freeze(["md", "yaml", "json", "html", "pdf"]);
+  var EXPORT_SCHEMA_IDS = Object.freeze(["chat-export/1", "sharegpt/1"]);
+  var DEFAULT_EXPORT_SCHEMA_ID = "chat-export/1";
   var STORAGE_KEYS = Object.freeze({
     browserId: "ce.browserId",
     settings: "ce.settings",
@@ -479,6 +482,16 @@
     rpcTimeoutS: 60,
     tosVersion: 0,
     faqVersion: 0,
+    exportSchemas: Object.freeze({
+      default: DEFAULT_EXPORT_SCHEMA_ID,
+      byFormat: Object.freeze({
+        md: null,
+        yaml: null,
+        json: null,
+        html: null,
+        pdf: null
+      })
+    }),
     ui: Object.freeze({
       skin: "chatgpt",
       scheme: "auto",
@@ -491,6 +504,24 @@
     const scheme = UI_SCHEMES.indexOf(u3.scheme) >= 0 ? u3.scheme : "auto";
     const locale = UI_LOCALES.indexOf(u3.locale) >= 0 ? u3.locale : "auto";
     return { skin, scheme, locale };
+  }
+  function normalizeSchemaId(id) {
+    const s3 = String(id || "").trim();
+    if (EXPORT_SCHEMA_IDS.indexOf(s3) >= 0) return s3;
+    return DEFAULT_EXPORT_SCHEMA_ID;
+  }
+  function normalizeExportSchemas(raw) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    const def = normalizeSchemaId(src.default);
+    const byFormat = {};
+    const bf = src.byFormat && typeof src.byFormat === "object" ? src.byFormat : {};
+    for (let i3 = 0; i3 < EXPORT_FORMAT_IDS.length; i3++) {
+      const f3 = EXPORT_FORMAT_IDS[i3];
+      const v3 = bf[f3];
+      if (v3 == null || v3 === "" || v3 === "default") byFormat[f3] = null;
+      else byFormat[f3] = normalizeSchemaId(v3);
+    }
+    return { default: def, byFormat };
   }
   function normalizeSettings(raw) {
     const s3 = raw && typeof raw === "object" ? raw : {};
@@ -516,6 +547,7 @@
       rpcTimeoutS: Number.isFinite(rpcRaw) && rpcRaw >= 5 && rpcRaw <= 600 ? Math.floor(rpcRaw) : 60,
       tosVersion: Number.isFinite(Number(s3.tosVersion)) ? Number(s3.tosVersion) : 0,
       faqVersion: Number.isFinite(Number(s3.faqVersion)) ? Number(s3.faqVersion) : 0,
+      exportSchemas: normalizeExportSchemas(s3.exportSchemas),
       ui: normalizeUi(s3.ui)
     };
   }
@@ -559,6 +591,18 @@
     "label.browserId": "Browser id (per Chrome profile)",
     "label.platforms": "Platforms",
     "label.destructive": "Allow deleting chats and projects",
+    "label.exportSchemas": "Export schemas",
+    "label.schemaDefault": "Default schema",
+    "label.schemaByFormat": "Schema per format",
+    "label.schemaInherit": "Use default",
+    "schema.chat-export/1": "chat-export \u2014 1",
+    "schema.sharegpt/1": "sharegpt \u2014 1",
+    "schema.hint": "Formats on the page bar stay the same. Schema controls how MD/JSON/YAML/HTML/PDF text is shaped. Default is chat-export \u2014 1.",
+    "format.md": "Markdown",
+    "format.yaml": "YAML",
+    "format.json": "JSON",
+    "format.html": "HTML",
+    "format.pdf": "PDF",
     "label.tos": "Legal / Terms of Use",
     "label.faq": "Advanced Mode Terms & FAQ",
     "label.on": "On",
@@ -654,6 +698,18 @@
     "label.browserId": "Id \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 (\u043D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome)",
     "label.platforms": "\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u044B",
     "label.destructive": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0435 \u0447\u0430\u0442\u043E\u0432 \u0438 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432",
+    "label.exportSchemas": "\u0421\u0445\u0435\u043C\u044B \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "label.schemaDefault": "\u0421\u0445\u0435\u043C\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "label.schemaByFormat": "\u0421\u0445\u0435\u043C\u0430 \u043D\u0430 \u0444\u043E\u0440\u043C\u0430\u0442",
+    "label.schemaInherit": "\u041A\u0430\u043A \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "schema.chat-export/1": "chat-export \u2014 1",
+    "schema.sharegpt/1": "sharegpt \u2014 1",
+    "schema.hint": "\u041A\u043D\u043E\u043F\u043A\u0438 \u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0432 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u043D\u0435 \u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F. \u0421\u0445\u0435\u043C\u0430 \u0437\u0430\u0434\u0430\u0451\u0442, \u043A\u0430\u043A \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442 \u0442\u0435\u043A\u0441\u0442 MD/JSON/YAML/HTML/PDF. \u0414\u0435\u0444\u043E\u043B\u0442 \u2014 chat-export \u2014 1.",
+    "format.md": "Markdown",
+    "format.yaml": "YAML",
+    "format.json": "JSON",
+    "format.html": "HTML",
+    "format.pdf": "PDF",
     "label.tos": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F / \u0420\u0438\u0441\u043A\u0438",
     "label.faq": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u0433\u043E \u0440\u0435\u0436\u0438\u043C\u0430 \u0438 FAQ",
     "label.on": "\u0412\u043A\u043B",
@@ -1384,7 +1440,47 @@
         offLabel: t3("label.off"),
         onClick: () => persist(Object.assign({}, settings, { allowDestructive: !settings.allowDestructive }))
       }
-    )), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.rpcTimeout")), /* @__PURE__ */ k(
+    )), /* @__PURE__ */ k("h2", null, t3("label.exportSchemas")), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("schema.hint")), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.schemaDefault")), /* @__PURE__ */ k(
+      "select",
+      {
+        value: settings.exportSchemas && settings.exportSchemas.default || "chat-export/1",
+        disabled: busy,
+        onChange: (e3) => {
+          const exportSchemas = normalizeExportSchemas(
+            Object.assign({}, settings.exportSchemas, { default: e3.currentTarget.value })
+          );
+          persist(Object.assign({}, settings, { exportSchemas }));
+        }
+      },
+      EXPORT_SCHEMA_IDS.map(function(id) {
+        return /* @__PURE__ */ k("option", { key: id, value: id }, t3("schema." + id));
+      })
+    )), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.schemaByFormat")), EXPORT_FORMAT_IDS.map(function(fmt) {
+      const cur = settings.exportSchemas && settings.exportSchemas.byFormat && settings.exportSchemas.byFormat[fmt];
+      return /* @__PURE__ */ k("label", { key: fmt, class: "ce-field ce-field--nested" }, /* @__PURE__ */ k("span", null, t3("format." + fmt)), /* @__PURE__ */ k(
+        "select",
+        {
+          value: cur || "",
+          disabled: busy,
+          onChange: (e3) => {
+            const val = e3.currentTarget.value;
+            const byFormat = Object.assign(
+              {},
+              settings.exportSchemas && settings.exportSchemas.byFormat || {},
+              { [fmt]: val ? val : null }
+            );
+            const exportSchemas = normalizeExportSchemas(
+              Object.assign({}, settings.exportSchemas, { byFormat })
+            );
+            persist(Object.assign({}, settings, { exportSchemas }));
+          }
+        },
+        /* @__PURE__ */ k("option", { value: "" }, t3("label.schemaInherit")),
+        EXPORT_SCHEMA_IDS.map(function(id) {
+          return /* @__PURE__ */ k("option", { key: id, value: id }, t3("schema." + id));
+        })
+      ));
+    })), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.rpcTimeout")), /* @__PURE__ */ k(
       "input",
       {
         type: "number",

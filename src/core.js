@@ -1424,52 +1424,42 @@
     });
   }
 
-  function buildExportFiles(base, metaMd, metaYaml, messages, formats) {
+  function resolveSchemaForFormat(ext, opts) {
+    var override = opts && opts.schema ? String(opts.schema) : '';
+    var exportSchemas = opts && opts.exportSchemas;
+    if (global.ChatExport && typeof global.ChatExport.effectiveSchemaForFormat === 'function') {
+      return global.ChatExport.effectiveSchemaForFormat(exportSchemas, ext, override || null);
+    }
+    return override || 'chat-export/1';
+  }
+
+  function renderExportFormat(ext, metaMd, metaYaml, messages, schemaId) {
+    var meta = ext === 'md' ? metaMd : metaYaml;
+    if (global.ChatExport && typeof global.ChatExport.renderWithSchema === 'function') {
+      return Promise.resolve(global.ChatExport.renderWithSchema(schemaId, ext, meta, messages));
+    }
+    if (ext === 'md') return Promise.resolve(buildMarkdown(metaMd, messages));
+    if (ext === 'yaml') return Promise.resolve(yamlDump(metaYaml, messages));
+    if (ext === 'json') return Promise.resolve(buildJson(metaYaml, messages));
+    if (ext === 'html') return Promise.resolve(buildHtml(metaYaml, messages));
+    if (ext === 'pdf') return buildPdf(metaYaml, messages);
+    return Promise.resolve(null);
+  }
+
+  function buildExportFiles(base, metaMd, metaYaml, messages, formats, opts) {
     var list = normalizeFormats(formats);
     var jobs = list.map(function (ext) {
-      if (ext === 'md') {
-        return Promise.resolve({
-          ext: 'md',
-          filename: base + '.md',
-          data: buildMarkdown(metaMd, messages),
-          mime: BLOB_MIME.md
-        });
-      }
-      if (ext === 'yaml') {
-        return Promise.resolve({
-          ext: 'yaml',
-          filename: base + '.yaml',
-          data: yamlDump(metaYaml, messages),
-          mime: BLOB_MIME.yaml
-        });
-      }
-      if (ext === 'json') {
-        return Promise.resolve({
-          ext: 'json',
-          filename: base + '.json',
-          data: buildJson(metaYaml, messages),
-          mime: BLOB_MIME.json
-        });
-      }
-      if (ext === 'html') {
-        return Promise.resolve({
-          ext: 'html',
-          filename: base + '.html',
-          data: buildHtml(metaYaml, messages),
-          mime: BLOB_MIME.html
-        });
-      }
-      if (ext === 'pdf') {
-        return buildPdf(metaYaml, messages).then(function (bytes) {
-          return {
-            ext: 'pdf',
-            filename: base + '.pdf',
-            data: bytes,
-            mime: BLOB_MIME.pdf
-          };
-        });
-      }
-      return Promise.resolve(null);
+      var schemaId = resolveSchemaForFormat(ext, opts || {});
+      return renderExportFormat(ext, metaMd, metaYaml, messages, schemaId).then(function (data) {
+        if (data == null) return null;
+        return {
+          ext: ext,
+          filename: base + '.' + ext,
+          data: data,
+          mime: BLOB_MIME[ext],
+          schema: schemaId
+        };
+      });
     });
     return Promise.all(jobs).then(function (files) {
       return files.filter(Boolean);
@@ -1506,7 +1496,7 @@
       user_email: opts.userEmail || ''
     };
     var base = platform + '-' + slugTitle(title) + '-' + dateStamp(now);
-    return buildExportFiles(base, metaMd, metaYaml, messages, formats).then(function (files) {
+    return buildExportFiles(base, metaMd, metaYaml, messages, formats, opts).then(function (files) {
       return { base: base, files: files };
     });
   }

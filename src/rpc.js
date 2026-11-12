@@ -107,7 +107,16 @@ function exportChat(CE, entry, args, ctx) {
   if (!formats.length) throw new RpcError('BAD_REQUEST', 'formats must be a non-empty array');
   return Promise.resolve(loadPayload(entry, args, ctx)).then(function (raw) {
     const payload = normalizePayload(entry.id, raw);
-    return CE.buildExportBundle(Object.assign({}, payload, { formats: formats })).then(function (bundle) {
+    const settings = typeof CE.getPlatformSettings === 'function' ? CE.getPlatformSettings() : null;
+    const exportSchemas = (args && args.exportSchemas) || (settings && settings.exportSchemas) || null;
+    const schema = args && args.schema ? String(args.schema) : '';
+    return CE.buildExportBundle(
+      Object.assign({}, payload, {
+        formats: formats,
+        exportSchemas: exportSchemas,
+        schema: schema || undefined
+      })
+    ).then(function (bundle) {
       return { files: bundle.files.map(toProtocolFile), payload: payload };
     });
   });
