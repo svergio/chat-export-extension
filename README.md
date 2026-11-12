@@ -12,6 +12,10 @@ Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok,
 
 **No network, no analytics, local-only.** Export and the optional MCP bridge stay on your machine (`chrome.downloads` + `127.0.0.1`). The extension does not phone home and does not include telemetry.
 
+## Standalone
+
+Chat Export is a **full product** in three public repos (extension, server, dashboard). Manual export works with the extension alone. MCP automation uses `chat-export-server` and the **MV3 extension bridge** in your Chrome tabs — **not** Chrome DevTools MCP. Deploy the server **natively**, via **Docker / Colima**, or **Kubernetes**. Cursor, Open WebUI, and local LLMs (e.g. Bonsai-27B) are **optional external MCP clients** only.
+
 **Install zip:** [chat-export-extension-2.0.3.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.3/chat-export-extension-2.0.3.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.3](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.3).
 
 ## The problem
