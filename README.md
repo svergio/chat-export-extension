@@ -16,7 +16,7 @@ Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok,
 
 Chat Export is a **full product** in three public repos (extension, server, dashboard). Manual export works with the extension alone. MCP automation uses `chat-export-server` and the **MV3 extension bridge** in your Chrome tabs — **not** Chrome DevTools MCP. Deploy the server **natively**, via **Docker / Colima**, or **Kubernetes**. Cursor, Open WebUI, and local LLMs (e.g. Bonsai-27B) are **optional external MCP clients** only.
 
-**Install zip:** [chat-export-extension-2.0.5.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.5/chat-export-extension-2.0.5.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.5](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.5).
+**Install zip:** [chat-export-extension-2.0.6.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.6/chat-export-extension-2.0.6.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.6](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.6).
 
 ## The problem
 
@@ -90,8 +90,8 @@ Server MCP setup: [server README — Configuration](https://github.com/svergio/c
 ## Export bar (no server required)
 
 1. Open a supported host (e.g. [chatgpt.com](https://chatgpt.com), [grok.com](https://grok.com), [claude.ai](https://claude.ai), [chat.qwen.ai](https://chat.qwen.ai), [chat.deepseek.com](https://chat.deepseek.com), [perplexity.ai](https://perplexity.ai)) and refresh after extension updates.
-2. Choose formats (MD / YAML / JSON / HTML / PDF). Multi-format: **Folder** or **Zip** toggle.
-3. Download icon — silent save to Downloads (Shift/Cmd = Save As). Names: `{platform}-{title}-{date}.{ext}`.
+2. Choose formats (MD / YAML / JSON / HTML / PDF). **Folder** or **Zip** is always available (even for one format).
+3. Download — after you pick a default folder once, saves are **silent** into that folder. **Shift+click** changes default folder (`rebind`) or asks once (`saveAs`); configure in popup **Export settings** (above Advanced). Wiki: [Saving and Shift modes](https://github.com/svergio/chat-export-extension/wiki/Saving-and-Shift-Modes) · [per-provider UI galleries](https://github.com/svergio/chat-export-extension/wiki/Supported-Platforms#provider-ui-galleries-screenshots--gif).
 
 **What the files look like (semantics):** Default schema `chat-export/1` — Markdown `` ```md `` fences (`sys` / `user:` / `assistant:` / `sources`); JSON `schema: chat-export/1` with `messages[{ role, role_tag, text, … }]`. Optional `sharegpt/1` for ShareGPT-style `conversations[{ from, value }]`. Choose schema in the popup (Advanced); the page bar only picks formats. Hub + minis: **[Wiki — Export formats](https://github.com/svergio/chat-export-extension/wiki/Export-Formats)**.
 
