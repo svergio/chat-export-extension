@@ -374,11 +374,9 @@
     var endBtn = send || dictate || voice;
     var row = commonAncestor(thinking || attach, endBtn, footer) || footer;
     var thinkWrap = wrapChildOf(row, thinking);
-    var endWrap = wrapChildOf(row, endBtn);
     return {
       el: row,
       insertAfter: thinkWrap,
-      beforeChild: endWrap,
       nativeFrom: thinking || attach,
       nativeIconFrom: attach || null
     };

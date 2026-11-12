@@ -1,0 +1,194 @@
+/* X Grok full page + GrokDrawer. React Native Web hash classes (css-*, r-*) are copied
+   onto our buttons, so every rule here is scoped by our own attribute and uses !important. */
+[data-chat-export-bar='grok-x'] {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 0;
+  gap: 0;
+  white-space: nowrap;
+  max-width: none;
+  position: relative;
+  z-index: 6;
+  height: 34px;
+  color: inherit;
+}
+
+/* Match X Grok mode chip (Fast / Быстрый): transparent pill on the composer shell */
+[data-chat-export-bar='grok-x'] .chat-export-fmt {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  min-width: 22px !important;
+  width: max-content !important;
+  padding: 0 8px 0 12px !important;
+  margin: 0 !important;
+  gap: 4px !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 9999px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s !important;
+}
+
+[data-chat-export-bar='grok-x'] .chat-export-fmt:hover,
+[data-chat-export-bar='grok-x'] .chat-export-fmt.is-open,
+[data-chat-export-bar='grok-x'] .chat-export-dl:hover {
+  background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
+}
+
+/* RNW css-g5y9jx is column flex: without row + min-size the label collapses to h=0 */
+[data-chat-export-bar='grok-x'] .chat-export-format-text {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  min-height: 1em !important;
+  height: auto !important;
+  max-height: none !important;
+  font-family: TwitterChirp, -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 16px !important;
+  letter-spacing: normal !important;
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+[data-chat-export-bar='grok-x'] .chat-export-chevron {
+  flex: 0 0 auto !important;
+  width: 16px !important;
+  height: 16px !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+  opacity: 1 !important;
+}
+
+[data-chat-export-bar='grok-x'] .chat-export-dl {
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 9999px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  /* --ce-gx-icon is copied at runtime from the native attach icon (per X theme) */
+  color: var(--ce-gx-icon, currentColor) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background-color 0.2s !important;
+}
+
+/* X keyboard focus: 2px neutral ring plus the hover tint, no outline */
+[data-chat-export-bar='grok-x'] .chat-export-fmt:focus-visible,
+[data-chat-export-bar='grok-x'] .chat-export-dl:focus-visible {
+  outline: none !important;
+  background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
+  box-shadow: 0 0 0 2px var(--ce-gx-ring) !important;
+}
+
+[data-chat-export-bar='grok-x'][data-ce-scheme='dark'] {
+  --ce-gx-ring: rgb(243, 244, 245);
+}
+
+[data-chat-export-bar='grok-x'][data-ce-scheme='light'] {
+  --ce-gx-ring: rgb(135, 138, 140);
+}
+
+[data-chat-export-bar='grok-x'] .chat-export-dl > span {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-chat-export-bar='grok-x'] .chat-export-dl svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* X dropdown (mode menu): borderless 12px card, edge-to-edge 44px rows, solid hover */
+.chat-export-menu[data-chat-export-menu='grok-x'][data-ce-scheme='dark'] {
+  --ce-menu-bg: rgb(20, 20, 20);
+  --ce-menu-fg: rgb(231, 233, 234);
+  --ce-menu-border: transparent;
+  --ce-menu-hover: rgb(22, 24, 28);
+  --ce-menu-shadow: rgba(0, 0, 0, 0.5) 0 4px 12px, rgba(0, 0, 0, 0.35) 0 0 2px;
+  --ce-menu-sep: rgb(47, 51, 54);
+  --ce-menu-pack-bg: rgba(231, 233, 234, 0.06);
+  --ce-menu-pack-active: rgba(231, 233, 234, 0.14);
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'][data-ce-scheme='light'] {
+  --ce-menu-bg: rgb(255, 255, 255);
+  --ce-menu-fg: rgb(15, 20, 25);
+  --ce-menu-border: transparent;
+  --ce-menu-hover: rgb(247, 249, 249);
+  --ce-menu-shadow: rgba(101, 119, 134, 0.2) 0 0 15px, rgba(101, 119, 134, 0.15) 0 0 3px 1px;
+  --ce-menu-sep: rgb(239, 243, 244);
+  --ce-menu-pack-bg: rgba(15, 20, 25, 0.05);
+  --ce-menu-pack-active: rgba(15, 20, 25, 0.1);
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'] {
+  padding: 0;
+  border-width: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: TwitterChirp, -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-menu-item {
+  min-height: 44px;
+  padding: 12px 16px;
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+/* X marks the current choice with a check; the row tint is hover/keyboard only */
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-menu-item.is-active {
+  background: transparent;
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-menu-item:hover,
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-menu-item:focus-visible {
+  background: var(--ce-menu-hover);
+  outline: none;
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-check {
+  opacity: 1;
+  font-size: 15px;
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-menu-sep {
+  margin: 0;
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-pack {
+  margin: 12px 16px;
+  border-radius: 9999px;
+}
+
+.chat-export-menu[data-chat-export-menu='grok-x'] .chat-export-pack-btn {
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 700;
+}

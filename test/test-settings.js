@@ -24,7 +24,7 @@ test('normalizeSettings recovers corrupted storage', () => {
   assert.equal(s.host, '127.0.0.1');
   assert.equal(s.tosVersion, 0);
   assert.equal(s.faqVersion, 0);
-  assert.equal(s.ui.skin, 'chatgpt');
+  assert.equal(s.ui.skin, 'auto');
   assert.equal(s.ui.locale, 'auto');
 
   const bad = normalizeSettings({
@@ -37,7 +37,7 @@ test('normalizeSettings recovers corrupted storage', () => {
   assert.equal(bad.port, 8765);
   assert.equal(bad.rpcTimeoutS, 60);
   assert.equal(bad.tosVersion, 0);
-  assert.equal(bad.ui.skin, 'chatgpt');
+  assert.equal(bad.ui.skin, 'auto');
   assert.equal(bad.ui.scheme, 'auto');
   assert.equal(bad.ui.locale, 'auto');
 });
@@ -56,4 +56,17 @@ test('all platforms default enabled unless explicitly false', () => {
   for (const id of PLATFORMS) {
     if (id !== 'chatgpt' && id !== 'qwen') assert.equal(s.platforms[id], true);
   }
+});
+
+test('saveFolder.shiftMode defaults and normalizes', () => {
+  assert.equal(normalizeSettings({}).saveFolder.shiftMode, 'rebind');
+  assert.equal(normalizeSettings(null).saveFolder.shiftMode, 'rebind');
+  assert.equal(
+    normalizeSettings({ saveFolder: { shiftMode: 'saveAs' } }).saveFolder.shiftMode,
+    'saveAs'
+  );
+  assert.equal(
+    normalizeSettings({ saveFolder: { shiftMode: 'x' } }).saveFolder.shiftMode,
+    'rebind'
+  );
 });

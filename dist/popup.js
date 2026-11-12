@@ -455,6 +455,7 @@
   var EXPORT_FORMAT_IDS = Object.freeze(["md", "yaml", "json", "html", "pdf"]);
   var EXPORT_SCHEMA_IDS = Object.freeze(["chat-export/1", "sharegpt/1"]);
   var DEFAULT_EXPORT_SCHEMA_ID = "chat-export/1";
+  var SHIFT_MODES = Object.freeze(["rebind", "saveAs"]);
   var STORAGE_KEYS = Object.freeze({
     browserId: "ce.browserId",
     settings: "ce.settings",
@@ -492,15 +493,16 @@
         pdf: null
       })
     }),
+    saveFolder: Object.freeze({ shiftMode: "rebind" }),
     ui: Object.freeze({
-      skin: "chatgpt",
+      skin: "auto",
       scheme: "auto",
       locale: "auto"
     })
   });
   function normalizeUi(raw) {
     const u3 = raw && typeof raw === "object" ? raw : {};
-    const skin = UI_SKINS.indexOf(u3.skin) >= 0 ? u3.skin : "chatgpt";
+    const skin = u3.skin === "auto" || UI_SKINS.indexOf(u3.skin) >= 0 ? u3.skin : "auto";
     const scheme = UI_SCHEMES.indexOf(u3.scheme) >= 0 ? u3.scheme : "auto";
     const locale = UI_LOCALES.indexOf(u3.locale) >= 0 ? u3.locale : "auto";
     return { skin, scheme, locale };
@@ -548,6 +550,9 @@
       tosVersion: Number.isFinite(Number(s3.tosVersion)) ? Number(s3.tosVersion) : 0,
       faqVersion: Number.isFinite(Number(s3.faqVersion)) ? Number(s3.faqVersion) : 0,
       exportSchemas: normalizeExportSchemas(s3.exportSchemas),
+      saveFolder: {
+        shiftMode: SHIFT_MODES.indexOf(s3.saveFolder && s3.saveFolder.shiftMode) >= 0 ? s3.saveFolder.shiftMode : "rebind"
+      },
       ui: normalizeUi(s3.ui)
     };
   }
@@ -595,6 +600,16 @@
     "label.schemaDefault": "Default schema",
     "label.schemaByFormat": "Schema per format",
     "label.schemaInherit": "Use default",
+    "label.saveFolder": "Default folder",
+    "label.shiftMode": "Shift + click",
+    "label.schemaPerFormat": "Per format",
+    "schema.inherit": "As default",
+    "saveFolder.none": "Not chosen \u2014 will ask on first download",
+    "saveFolder.prompt": "Access expired \u2014 restore",
+    "saveFolder.unsupported": "Not supported \u2014 Chrome Downloads is used",
+    "shiftMode.rebind": "Choose new default folder",
+    "shiftMode.saveAs": "Ask where to save (one time)",
+    "hint.shiftMode": "Normal click saves silently into the default folder.",
     "schema.chat-export/1": "chat-export \u2014 1",
     "schema.sharegpt/1": "sharegpt \u2014 1",
     "schema.hint": "Formats on the page bar stay the same. Schema controls how MD/JSON/YAML/HTML/PDF text is shaped. Default is chat-export \u2014 1.",
@@ -607,6 +622,7 @@
     "label.faq": "Advanced Mode Terms & FAQ",
     "label.on": "On",
     "label.off": "Off",
+    "skin.auto": "Auto (match site)",
     "skin.chatgpt": "ChatGPT",
     "skin.grok": "Grok",
     "skin.grok-x": "X Grok",
@@ -629,18 +645,30 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "section.exportSettings": "Export settings",
     "bar.pack": "Pack",
     "bar.pack.folder": "Folder",
     "bar.pack.zip": "Zip",
     "bar.format": "Export format",
     "bar.download": "Download chat",
-    "bar.dl.single": "Click: Downloads. Shift or Ctrl: choose path",
-    "bar.dl.multi": "Click: export. Shift or Ctrl: choose save location",
+    "bar.dl.single": "Download {fmt}. Shift: {shiftHint}",
+    "bar.dl.multi": "Download {fmt}. Shift: {shiftHint}",
+    "toast.saved": "Saved to \xAB{folder}\xBB: {name}",
+    "toast.downloaded": "Downloaded: {name}",
+    "toast.failed": "Export failed",
+    "toast.empty": "Nothing to export yet",
+    "bar.shift.rebind": "new default folder",
+    "bar.shift.saveAs": "ask where to save",
     "btn.generate": "Generate",
     "btn.rotate": "Rotate",
     "btn.copy": "Copy",
     "btn.continue": "Continue",
     "btn.acceptTos": "Accept & Continue",
+    "btn.showExportSettings": "Export settings",
+    "btn.hideExportSettings": "Hide export settings",
+    "btn.chooseFolder": "Choose folder",
+    "btn.changeFolder": "Change folder",
+    "btn.forgetFolder": "Forget",
     "btn.showAdvanced": "Advanced",
     "btn.hideAdvanced": "Hide advanced",
     "test.connection": "Test connection",
@@ -669,7 +697,18 @@
     "faq.3": "Local Loopback Only: The extension and server communicate strictly over 127.0.0.1 using per-browser ceb_ tokens. Site passwords and cookies are never extracted or sent to the agent.",
     "faq.4": "Permission Gates: Creating/sending chats can be toggled off, and destructive actions (deleting chats or projects) are disabled by default and require explicit confirmation.",
     "faq.5": 'You are solely responsible for all actions performed by connected agents and for complying with provider Terms of Service. Provided "AS IS" without liability.',
-    "faq.6": "If an adapter or RPC command breaks after a provider update, open an issue at https://github.com/svergio/chat-export-extension/issues"
+    "faq.6": "If an adapter or RPC command breaks after a provider update, open an issue at https://github.com/svergio/chat-export-extension/issues",
+    "folderPage.title": "Chat Export \u2014 save folder",
+    "folderPage.pick": "Choose folder",
+    "folderPage.grant": "Restore access to \xAB{name}\xBB",
+    "folderPage.saved": "Saved to \xAB{name}\xBB",
+    "folderPage.cancelled": "Cancelled. Nothing saved.",
+    "folderPage.hint": "Choose or create a subfolder, for example Downloads/Chat Export. Chrome does not allow the Downloads, Desktop or Documents folder itself.",
+    "folderPage.pending": "The export will be saved as soon as you choose a folder.",
+    "folderPage.notPicked": "No folder chosen yet. Pick a subfolder and try again.",
+    "folderPage.cancel": "Cancel export",
+    "folderPage.pendingMany": "{count} exports will be saved as soon as you choose a folder.",
+    "folderPage.savedMany": "Saved {count} exports to \xAB{name}\xBB"
   };
 
   // locales/LN_ru.json
@@ -702,6 +741,16 @@
     "label.schemaDefault": "\u0421\u0445\u0435\u043C\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
     "label.schemaByFormat": "\u0421\u0445\u0435\u043C\u0430 \u043D\u0430 \u0444\u043E\u0440\u043C\u0430\u0442",
     "label.schemaInherit": "\u041A\u0430\u043A \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "label.saveFolder": "\u041F\u0430\u043F\u043A\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "label.shiftMode": "Shift + \u043A\u043B\u0438\u043A",
+    "label.schemaPerFormat": "\u041F\u043E \u0444\u043E\u0440\u043C\u0430\u0442\u0430\u043C",
+    "schema.inherit": "\u041A\u0430\u043A \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "saveFolder.none": "\u041D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430 \u2014 \u0441\u043F\u0440\u043E\u0441\u0438\u043C \u043F\u0440\u0438 \u043F\u0435\u0440\u0432\u043E\u043C \u0441\u043A\u0430\u0447\u0438\u0432\u0430\u043D\u0438\u0438",
+    "saveFolder.prompt": "\u0414\u043E\u0441\u0442\u0443\u043F \u0438\u0441\u0442\u0451\u043A \u2014 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C",
+    "saveFolder.unsupported": "\u041D\u0435 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u2014 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E\u0442\u0441\u044F \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438 Chrome",
+    "shiftMode.rebind": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043D\u043E\u0432\u0443\u044E \u043F\u0430\u043F\u043A\u0443 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "shiftMode.saveAs": "\u0421\u043F\u0440\u043E\u0441\u0438\u0442\u044C, \u043A\u0443\u0434\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C (\u0440\u0430\u0437\u043E\u0432\u043E)",
+    "hint.shiftMode": "\u041E\u0431\u044B\u0447\u043D\u044B\u0439 \u043A\u043B\u0438\u043A \u0442\u0438\u0445\u043E \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0432 \u043F\u0430\u043F\u043A\u0443 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E.",
     "schema.chat-export/1": "chat-export \u2014 1",
     "schema.sharegpt/1": "sharegpt \u2014 1",
     "schema.hint": "\u041A\u043D\u043E\u043F\u043A\u0438 \u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0432 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u043D\u0435 \u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F. \u0421\u0445\u0435\u043C\u0430 \u0437\u0430\u0434\u0430\u0451\u0442, \u043A\u0430\u043A \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442 \u0442\u0435\u043A\u0441\u0442 MD/JSON/YAML/HTML/PDF. \u0414\u0435\u0444\u043E\u043B\u0442 \u2014 chat-export \u2014 1.",
@@ -714,6 +763,7 @@
     "label.faq": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u0433\u043E \u0440\u0435\u0436\u0438\u043C\u0430 \u0438 FAQ",
     "label.on": "\u0412\u043A\u043B",
     "label.off": "\u0412\u044B\u043A\u043B",
+    "skin.auto": "\u0410\u0432\u0442\u043E (\u043F\u043E \u0441\u0430\u0439\u0442\u0443)",
     "skin.chatgpt": "ChatGPT",
     "skin.grok": "Grok",
     "skin.grok-x": "X Grok",
@@ -736,18 +786,30 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "section.exportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.pack": "\u0423\u043F\u0430\u043A\u043E\u0432\u043A\u0430",
     "bar.pack.folder": "\u041F\u0430\u043F\u043A\u0430",
     "bar.pack.zip": "\u0410\u0440\u0445\u0438\u0432",
     "bar.format": "\u0424\u043E\u0440\u043C\u0430\u0442 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.download": "\u0421\u043A\u0430\u0447\u0430\u0442\u044C \u0447\u0430\u0442",
-    "bar.dl.single": "\u041A\u043B\u0438\u043A: \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438. Shift \u0438\u043B\u0438 Ctrl: \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0443\u0442\u044C",
-    "bar.dl.multi": "\u041A\u043B\u0438\u043A: \u044D\u043A\u0441\u043F\u043E\u0440\u0442. Shift \u0438\u043B\u0438 Ctrl: \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u043C\u0435\u0441\u0442\u043E \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
+    "bar.dl.single": "\u0421\u043A\u0430\u0447\u0430\u0442\u044C {fmt}. Shift: {shiftHint}",
+    "bar.dl.multi": "\u0421\u043A\u0430\u0447\u0430\u0442\u044C {fmt}. Shift: {shiftHint}",
+    "toast.saved": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB{folder}\xBB: {name}",
+    "toast.downloaded": "\u0421\u043A\u0430\u0447\u0430\u043D\u043E: {name}",
+    "toast.failed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F",
+    "toast.empty": "\u041F\u043E\u043A\u0430 \u043D\u0435\u0447\u0435\u0433\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+    "bar.shift.rebind": "\u043D\u043E\u0432\u0430\u044F \u043F\u0430\u043F\u043A\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+    "bar.shift.saveAs": "\u0441\u043F\u0440\u043E\u0441\u0438\u0442\u044C, \u043A\u0443\u0434\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C",
     "btn.generate": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C",
     "btn.rotate": "\u0421\u043C\u0435\u043D\u0438\u0442\u044C",
     "btn.copy": "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
     "btn.continue": "\u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
     "btn.acceptTos": "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0438 \u043F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
+    "btn.showExportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "btn.hideExportSettings": "\u0421\u043A\u0440\u044B\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "btn.chooseFolder": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+    "btn.changeFolder": "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+    "btn.forgetFolder": "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C",
     "btn.showAdvanced": "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "btn.hideAdvanced": "\u0421\u043A\u0440\u044B\u0442\u044C \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "test.connection": "\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435",
@@ -776,7 +838,18 @@
     "faq.3": "\u0422\u043E\u043B\u044C\u043A\u043E \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043D\u0442\u0443\u0440: \u041E\u0431\u043C\u0435\u043D \u043C\u0435\u0436\u0434\u0443 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435\u043C \u0438 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u043C \u0438\u0434\u0435\u0442 \u0441\u0442\u0440\u043E\u0433\u043E \u0447\u0435\u0440\u0435\u0437 127.0.0.1 \u043F\u043E \u0438\u043D\u0434\u0438\u0432\u0438\u0434\u0443\u0430\u043B\u044C\u043D\u044B\u043C \u0442\u043E\u043A\u0435\u043D\u0430\u043C ceb_. \u041F\u0430\u0440\u043E\u043B\u0438 \u0438 cookies \u0441\u0430\u0439\u0442\u043E\u0432 \u043D\u0435 \u0438\u0437\u0432\u043B\u0435\u043A\u0430\u044E\u0442\u0441\u044F \u0438 \u043D\u0435 \u043F\u0435\u0440\u0435\u0434\u0430\u044E\u0442\u0441\u044F \u0430\u0433\u0435\u043D\u0442\u0443.",
     "faq.4": "\u041A\u043E\u043D\u0442\u0440\u043E\u043B\u044C \u043F\u0440\u0430\u0432: \u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0443 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439 \u043C\u043E\u0436\u043D\u043E \u043E\u0442\u043A\u043B\u044E\u0447\u0438\u0442\u044C, \u0430 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0435 \u0447\u0430\u0442\u043E\u0432 \u0438 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432 \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u043E \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E \u0438 \u0442\u0440\u0435\u0431\u0443\u0435\u0442 \u044F\u0432\u043D\u043E\u0433\u043E \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u0438\u044F.",
     "faq.5": "\u0412\u044B \u043D\u0435\u0441\u0435\u0442\u0435 \u043F\u043E\u043B\u043D\u0443\u044E \u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0441\u0442\u044C \u0437\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044F \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043D\u044B\u0445 \u0430\u0433\u0435\u043D\u0442\u043E\u0432 \u0438 \u0441\u043E\u0431\u043B\u044E\u0434\u0435\u043D\u0438\u0435 \u043F\u0440\u0430\u0432\u0438\u043B \u0441\u0435\u0440\u0432\u0438\u0441\u043E\u0432 (ToS). \u041F\u041E \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \xAB\u041A\u0410\u041A \u0415\u0421\u0422\u042C\xBB \u0431\u0435\u0437 \u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0441\u0442\u0438 \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432.",
-    "faq.6": "\u0415\u0441\u043B\u0438 \u0430\u0434\u0430\u043F\u0442\u0435\u0440 \u0438\u043B\u0438 RPC-\u043A\u043E\u043C\u0430\u043D\u0434\u0430 \u0441\u043B\u043E\u043C\u0430\u043B\u0438\u0441\u044C \u043F\u043E\u0441\u043B\u0435 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u0430\u0439\u0442\u0430, \u0441\u043E\u043E\u0431\u0449\u0438\u0442\u0435 \u0432 \u0438\u0448\u044C\u044E: https://github.com/svergio/chat-export-extension/issues"
+    "faq.6": "\u0415\u0441\u043B\u0438 \u0430\u0434\u0430\u043F\u0442\u0435\u0440 \u0438\u043B\u0438 RPC-\u043A\u043E\u043C\u0430\u043D\u0434\u0430 \u0441\u043B\u043E\u043C\u0430\u043B\u0438\u0441\u044C \u043F\u043E\u0441\u043B\u0435 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u0430\u0439\u0442\u0430, \u0441\u043E\u043E\u0431\u0449\u0438\u0442\u0435 \u0432 \u0438\u0448\u044C\u044E: https://github.com/svergio/chat-export-extension/issues",
+    "folderPage.title": "Chat Export \u2014 \u043F\u0430\u043F\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
+    "folderPage.pick": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+    "folderPage.grant": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0434\u043E\u0441\u0442\u0443\u043F \u043A \xAB{name}\xBB",
+    "folderPage.saved": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB{name}\xBB",
+    "folderPage.cancelled": "\u041E\u0442\u043C\u0435\u043D\u0435\u043D\u043E. \u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E.",
+    "folderPage.hint": "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u043B\u0438 \u0441\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043F\u043E\u0434\u043F\u0430\u043F\u043A\u0443, \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440 \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438/Chat Export. Chrome \u043D\u0435 \u0440\u0430\u0437\u0440\u0435\u0448\u0430\u0435\u0442 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0441\u0430\u043C\u0438 \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438, \u0420\u0430\u0431\u043E\u0447\u0438\u0439 \u0441\u0442\u043E\u043B \u0438\u043B\u0438 \u0414\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B.",
+    "folderPage.pending": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u0441\u044F \u0441\u0440\u0430\u0437\u0443 \u043F\u043E\u0441\u043B\u0435 \u0432\u044B\u0431\u043E\u0440\u0430 \u043F\u0430\u043F\u043A\u0438.",
+    "folderPage.notPicked": "\u041F\u0430\u043F\u043A\u0430 \u043F\u043E\u043A\u0430 \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u043E\u0434\u043F\u0430\u043F\u043A\u0443 \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430.",
+    "folderPage.cancel": "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u044D\u043A\u0441\u043F\u043E\u0440\u0442",
+    "folderPage.pendingMany": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432 \u0432 \u043E\u0447\u0435\u0440\u0435\u0434\u0438: {count}. \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u043C \u0441\u0440\u0430\u0437\u0443 \u043F\u043E\u0441\u043B\u0435 \u0432\u044B\u0431\u043E\u0440\u0430 \u043F\u0430\u043F\u043A\u0438.",
+    "folderPage.savedMany": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432: {count} \u0432 \xAB{name}\xBB"
   };
 
   // src/i18n/index.js
@@ -836,9 +909,10 @@
     const s3 = size || 16;
     return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" }));
   }
+  var CLAUDE_SPARK_PATH = "M52.4285 162.873L98.7844 136.879L99.5485 134.602L98.7844 133.334H96.4921L88.7237 132.862L62.2346 132.153L39.3113 131.207L17.0249 130.026L11.4214 128.844L6.2 121.873L6.7094 118.447L11.4214 115.257L18.171 115.847L33.0711 116.911L55.485 118.447L71.6586 119.392L95.728 121.873H99.5485L100.058 120.337L98.7844 119.392L97.7656 118.447L74.5877 102.732L49.4995 86.1905L36.3823 76.62L29.3779 71.7757L25.8121 67.2858L24.2839 57.3608L30.6515 50.2716L39.3113 50.8623L41.4763 51.4531L50.2636 58.1879L68.9842 72.7209L93.4357 90.6804L97.0015 93.6343L98.4374 92.6652L98.6571 91.9801L97.0015 89.2625L83.757 65.2772L69.621 40.8192L63.2534 30.6579L61.5978 24.632C60.9565 22.1032 60.579 20.0111 60.579 17.4246L67.8381 7.49965L71.9133 6.19995L81.7193 7.49965L85.7946 11.0443L91.9074 24.9865L101.714 46.8451L116.996 76.62L121.453 85.4816L123.873 93.6343L124.764 96.1155H126.292V94.6976L127.566 77.9197L129.858 57.3608L132.15 30.8942L132.915 23.4505L136.608 14.4708L143.994 9.62643L149.725 12.344L154.437 19.0788L153.8 23.4505L150.998 41.6463L145.522 70.1215L141.957 89.2625H143.994L146.414 86.7813L156.093 74.0206L172.266 53.698L179.398 45.6635L187.803 36.802L193.152 32.5484H203.34L210.726 43.6549L207.415 55.1159L196.972 68.3492L188.312 79.5739L175.896 96.2095L168.191 109.585L168.882 110.689L170.738 110.53L198.755 104.504L213.91 101.787L231.994 98.7149L240.144 102.496L241.036 106.395L237.852 114.311L218.495 119.037L195.826 123.645L162.07 131.592L161.696 131.893L162.137 132.547L177.36 133.925L183.855 134.279H199.774L229.447 136.524L237.215 141.605L241.8 147.867L241.036 152.711L229.065 158.737L213.019 154.956L175.45 145.977L162.587 142.787H160.805V143.85L171.502 154.366L191.242 172.089L215.82 195.011L217.094 200.682L213.91 205.172L210.599 204.699L188.949 188.394L180.544 181.069L161.696 165.118H160.422V166.772L164.752 173.152L187.803 207.771L188.949 218.405L187.294 221.832L181.308 223.959L174.813 222.777L161.187 203.754L147.305 182.486L136.098 163.345L134.745 164.2L128.075 235.42L125.019 239.082L117.887 241.8L111.902 237.31L108.718 229.984L111.902 215.452L115.722 196.547L118.779 181.541L121.58 162.873L123.291 156.636L123.14 156.219L121.773 156.449L107.699 175.752L86.304 204.699L69.3663 222.777L65.291 224.431L58.2867 220.768L58.9235 214.27L62.8713 208.48L86.304 178.705L100.44 160.155L109.551 149.507L109.462 147.967L108.959 147.924L46.6977 188.512L35.6182 189.93L30.7788 185.44L31.4156 178.115L33.7079 175.752L52.4285 162.873Z";
   function IconClaude({ size }) {
     const s3 = size || 16;
-    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z" }));
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 248 248", width: s3, height: s3, fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { fill: "#D97757", d: CLAUDE_SPARK_PATH }));
   }
   function IconCopilot({ size }) {
     const s3 = size || 16;
@@ -872,7 +946,18 @@
     const s3 = size || 12;
     return /* @__PURE__ */ k("svg", { viewBox: "0 0 16 16", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" }));
   }
+  function IconSkinAuto({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 16 16", width: s3, height: s3, fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k("circle", { cx: "8", cy: "8", r: "6.25", stroke: "currentColor", "stroke-width": "1.25", opacity: "0.45" }), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M8 1.75a6.25 6.25 0 0 1 0 12.5Z",
+        fill: "currentColor"
+      }
+    ));
+  }
   var SKIN_OPTIONS = [
+    { id: "auto", Icon: IconSkinAuto },
     { id: "chatgpt", Icon: IconChatGpt },
     { id: "grok", Icon: IconGrok },
     { id: "grok-x", Icon: IconX },
@@ -893,6 +978,73 @@
     { id: "en" },
     { id: "ru" }
   ];
+
+  // src/hostSkin.js
+  function toolbarKindFromUrl(url) {
+    if (!url) return "idle";
+    try {
+      const u3 = new URL(url);
+      const host = (u3.hostname || "").toLowerCase();
+      const path = u3.pathname || "";
+      if (host === "grok.com" || host.endsWith(".grok.com")) return "grok";
+      if (host === "chatgpt.com" || host === "chat.openai.com" || host.endsWith(".chatgpt.com")) {
+        return "chatgpt";
+      }
+      if (host === "github.com" || host.endsWith(".github.com")) {
+        if (path === "/" || /^\/copilot(?:\/|$)/i.test(path)) return "copilot";
+        return "idle";
+      }
+      if (host === "x.com" || host === "twitter.com" || host.endsWith(".x.com") || host.endsWith(".twitter.com")) {
+        if (/^\/i\/grok(?:\/|$)/i.test(path)) return "x";
+        return "idle";
+      }
+      if (host === "claude.ai" || host.endsWith(".claude.ai")) return "claude";
+      if (host === "chat.qwen.ai" || host.endsWith(".qwen.ai")) return "qwen";
+      if (host === "chat.deepseek.com" || host.endsWith(".deepseek.com")) return "deepseek";
+      if (host === "perplexity.ai" || host === "www.perplexity.ai" || host.endsWith(".perplexity.ai")) {
+        return "perplexity";
+      }
+    } catch (e3) {
+    }
+    return "idle";
+  }
+  function toolbarKindToSkinId(kind) {
+    if (!kind || kind === "idle") return null;
+    if (kind === "x") return "grok-x";
+    return kind;
+  }
+
+  // src/skinResolve.js
+  var SKIN_AUTO_FALLBACK = "chatgpt";
+  function resolvedSkinFromUrl(url) {
+    const kind = toolbarKindFromUrl(url);
+    const mapped = toolbarKindToSkinId(kind);
+    const skin = mapped || SKIN_AUTO_FALLBACK;
+    if (UI_SKINS.indexOf(skin) >= 0) return skin;
+    return SKIN_AUTO_FALLBACK;
+  }
+  function dataSkinFromSettingAndUrl(uiSkin, url) {
+    if (uiSkin === "auto") return resolvedSkinFromUrl(url);
+    if (UI_SKINS.indexOf(uiSkin) >= 0) return uiSkin;
+    return SKIN_AUTO_FALLBACK;
+  }
+  function tabUrl(tab) {
+    return tab && typeof tab.url === "string" ? tab.url : "";
+  }
+  function queryActiveTabUrlForPopup() {
+    return new Promise(function(resolve) {
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        void chrome.runtime.lastError;
+        resolve(tabUrl(tabs && tabs[0]));
+      });
+    });
+  }
+  async function resolveUiDataSkinForPopup(ui) {
+    const setting = ui && ui.skin || "auto";
+    if (setting !== "auto") return dataSkinFromSettingAndUrl(setting, "");
+    const url = await queryActiveTabUrlForPopup();
+    return resolvedSkinFromUrl(url);
+  }
 
   // src/popup/main.jsx
   var ISSUES_URL = "https://github.com/svergio/chat-export-extension/issues";
@@ -945,10 +1097,10 @@
     }, []);
     return dark;
   }
-  function applyDocumentTheme(skin, scheme, prefersDark) {
+  function applyDocumentTheme(dataSkin, scheme, prefersDark) {
     const resolved = resolveUiScheme(scheme, prefersDark);
     const root = document.documentElement;
-    root.dataset.skin = skin || "chatgpt";
+    root.dataset.skin = dataSkin || SKIN_AUTO_FALLBACK;
     root.dataset.scheme = resolved;
     root.style.colorScheme = resolved;
   }
@@ -1018,6 +1170,17 @@
     if (!text) return null;
     return /* @__PURE__ */ k("p", { class: "ce-tone ce-tone--" + (tone || "muted") }, text);
   }
+  function IconFolder({ size = 14 }) {
+    return /* @__PURE__ */ k("svg", { width: size, height: size, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5H12.5A1.5 1.5 0 0 1 14 6v6.5A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-8Z",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+        "stroke-linejoin": "round"
+      }
+    ));
+  }
   function PrimaryTosConsent({ onAccept, busy, t: t3, localeSetting, onSetLocale }) {
     const [checked, setChecked] = d2(false);
     const currentLoc = localeSetting || "auto";
@@ -1050,9 +1213,11 @@
       "RU"
     ))), /* @__PURE__ */ k("h2", null, t3("tos.title")), /* @__PURE__ */ k("div", { class: "ce-faq-compact ce-tos-body" }, /* @__PURE__ */ k("p", { class: "ce-lead" }, t3("tos.lead")), /* @__PURE__ */ k("ul", null, tosKeys().map(function(key) {
       return /* @__PURE__ */ k("li", { key }, renderWithIssuesLink(t3(key)));
-    })), /* @__PURE__ */ k("label", { class: "ce-check" }, /* @__PURE__ */ k(
+    })), /* @__PURE__ */ k("label", { class: "ce-check", htmlFor: "ce-tos-agree" }, /* @__PURE__ */ k(
       "input",
       {
+        id: "ce-tos-agree",
+        name: "ce-tos-agree",
         type: "checkbox",
         checked,
         onChange: (e3) => setChecked(e3.currentTarget.checked)
@@ -1073,7 +1238,16 @@
     if (consented) return null;
     return /* @__PURE__ */ k("div", { class: "ce-faq-compact" }, /* @__PURE__ */ k("p", { class: "ce-lead" }, t3("faq.lead")), /* @__PURE__ */ k("ul", null, faqKeys().map(function(key) {
       return /* @__PURE__ */ k("li", { key }, renderWithIssuesLink(t3(key)));
-    })), /* @__PURE__ */ k("label", { class: "ce-check" }, /* @__PURE__ */ k("input", { type: "checkbox", checked, onChange: (e3) => setChecked(e3.currentTarget.checked) }), /* @__PURE__ */ k("span", null, t3("faq.agree"))), /* @__PURE__ */ k(
+    })), /* @__PURE__ */ k("label", { class: "ce-check", htmlFor: "ce-faq-agree" }, /* @__PURE__ */ k(
+      "input",
+      {
+        id: "ce-faq-agree",
+        name: "ce-faq-agree",
+        type: "checkbox",
+        checked,
+        onChange: (e3) => setChecked(e3.currentTarget.checked)
+      }
+    ), /* @__PURE__ */ k("span", null, t3("faq.agree"))), /* @__PURE__ */ k(
       "button",
       {
         type: "button",
@@ -1091,12 +1265,18 @@
     const [browserId, setBrowserId] = d2("");
     const [tone, setTone] = d2({ kind: "", text: "" });
     const [busy, setBusy] = d2(false);
+    const [exportOpen, setExportOpen] = d2(false);
     const [advancedOpen, setAdvancedOpen] = d2(false);
     const [skinOpen, setSkinOpen] = d2(false);
     const [schemeOpen, setSchemeOpen] = d2(false);
     const [localeOpen, setLocaleOpen] = d2(false);
+    const [shiftOpen, setShiftOpen] = d2(false);
+    const [schemaDefaultOpen, setSchemaDefaultOpen] = d2(false);
+    const [formatMenuOpen, setFormatMenuOpen] = d2(null);
+    const [folderStatus, setFolderStatus] = d2({ state: "none", name: null });
+    const [resolvedDataSkin, setResolvedDataSkin] = d2(SKIN_AUTO_FALLBACK);
     const prefersDark = usePrefersDark();
-    const ui = settings.ui || { skin: "chatgpt", scheme: "auto", locale: "auto" };
+    const ui = settings.ui || { skin: "auto", scheme: "auto", locale: "auto" };
     const localeCode = resolveLocale(ui.locale);
     const t3 = w2(() => createTranslator(localeCode), [localeCode]);
     const refresh = b(async () => {
@@ -1123,8 +1303,41 @@
       return () => chrome.storage.onChanged.removeListener(onChanged);
     }, [refresh]);
     A2(() => {
-      applyDocumentTheme(ui.skin, ui.scheme, prefersDark);
+      let cancelled = false;
+      resolveUiDataSkinForPopup(ui).then(function(dataSkin) {
+        if (cancelled) return;
+        setResolvedDataSkin(dataSkin);
+        applyDocumentTheme(dataSkin, ui.scheme, prefersDark);
+      });
+      return function() {
+        cancelled = true;
+      };
     }, [ui.skin, ui.scheme, prefersDark]);
+    const refreshFolderStatus = b(async function() {
+      const res = await sendBridge("folderStatus");
+      if (res && res.ok && res.state) {
+        setFolderStatus({ state: res.state, name: res.name || null });
+      } else if (res && res.ok) {
+        setFolderStatus({ state: "none", name: null });
+      } else {
+        setFolderStatus({ state: "unsupported", name: null });
+      }
+    }, []);
+    A2(() => {
+      refreshFolderStatus();
+      function onMessage(msg) {
+        if (msg && msg.type === "ce-folder-changed") {
+          setFolderStatus({
+            state: msg.state || "none",
+            name: msg.name != null ? msg.name : null
+          });
+        }
+      }
+      chrome.runtime.onMessage.addListener(onMessage);
+      return function() {
+        chrome.runtime.onMessage.removeListener(onMessage);
+      };
+    }, [refreshFolderStatus]);
     async function persist(next) {
       const normalized = normalizeSettings(next);
       if (normalized.serverOn && (!hasTosConsent(normalized) || !hasFaqConsent(normalized))) {
@@ -1193,6 +1406,39 @@
       setSkinOpen(which === "skin");
       setSchemeOpen(which === "scheme");
       setLocaleOpen(which === "locale");
+      setShiftOpen(which === "shift");
+      setSchemaDefaultOpen(which === "schemaDefault");
+      setFormatMenuOpen(which && String(which).indexOf("fmt:") === 0 ? String(which).slice(4) : null);
+    }
+    async function onFolderPick(mode) {
+      await sendBridge("folderPick", { mode });
+    }
+    async function onFolderForget() {
+      const res = await sendBridge("folderForget");
+      if (res && res.ok) {
+        setFolderStatus({ state: "none", name: null });
+      } else {
+        await refreshFolderStatus();
+      }
+    }
+    function folderPathDisplay() {
+      const state = folderStatus.state || "none";
+      if (state === "granted" || state === "prompt") {
+        const name = folderStatus.name ? String(folderStatus.name) : "";
+        return name ? "\u2026/" + name : "\u2026/";
+      }
+      return "";
+    }
+    function folderPathPlaceholder() {
+      const state = folderStatus.state || "none";
+      if (state === "unsupported") return t3("saveFolder.unsupported");
+      if (state === "none") return t3("saveFolder.none");
+      return "";
+    }
+    function onFolderPathActivate() {
+      if (!folderPickable || busy) return;
+      if (folderState === "none") onFolderPick("pick");
+      else onFolderPick(folderState === "prompt" ? "grant" : "rebind");
     }
     if (!ready) {
       return /* @__PURE__ */ k("div", { class: "ce-wrap" }, t3("app.loading"));
@@ -1213,7 +1459,15 @@
     const statusLabel = t3("status." + statusState(status));
     const skinOpt = SKIN_OPTIONS.find((o3) => o3.id === ui.skin) || SKIN_OPTIONS[0];
     const SkinIcon = skinOpt.Icon;
+    const skinValueLabel = ui.skin === "auto" ? /* @__PURE__ */ k($, null, t3("skin.auto"), /* @__PURE__ */ k("span", { class: "ce-skin-auto-resolve" }, " \u2014 ", t3("skin." + resolvedDataSkin))) : t3("skin." + skinOpt.id);
     const gatewayOn = !!settings.serverOn;
+    const shiftMode = settings.saveFolder && settings.saveFolder.shiftMode || "rebind";
+    const schemaDefault = settings.exportSchemas && settings.exportSchemas.default || "chat-export/1";
+    const folderState = folderStatus.state || "none";
+    const folderPickable = folderState !== "unsupported";
+    const folderPathValue = folderPathDisplay();
+    const folderPathEmpty = !folderPathValue;
+    const folderPathTitle = folderPathEmpty ? folderPathPlaceholder() : folderPathValue;
     return /* @__PURE__ */ k("div", { class: "ce-wrap" }, /* @__PURE__ */ k("section", { class: "ce-card" }, /* @__PURE__ */ k("header", { class: "ce-head" }, /* @__PURE__ */ k("h1", null, t3("app.title")), gatewayOn ? /* @__PURE__ */ k(StatusDot, { status, label: statusLabel }) : null), /* @__PURE__ */ k("h2", null, t3("label.platforms")), /* @__PURE__ */ k("div", { class: "ce-platforms" }, PLATFORMS.map(function(id) {
       const on = settings.platforms[id] !== false;
       const label = t3("platform." + id);
@@ -1241,7 +1495,7 @@
         open: skinOpen,
         setOpen: (v3) => v3 ? closeMenusExcept("skin") : setSkinOpen(false),
         leading: /* @__PURE__ */ k(SkinIcon, { size: 15 }),
-        valueLabel: t3("skin." + skinOpt.id)
+        valueLabel: skinValueLabel
       },
       SKIN_OPTIONS.map(function(opt) {
         const active = ui.skin === opt.id;
@@ -1322,6 +1576,196 @@
       "button",
       {
         type: "button",
+        class: "ce-advanced-toggle" + (exportOpen ? " is-open" : ""),
+        "aria-expanded": exportOpen ? "true" : "false",
+        onClick: () => setExportOpen(!exportOpen)
+      },
+      /* @__PURE__ */ k(IconChevron, { size: 12 }),
+      /* @__PURE__ */ k("span", null, exportOpen ? t3("btn.hideExportSettings") : t3("btn.showExportSettings"))
+    ), exportOpen ? /* @__PURE__ */ k("div", { class: "ce-advanced-panel ce-export-panel" }, /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.saveFolder")), /* @__PURE__ */ k("div", { class: "ce-save-folder" }, /* @__PURE__ */ k(
+      "div",
+      {
+        class: "ce-save-folder-path" + (folderState === "prompt" ? " is-warn" : "") + (folderPathEmpty ? " is-empty" : "") + (folderPickable && !busy ? " is-clickable" : ""),
+        role: folderPickable ? "button" : void 0,
+        tabIndex: folderPickable && !busy ? 0 : void 0,
+        title: folderPathTitle,
+        onClick: () => onFolderPathActivate(),
+        onKeyDown: (e3) => {
+          if (!folderPickable || busy) return;
+          if (e3.key === "Enter" || e3.key === " ") {
+            e3.preventDefault();
+            onFolderPathActivate();
+          }
+        }
+      },
+      /* @__PURE__ */ k("span", { class: "ce-save-folder-path-icon" }, /* @__PURE__ */ k(IconFolder, { size: 14 })),
+      /* @__PURE__ */ k(
+        "input",
+        {
+          id: "ce-save-folder-path",
+          name: "ce-save-folder-path",
+          type: "text",
+          readOnly: true,
+          tabIndex: -1,
+          value: folderPathValue,
+          placeholder: folderPathPlaceholder()
+        }
+      )
+    ), folderState === "prompt" ? /* @__PURE__ */ k("p", { class: "ce-hint ce-save-folder-prompt" }, t3("saveFolder.prompt")) : null, folderPickable ? /* @__PURE__ */ k("div", { class: "ce-save-folder-actions" }, folderState === "none" ? /* @__PURE__ */ k(
+      "button",
+      {
+        type: "button",
+        class: "ce-btn ce-btn--solid",
+        disabled: busy,
+        onClick: () => onFolderPick("pick")
+      },
+      t3("btn.chooseFolder")
+    ) : /* @__PURE__ */ k($, null, /* @__PURE__ */ k(
+      "button",
+      {
+        type: "button",
+        class: "ce-btn ce-btn--solid",
+        disabled: busy,
+        onClick: () => onFolderPick(folderState === "prompt" ? "grant" : "rebind")
+      },
+      t3("btn.changeFolder")
+    ), /* @__PURE__ */ k(
+      "button",
+      {
+        type: "button",
+        class: "ce-btn",
+        disabled: busy,
+        onClick: () => onFolderForget()
+      },
+      t3("btn.forgetFolder")
+    ))) : null)), /* @__PURE__ */ k(
+      SelectMenu,
+      {
+        label: t3("label.shiftMode"),
+        ariaLabel: t3("label.shiftMode"),
+        disabled: busy,
+        open: shiftOpen,
+        setOpen: (v3) => v3 ? closeMenusExcept("shift") : setShiftOpen(false),
+        valueLabel: t3("shiftMode." + shiftMode)
+      },
+      SHIFT_MODES.map(function(id) {
+        const active = shiftMode === id;
+        return /* @__PURE__ */ k(
+          "button",
+          {
+            key: id,
+            type: "button",
+            role: "option",
+            "aria-selected": active ? "true" : "false",
+            class: "ce-select-item" + (active ? " is-active" : ""),
+            onClick: () => {
+              const saveFolder = Object.assign({}, settings.saveFolder || {}, { shiftMode: id });
+              persist(Object.assign({}, settings, { saveFolder }));
+              setShiftOpen(false);
+            }
+          },
+          /* @__PURE__ */ k("span", null, t3("shiftMode." + id))
+        );
+      })
+    ), /* @__PURE__ */ k("p", { class: "ce-hint ce-hint--tight" }, t3("hint.shiftMode")), /* @__PURE__ */ k(
+      SelectMenu,
+      {
+        label: t3("label.schemaDefault"),
+        ariaLabel: t3("label.schemaDefault"),
+        disabled: busy,
+        open: schemaDefaultOpen,
+        setOpen: (v3) => v3 ? closeMenusExcept("schemaDefault") : setSchemaDefaultOpen(false),
+        valueLabel: t3("schema." + schemaDefault)
+      },
+      EXPORT_SCHEMA_IDS.map(function(id) {
+        const active = schemaDefault === id;
+        return /* @__PURE__ */ k(
+          "button",
+          {
+            key: id,
+            type: "button",
+            role: "option",
+            "aria-selected": active ? "true" : "false",
+            class: "ce-select-item" + (active ? " is-active" : ""),
+            onClick: () => {
+              const exportSchemas = normalizeExportSchemas(
+                Object.assign({}, settings.exportSchemas, { default: id })
+              );
+              persist(Object.assign({}, settings, { exportSchemas }));
+              setSchemaDefaultOpen(false);
+            }
+          },
+          /* @__PURE__ */ k("span", null, t3("schema." + id))
+        );
+      })
+    ), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.schemaPerFormat")), EXPORT_FORMAT_IDS.map(function(fmt) {
+      const cur = settings.exportSchemas && settings.exportSchemas.byFormat && settings.exportSchemas.byFormat[fmt];
+      const menuKey = "fmt:" + fmt;
+      const open = formatMenuOpen === fmt;
+      return /* @__PURE__ */ k(
+        SelectMenu,
+        {
+          key: fmt,
+          label: t3("format." + fmt),
+          ariaLabel: t3("format." + fmt),
+          disabled: busy,
+          open,
+          setOpen: (v3) => v3 ? closeMenusExcept(menuKey) : setFormatMenuOpen(null),
+          valueLabel: cur ? t3("schema." + cur) : t3("schema.inherit")
+        },
+        /* @__PURE__ */ k(
+          "button",
+          {
+            type: "button",
+            role: "option",
+            "aria-selected": !cur ? "true" : "false",
+            class: "ce-select-item" + (!cur ? " is-active" : ""),
+            onClick: () => {
+              const byFormat = Object.assign(
+                {},
+                settings.exportSchemas && settings.exportSchemas.byFormat || {},
+                { [fmt]: null }
+              );
+              const exportSchemas = normalizeExportSchemas(
+                Object.assign({}, settings.exportSchemas, { byFormat })
+              );
+              persist(Object.assign({}, settings, { exportSchemas }));
+              setFormatMenuOpen(null);
+            }
+          },
+          /* @__PURE__ */ k("span", null, t3("schema.inherit"))
+        ),
+        EXPORT_SCHEMA_IDS.map(function(id) {
+          const active = cur === id;
+          return /* @__PURE__ */ k(
+            "button",
+            {
+              key: id,
+              type: "button",
+              role: "option",
+              "aria-selected": active ? "true" : "false",
+              class: "ce-select-item" + (active ? " is-active" : ""),
+              onClick: () => {
+                const byFormat = Object.assign(
+                  {},
+                  settings.exportSchemas && settings.exportSchemas.byFormat || {},
+                  { [fmt]: id }
+                );
+                const exportSchemas = normalizeExportSchemas(
+                  Object.assign({}, settings.exportSchemas, { byFormat })
+                );
+                persist(Object.assign({}, settings, { exportSchemas }));
+                setFormatMenuOpen(null);
+              }
+            },
+            /* @__PURE__ */ k("span", null, t3("schema." + id))
+          );
+        })
+      );
+    }))) : null, /* @__PURE__ */ k(
+      "button",
+      {
+        type: "button",
         class: "ce-advanced-toggle" + (advancedOpen ? " is-open" : ""),
         "aria-expanded": advancedOpen ? "true" : "false",
         onClick: () => setAdvancedOpen(!advancedOpen)
@@ -1349,9 +1793,11 @@
           await persist(next);
         }
       }
-    )), /* @__PURE__ */ k("div", { class: "ce-host-port" }, /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.host")), /* @__PURE__ */ k(
+    )), /* @__PURE__ */ k("div", { class: "ce-host-port" }, /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-host" }, /* @__PURE__ */ k("span", null, t3("label.host")), /* @__PURE__ */ k(
       "input",
       {
+        id: "ce-host",
+        name: "ce-host",
         type: "text",
         spellcheck: false,
         value: settings.host,
@@ -1359,9 +1805,11 @@
         onChange: (e3) => setSettings(Object.assign({}, settings, { host: e3.currentTarget.value })),
         onBlur: () => persist(settings)
       }
-    )), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.port")), /* @__PURE__ */ k(
+    )), /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-port" }, /* @__PURE__ */ k("span", null, t3("label.port")), /* @__PURE__ */ k(
       "input",
       {
+        id: "ce-port",
+        name: "ce-port",
         type: "number",
         min: "1",
         max: "65535",
@@ -1374,17 +1822,31 @@
         ),
         onBlur: () => persist(settings)
       }
-    ))), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.browserLabel")), /* @__PURE__ */ k(
+    ))), /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-browser-label" }, /* @__PURE__ */ k("span", null, t3("label.browserLabel")), /* @__PURE__ */ k(
       "input",
       {
+        id: "ce-browser-label",
+        name: "ce-browser-label",
         type: "text",
         value: settings.browserLabel,
         onChange: (e3) => setSettings(Object.assign({}, settings, { browserLabel: e3.currentTarget.value })),
         onBlur: () => persist(settings)
       }
-    )), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.browserId")), /* @__PURE__ */ k("input", { type: "text", readOnly: true, spellcheck: false, value: browserId || "\u2014" }), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("browser.hint"))), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.gatewayToken")), /* @__PURE__ */ k(
+    )), /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-browser-id" }, /* @__PURE__ */ k("span", null, t3("label.browserId")), /* @__PURE__ */ k(
       "input",
       {
+        id: "ce-browser-id",
+        name: "ce-browser-id",
+        type: "text",
+        readOnly: true,
+        spellcheck: false,
+        value: browserId || "\u2014"
+      }
+    ), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("browser.hint"))), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("label", { htmlFor: "ce-gateway-token" }, t3("label.gatewayToken")), /* @__PURE__ */ k(
+      "input",
+      {
+        id: "ce-gateway-token",
+        name: "ce-gateway-token",
         type: "text",
         autocomplete: "off",
         spellcheck: false,
@@ -1440,49 +1902,11 @@
         offLabel: t3("label.off"),
         onClick: () => persist(Object.assign({}, settings, { allowDestructive: !settings.allowDestructive }))
       }
-    )), /* @__PURE__ */ k("h2", null, t3("label.exportSchemas")), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("schema.hint")), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.schemaDefault")), /* @__PURE__ */ k(
-      "select",
-      {
-        value: settings.exportSchemas && settings.exportSchemas.default || "chat-export/1",
-        disabled: busy,
-        onChange: (e3) => {
-          const exportSchemas = normalizeExportSchemas(
-            Object.assign({}, settings.exportSchemas, { default: e3.currentTarget.value })
-          );
-          persist(Object.assign({}, settings, { exportSchemas }));
-        }
-      },
-      EXPORT_SCHEMA_IDS.map(function(id) {
-        return /* @__PURE__ */ k("option", { key: id, value: id }, t3("schema." + id));
-      })
-    )), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.schemaByFormat")), EXPORT_FORMAT_IDS.map(function(fmt) {
-      const cur = settings.exportSchemas && settings.exportSchemas.byFormat && settings.exportSchemas.byFormat[fmt];
-      return /* @__PURE__ */ k("label", { key: fmt, class: "ce-field ce-field--nested" }, /* @__PURE__ */ k("span", null, t3("format." + fmt)), /* @__PURE__ */ k(
-        "select",
-        {
-          value: cur || "",
-          disabled: busy,
-          onChange: (e3) => {
-            const val = e3.currentTarget.value;
-            const byFormat = Object.assign(
-              {},
-              settings.exportSchemas && settings.exportSchemas.byFormat || {},
-              { [fmt]: val ? val : null }
-            );
-            const exportSchemas = normalizeExportSchemas(
-              Object.assign({}, settings.exportSchemas, { byFormat })
-            );
-            persist(Object.assign({}, settings, { exportSchemas }));
-          }
-        },
-        /* @__PURE__ */ k("option", { value: "" }, t3("label.schemaInherit")),
-        EXPORT_SCHEMA_IDS.map(function(id) {
-          return /* @__PURE__ */ k("option", { key: id, value: id }, t3("schema." + id));
-        })
-      ));
-    })), /* @__PURE__ */ k("label", { class: "ce-field" }, /* @__PURE__ */ k("span", null, t3("label.rpcTimeout")), /* @__PURE__ */ k(
+    )), /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-rpc-timeout" }, /* @__PURE__ */ k("span", null, t3("label.rpcTimeout")), /* @__PURE__ */ k(
       "input",
       {
+        id: "ce-rpc-timeout",
+        name: "ce-rpc-timeout",
         type: "number",
         min: "5",
         max: "600",

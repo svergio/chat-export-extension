@@ -560,6 +560,11 @@ h2 {
   text-align: left;
 }
 
+.ce-skin-auto-resolve {
+  color: var(--ce-muted);
+  font-weight: 400;
+}
+
 .ce-select-btn svg:last-child {
   flex: 0 0 auto;
   opacity: 0.7;
@@ -810,6 +815,100 @@ h2 {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--ce-line);
+}
+
+.ce-export-panel .ce-field + .ce-select-row,
+.ce-export-panel .ce-hint--tight + .ce-select-row {
+  margin-top: 8px;
+}
+
+.ce-save-folder {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.ce-save-folder-path {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ce-line);
+  border-radius: var(--ce-radius-sm);
+  padding: 7px 9px;
+  background: var(--ce-surface-2);
+  color: var(--ce-ink);
+}
+
+.ce-save-folder-path.is-warn {
+  border-color: var(--ce-warn);
+}
+
+.ce-save-folder-path.is-clickable {
+  cursor: pointer;
+}
+
+.ce-save-folder-path.is-clickable:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ce-accent) 35%, transparent);
+  border-color: var(--ce-accent);
+}
+
+.ce-save-folder-path-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--ce-muted);
+}
+
+.ce-save-folder-path input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ce-ink);
+  direction: rtl;
+  text-align: left;
+  unicode-bidi: plaintext;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ce-save-folder-path input[readonly] {
+  font: inherit;
+  font-size: inherit;
+}
+
+.ce-save-folder-path.is-empty input {
+  direction: ltr;
+  unicode-bidi: normal;
+  color: var(--ce-muted);
+}
+
+.ce-save-folder-path input::placeholder {
+  color: var(--ce-muted);
+  opacity: 1;
+}
+
+.ce-save-folder-prompt {
+  margin: 0;
+  color: var(--ce-warn);
+}
+
+.ce-save-folder-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ce-hint--tight {
+  margin: 4px 0 10px;
 }
 
 .ce-faq-compact {

@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Chat Export",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, and Perplexity chats to Markdown, YAML, JSON, HTML, and PDF.",
-  "permissions": ["downloads", "tabs", "storage", "alarms", "scripting"],
+  "permissions": ["downloads", "tabs", "storage", "alarms", "scripting", "offscreen"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"
   },
@@ -78,7 +78,7 @@
     {
       "matches": ["https://grok.com/*"],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/grok.css"],
       "run_at": "document_idle"
     },
     {
@@ -87,7 +87,7 @@
         "https://chat.openai.com/*"
       ],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/chatgpt.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/chatgpt.css"],
       "run_at": "document_idle"
     },
     {
@@ -96,13 +96,13 @@
         "https://twitter.com/*"
       ],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok-x.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/grok-x.css"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://claude.ai/*"],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/claude.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/claude.css"],
       "run_at": "document_idle"
     },
     {
@@ -112,25 +112,25 @@
         "https://github.com/copilot/*"
       ],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/copilot.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/copilot.css"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://chat.qwen.ai/*"],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/qwen.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/qwen.css"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://www.perplexity.ai/*", "https://perplexity.ai/*"],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/perplexity.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/perplexity.css"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://chat.deepseek.com/*"],
       "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/deepseek.js"],
-      "css": ["styles.css"],
+      "css": ["styles/base.css", "styles/deepseek.css"],
       "run_at": "document_idle"
     }
   ]

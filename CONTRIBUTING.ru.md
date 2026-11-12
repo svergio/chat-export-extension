@@ -43,7 +43,7 @@
 2. **Protocol** — id в `PLATFORMS` в `chat-export-server/packages/protocol/src/constants.js`; enum в JSON Schema при необходимости (`schema.js`). `npm run build` на сервере.
 3. **Content script** — `CE.definePlatform({ id, hosts, ops, … })` в `content/<id>.js` (образец: `chatgpt.js`, `grok-x.js`).
 4. **manifest.json** — `host_permissions`, `content_scripts.matches`, `web_accessible_resources` (узкие паттерны).
-5. **UI** — CSS бара в `styles.css`; `npm run build` → `dist/shared.js`, `dist/popup.js`.
+5. **UI** — CSS бара в `styles/base.css` и `styles/<platform>.css`; `npm run build` → `dist/shared.js`, `dist/popup.js`.
 6. **Settings** — тоггл в `src/settings.js` (`PLATFORMS`, `platforms`) и списки в `background.js`, пока сборка не унифицирует.
 7. **Server** — валидация по `PLATFORMS`; `platformsEnabled` в `config.json` и мосте расширения.
 8. **MCP** — существующие инструменты с аргументом `platform`; новый tool только если поверхность реально другая.
@@ -58,7 +58,7 @@
 | RPC / schema | `packages/protocol/src/schema.js` | enum, аргументы ops |
 | Реализация | `content/<platform>.js` | `CE.definePlatform`, `ops.*` |
 | MV3 | `manifest.json` | permissions, content_scripts |
-| Бар | `styles.css` | layout под платформу |
+| Бар | `styles/*.css` | layout под платформу |
 | Сборка | `dist/*` | `npm run build` |
 | Мост | `src/settings.js`, `background.js` | `PLATFORMS`, `platforms.<id>` |
 | Popup | `src/popup/main.jsx` | из settings |

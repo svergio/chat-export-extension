@@ -16,7 +16,7 @@
 
 Три публичных репозитория (extension, server, dashboard). Ручной экспорт — только расширение. MCP и автоматизация — `chat-export-server` и **мост расширения** в вкладках Chrome, **без** Chrome DevTools MCP. Сервер можно поднять **нативно**, в **Docker / Colima** или **Kubernetes**. Cursor, Open WebUI и локальные LLM (например Bonsai-27B) — **опциональные внешние MCP-клиенты**.
 
-**Zip для установки:** [chat-export-extension-2.0.5.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.5/chat-export-extension-2.0.5.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.0.5](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.5).
+**Zip для установки:** [chat-export-extension-2.0.6.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.6/chat-export-extension-2.0.6.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.0.6](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.6).
 
 ## Проблема
 
@@ -90,8 +90,8 @@ MCP и `~/.chat-export`: [README сервера — Configuration](https://githu
 ## Панель экспорта (без сервера)
 
 1. Откройте сайт провайдера и обновите вкладку после обновления расширения.
-2. Выберите форматы (MD / YAML / JSON / HTML / PDF). При нескольких форматах — **Папка** или **Архив**.
-3. Иконка загрузки — тихое сохранение в «Загрузки» (Shift/Cmd = «Сохранить как»). Имя: `{platform}-{title}-{date}.{ext}`.
+2. Выберите форматы (MD / YAML / JSON / HTML / PDF). **Папка** или **Архив** доступны всегда (даже для одного формата).
+3. После однократного выбора папки по умолчанию скачивание **без диалога**. **Shift+клик** — смена папки по умолчанию (`rebind`) или разовый путь (`saveAs`); в попапе блок **Настройки экспорта** (выше «Расширенные»). Вики: [Сохранение и Shift](https://github.com/svergio/chat-export-extension/wiki/Saving-and-Shift-Modes-RU) · [галереи UI провайдеров](https://github.com/svergio/chat-export-extension/wiki/Supported-Platforms-RU#галереи-провайдеров-206).
 
 **Как выглядит текст (семантика):** Дефолт-схема `chat-export/1` — MD-фенсы `` ```md `` (`sys` / `user:` / `assistant:` / `sources`); JSON `schema: chat-export/1` и `messages[{ role, role_tag, text, … }]`. Опционально `sharegpt/1` — ShareGPT `conversations[{ from, value }]`. Схема выбирается в попапе (Расширенные); панель на странице только форматы. Хаб и мини-страницы: **[Вики — Форматы экспорта](https://github.com/svergio/chat-export-extension/wiki/Export-Formats-RU)**.
 

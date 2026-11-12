@@ -1,0 +1,109 @@
+.chat-export-bar--qwen {
+  flex: 0 0 auto;
+  align-self: center;
+  order: 0;
+  margin: 0;
+  gap: 8px;
+  height: 32px;
+}
+
+.chat-export-bar--qwen > .chat-export-fmt {
+  box-sizing: border-box !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 4px 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: var(--background-capsule, #2c2c2c) !important;
+  color: var(--text-primary, #fafbff) !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 22px !important;
+  white-space: nowrap !important;
+  transition: border-color 0.2s !important;
+}
+
+.chat-export-bar--qwen[data-ce-scheme='light'] > .chat-export-fmt {
+  background: var(--background-capsule, #fff) !important;
+  color: var(--text-primary, #222) !important;
+}
+
+.chat-export-bar--qwen > .chat-export-fmt:hover,
+.chat-export-bar--qwen > .chat-export-fmt.is-open {
+  border-color: var(--line-heavier, rgba(250, 251, 255, 0.2)) !important;
+}
+
+.chat-export-bar--qwen .chat-export-format-text {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 22px !important;
+}
+
+.chat-export-bar--qwen .chat-export-chevron {
+  width: 16px !important;
+  height: 16px !important;
+  opacity: 1 !important;
+}
+
+.chat-export-bar--qwen > .chat-export-dl {
+  box-sizing: border-box !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--background-option, rgba(250, 251, 255, 0.05)) !important;
+  color: var(--text-primary, #fafbff) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+.chat-export-bar--qwen[data-ce-scheme='light'] > .chat-export-dl {
+  background: var(--background-option, rgba(34, 34, 34, 0.03)) !important;
+  color: var(--text-primary, #222) !important;
+}
+
+.chat-export-bar--qwen > .chat-export-dl:hover {
+  background: var(--background-tag, rgba(250, 251, 255, 0.12)) !important;
+}
+
+.chat-export-bar--qwen .chat-export-dl svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.chat-export-menu[data-chat-export-menu='qwen'] {
+  --ce-menu-bg: var(--background-capsule, #2c2c2c);
+  --ce-menu-fg: var(--text-primary, #fafbff);
+  --ce-menu-border: var(--line-border, rgba(250, 251, 255, 0.12));
+  --ce-menu-hover: var(--background-option, rgba(250, 251, 255, 0.05));
+  --ce-menu-shadow: 0 12px 24px -2px var(--background-mask-05, rgba(0, 0, 0, 0.45));
+  --ce-menu-sep: var(--line-secondary-border, #2e2e33);
+  --ce-menu-pack-bg: var(--background-option, rgba(250, 251, 255, 0.05));
+  --ce-menu-pack-active: var(--line-heavier, rgba(250, 251, 255, 0.2));
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.chat-export-menu[data-chat-export-menu='qwen'][data-ce-scheme='light'] {
+  --ce-menu-bg: var(--background-capsule, #fff);
+  --ce-menu-fg: var(--text-primary, #222);
+  --ce-menu-border: var(--line-border, rgba(34, 34, 34, 0.06));
+  --ce-menu-hover: var(--background-option, rgba(34, 34, 34, 0.03));
+  --ce-menu-shadow: 0 12px 24px -2px var(--background-mask-05, rgba(0, 0, 0, 0.12));
+  --ce-menu-sep: var(--line-secondary-border, #e1e3ea);
+  --ce-menu-pack-bg: var(--background-option, rgba(34, 34, 34, 0.03));
+  --ce-menu-pack-active: var(--line-heavier, rgba(34, 34, 34, 0.12));
+}
+
+.chat-export-menu[data-chat-export-menu='qwen'] .chat-export-menu-item {
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 400;
+}

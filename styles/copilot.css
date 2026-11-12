@@ -1,0 +1,114 @@
+.chat-export-bar--copilot {
+  display: contents !important;
+}
+
+.chat-export-bar--copilot > .chat-export-fmt,
+.chat-export-bar--copilot > .chat-export-dl {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: 0 !important;
+}
+
+.chat-export-bar--copilot > .chat-export-fmt {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 0 10px !important;
+  gap: 4px !important;
+}
+
+.chat-export-bar--copilot > .chat-export-dl {
+  width: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  gap: 1px !important;
+}
+
+.chat-export-bar--copilot > .chat-export-fmt[class*='IconButton'] {
+  aspect-ratio: auto !important;
+}
+
+.chat-export-bar--copilot > .chat-export-fmt,
+.chat-export-bar--copilot > .chat-export-dl {
+  color: var(--fgColor-muted, #9198a1) !important;
+}
+
+.chat-export-bar--copilot > .chat-export-fmt:hover,
+.chat-export-bar--copilot > .chat-export-fmt.is-open,
+.chat-export-bar--copilot > .chat-export-dl:hover {
+  color: var(--fgColor-default, #f0f6fc) !important;
+}
+
+.chat-export-bar--copilot .chat-export-format-text {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  color: inherit !important;
+}
+
+.chat-export-bar--copilot .chat-export-chevron {
+  flex: 0 0 auto !important;
+  width: 10px !important;
+  height: 10px !important;
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+.chat-export-bar--copilot .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--copilot .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+  fill: currentColor !important;
+}
+
+.chat-export-menu[data-chat-export-menu='copilot'][data-ce-scheme='dark'] {
+  --ce-menu-bg: var(--overlay-bgColor, #010409);
+  --ce-menu-fg: var(--fgColor-default, #f0f6fc);
+  --ce-menu-border: var(--borderColor-default, #3d444d);
+  --ce-menu-hover: var(--control-transparent-bgColor-hover, rgba(177, 186, 196, 0.12));
+  --ce-menu-shadow: var(
+    --shadow-floating-medium,
+    0 0 0 1px #3d444d,
+    0 8px 16px -4px #01040966,
+    0 4px 32px -4px #01040966
+  );
+  --ce-menu-sep: var(--borderColor-muted, #3d444db3);
+  --ce-menu-pack-bg: var(--control-transparent-bgColor-rest, rgba(177, 186, 196, 0.08));
+  --ce-menu-pack-active: var(--control-transparent-bgColor-active, rgba(177, 186, 196, 0.16));
+  border-radius: 12px;
+}
+
+.chat-export-menu[data-chat-export-menu='copilot'][data-ce-scheme='light'] {
+  --ce-menu-bg: var(--overlay-bgColor, #ffffff);
+  --ce-menu-fg: var(--fgColor-default, #1f2328);
+  --ce-menu-border: var(--borderColor-default, #d1d9e0);
+  --ce-menu-hover: var(--control-transparent-bgColor-hover, rgba(31, 35, 40, 0.08));
+  --ce-menu-shadow: var(
+    --shadow-floating-medium,
+    0 0 0 1px #d1d9e0,
+    0 8px 16px -4px #25292e1a,
+    0 4px 32px -4px #25292e1a
+  );
+  --ce-menu-sep: var(--borderColor-muted, #d1d9e0b3);
+  --ce-menu-pack-bg: var(--control-transparent-bgColor-rest, rgba(31, 35, 40, 0.06));
+  --ce-menu-pack-active: var(--control-transparent-bgColor-active, rgba(31, 35, 40, 0.1));
+  border-radius: 12px;
+}

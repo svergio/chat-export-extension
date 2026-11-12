@@ -1,0 +1,126 @@
+.chat-export-bar--grok {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 0;
+  gap: 0;
+  white-space: nowrap;
+  max-width: none;
+  position: relative;
+  z-index: 6;
+  height: 32px;
+}
+
+/* Match Grok model chip (Быстрый): compact 24px text control */
+.chat-export-bar--grok > .chat-export-fmt {
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  padding: 0 4px !important;
+  gap: 4px !important;
+}
+
+.chat-export-bar--grok .chat-export-format-text {
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: 24px !important;
+}
+
+.chat-export-bar--grok .chat-export-chevron {
+  width: 15px !important;
+  height: 15px !important;
+  opacity: 1 !important;
+}
+
+/* Match Grok icon buttons (mic/attach): exact 32x32 hit target */
+.chat-export-bar--grok .chat-export-dl {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+}
+
+.chat-export-bar--grok .chat-export-dl > span {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-export-bar--grok .chat-export-dl svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Grok model popover (Быстрый/Эксперт): 20px surface, 8px inset, 32px rows */
+.chat-export-menu[data-chat-export-menu='grok'][data-ce-scheme='dark'] {
+  --ce-menu-bg: rgb(25, 25, 25);
+  --ce-menu-fg: rgb(230, 229, 227);
+  --ce-menu-border: rgb(56, 56, 55);
+  --ce-menu-hover: rgba(255, 255, 255, 0.06);
+  --ce-menu-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 8px 12px rgba(0, 0, 0, 0.25);
+  --ce-menu-sep: rgba(255, 255, 255, 0.06);
+  --ce-menu-pack-bg: rgba(255, 255, 255, 0.04);
+  --ce-menu-pack-active: rgba(255, 255, 255, 0.1);
+}
+
+.chat-export-menu[data-chat-export-menu='grok'][data-ce-scheme='light'] {
+  --ce-menu-bg: rgb(254, 254, 252);
+  --ce-menu-fg: rgb(44, 44, 43);
+  --ce-menu-border: rgb(230, 229, 227);
+  --ce-menu-hover: rgba(43, 28, 0, 0.05);
+  --ce-menu-shadow: 0 2px 6px lab(18.6 14.54 28.2 / 0.03), 0 8px 12px lab(18.6 14.54 28.2 / 0.03);
+  --ce-menu-sep: rgb(240, 239, 237);
+  --ce-menu-pack-bg: rgba(43, 28, 0, 0.04);
+  --ce-menu-pack-active: rgba(43, 28, 0, 0.08);
+}
+
+.chat-export-menu[data-chat-export-menu='grok'] {
+  border-radius: 20px;
+  font-family: X-VF, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-menu-item {
+  min-height: 32px;
+  padding: 0 8px;
+  gap: 6px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 425;
+  line-height: 20px;
+}
+
+/* Native rows mark selection with a check only; tint is hover/keyboard focus */
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-menu-item.is-active {
+  background: transparent;
+}
+
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-menu-item:hover,
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-menu-item:focus-visible {
+  background: var(--ce-menu-hover);
+  outline: none;
+}
+
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-check {
+  opacity: 1;
+  font-size: 14px;
+}
+
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-menu-sep {
+  margin: 5.5px 0;
+}
+
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-pack {
+  border-radius: 12px;
+}
+
+.chat-export-menu[data-chat-export-menu='grok'] .chat-export-pack-btn {
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 425;
+}

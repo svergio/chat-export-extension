@@ -1,13 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <defs>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.28"/>
-    </filter>
-  </defs>
-  <g transform="translate(20,20) scale(3.6667)" fill="none" stroke="#6E6E6E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft)" opacity="0.72">
-    <path d="M4 20h4l10.5-10.5a2.828 2.828 0 1 0-4-4L4 16v4"/>
-    <path d="M13.5 6.5l4 4"/>
-    <path d="M16 22l5-5"/>
-    <path d="M21 21.5V17h-4.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <g fill="none" stroke="#6b7280" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <path d="M14 2v6h6"/>
+    <path d="M12 18v-6"/>
+    <path d="m9 15 3 3 3-3"/>
   </g>
 </svg>

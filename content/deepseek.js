@@ -101,6 +101,32 @@
     return last.closest('.ec4f5d61') || last.parentElement;
   }
 
+  function findModePillButtons() {
+    var row = findModeToggleRow();
+    if (!row) return [];
+    var nodes = row.querySelectorAll('.ds-toggle-button, button, [role="button"]');
+    var out = [];
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      if (!visible(nodes[i])) continue;
+      if (nodes[i].closest('[data-chat-export-bar], [data-chat-export-menu]')) continue;
+      out.push(nodes[i]);
+    }
+    return out;
+  }
+
+  var STATE_CLASS_RE = /(--(selected|disabled|active|loading|pressed|checked|open))$|^(active|selected|disabled|is-active|is-selected|is-open)$/;
+
+  function statelessClass(el) {
+    if (!el) return '';
+    return String(el.className || '')
+      .split(/\s+/)
+      .filter(function (c) {
+        return c && !STATE_CLASS_RE.test(c);
+      })
+      .join(' ');
+  }
+
   function findComposerToolbar() {
     var input = findComposerInput();
     if (!input) return null;
@@ -109,11 +135,14 @@
     if (modeRow) {
       var toggles = modeRow.querySelectorAll('.ds-toggle-button');
       var anchor = toggles.length ? toggles[toggles.length - 1] : modeRow.lastElementChild;
+      var cls = statelessClass(anchor);
       return {
         el: modeRow,
         insertAfter: anchor,
         nativeFrom: anchor,
-        nativeIconFrom: send || anchor
+        nativeClass: cls,
+        nativeIconFrom: anchor,
+        nativeIconClass: cls
       };
     }
     var shell = input.parentElement;
@@ -124,7 +153,8 @@
         insertAfter: shell,
         beforeChild: send,
         nativeFrom: send || shell,
-        nativeIconFrom: send
+        nativeClass: statelessClass(send || shell),
+        nativeIconFrom: null
       };
     }
     return null;
@@ -158,7 +188,7 @@
     var i;
     for (i = 0; i < pills.length; i++) {
       var blob = labelOf(pills[i]);
-      if (/deepseek|v3|r1|model/i.test(blob) && !/deepthink|search/i.test(blob)) {
+      if (/deepseek|v3|r1|model/i.test(blob) && !/deepthink|search|мышлен|поиск/i.test(blob)) {
         return blob.slice(0, 80);
       }
     }

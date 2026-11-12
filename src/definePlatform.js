@@ -24,6 +24,15 @@ function removeBar(CE, id) {
   if (host && host.getAttribute('data-ce-host') === id) host.remove();
 }
 
+// Hosts with display:contents (Copilot bar) always report width 0; judge by rendered children.
+export function isRendered(el) {
+  if (!el) return false;
+  if (el.getBoundingClientRect().width > 0) return true;
+  if (getComputedStyle(el).display !== 'contents') return false;
+  for (const c of el.children) if (c.getBoundingClientRect().width > 0) return true;
+  return false;
+}
+
 export function definePlatform(spec) {
   const CE = window.ChatExport;
   if (!CE || !spec || !spec.id) return;
@@ -185,12 +194,9 @@ export function definePlatform(spec) {
     const existing = document.querySelector('[' + CE.BAR_ATTR + '="' + id + '"]');
     const sameVer = existing && existing.getAttribute('data-chat-export-v') === CE.EXT_VERSION;
     const existingOk =
-      existing &&
-      existing.isConnected &&
-      sameVer &&
-      found.el.contains(existing) &&
-      existing.getBoundingClientRect().width > 0;
+      existing && existing.isConnected && sameVer && found.el.contains(existing) && isRendered(existing);
     if (existingOk) return;
+    if (existing && existing.isConnected && sameVer && document.querySelector('[data-chat-export-menu="' + id + '"]')) return;
     if (existing) removeBar(CE, id);
 
     const nativeFrom = found.nativeFrom || null;

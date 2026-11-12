@@ -1072,9 +1072,10 @@
         form;
       var extra = toolbar.querySelector('[class*="extra"]');
       // Square Primer icon chips live in extra (repos / attach); our chips join the
-      // same flex row and copy the attach chip class (32x32). Layout in styles.css.
+      // same flex row and copy the attach chip class (32x32). Layout in styles/copilot.css.
       if (extra) {
         var iconChip = attach || extra.querySelector('button[class*="IconButton"]') || ask;
+        var textChip = findModelButton(form) || findModeSelectButton(form) || ask;
         var afterChip =
           wrapChildOf(extra, iconChip) ||
           (function () {
@@ -1085,7 +1086,7 @@
           el: extra,
           insertAfter: afterChip,
           beforeChild: null,
-          nativeFrom: iconChip,
+          nativeFrom: textChip || iconChip,
           nativeIconFrom: iconChip
         };
       }

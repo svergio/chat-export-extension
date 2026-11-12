@@ -1,0 +1,105 @@
+/* Chin row (data-size=xs): model chip and our controls share --cds-h-control (24px) */
+.chat-export-bar--claude {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+  margin-inline: 4px 0 !important;
+  height: var(--cds-h-control, 24px) !important;
+  vertical-align: bottom !important;
+}
+
+.chat-export-bar--claude > .chat-export-fmt {
+  height: var(--cds-h-control, 24px) !important;
+  min-height: 0 !important;
+}
+
+.chat-export-bar--claude > .chat-export-dl {
+  width: var(--cds-h-control, 24px) !important;
+  min-width: var(--cds-h-control, 24px) !important;
+  height: var(--cds-h-control, 24px) !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border-radius: var(--cds-radius, 6px) !important;
+}
+
+.chat-export-bar--claude .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--claude .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Native menu popup: bg-surface-3, shadow-panel, rounded 14px, 6px gutter, 28px rows */
+.chat-export-menu[data-chat-export-menu='claude'] {
+  border: 0;
+  border-radius: 14px;
+  padding: 6px;
+  min-width: 196px;
+  font-family: var(--font-sans, inherit);
+}
+
+.chat-export-menu[data-chat-export-menu='claude'] .chat-export-menu-item {
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 435;
+  line-height: 20px;
+}
+
+.chat-export-menu[data-chat-export-menu='claude'] .chat-export-menu-item.is-active {
+  background: transparent;
+}
+
+.chat-export-menu[data-chat-export-menu='claude'] .chat-export-menu-item:hover,
+.chat-export-menu[data-chat-export-menu='claude'] .chat-export-menu-item:focus-visible {
+  background: var(--ce-menu-hover);
+  outline: none;
+}
+
+.chat-export-menu[data-chat-export-menu='claude'] .chat-export-menu-sep {
+  margin: 4px 10px;
+}
+
+.chat-export-menu[data-chat-export-menu='claude'] .chat-export-pack {
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.chat-export-menu[data-chat-export-menu='claude'] .chat-export-pack-btn {
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 435;
+  line-height: 19px;
+}
+
+.chat-export-menu[data-chat-export-menu='claude'][data-ce-scheme='dark'] {
+  --ce-menu-bg: #303030;
+  --ce-menu-fg: rgba(255, 255, 255, 0.93);
+  --ce-menu-border: transparent;
+  --ce-menu-hover: #ffffff13;
+  --ce-menu-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.2);
+  --ce-menu-sep: rgba(255, 255, 255, 0.1);
+  --ce-menu-pack-bg: #ffffff0d;
+  --ce-menu-pack-active: #ffffff26;
+}
+
+.chat-export-menu[data-chat-export-menu='claude'][data-ce-scheme='light'] {
+  --ce-menu-bg: #ffffff;
+  --ce-menu-fg: rgba(0, 0, 0, 0.9);
+  --ce-menu-border: transparent;
+  --ce-menu-hover: #0000000d;
+  --ce-menu-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+  --ce-menu-sep: rgba(0, 0, 0, 0.1);
+  --ce-menu-pack-bg: #0000000a;
+  --ce-menu-pack-active: #00000014;
+}
