@@ -37,24 +37,11 @@
 
 Разбор DOM — в расширении; автоматизация и MCP — в [локальном сервере](https://github.com/svergio/chat-export-server). Опционально — [дашборд](https://github.com/svergio/chat-export-dashboard).
 
-```mermaid
-flowchart LR
-  subgraph browser [Ваш Chrome]
-    EXT[Расширение Chat Export]
-    TABS[Вкладки провайдеров]
-    TABS <--> EXT
-  end
-  subgraph local [127.0.0.1]
-    SRV[chat-export-server]
-    DASH[Дашборд /dashboard]
-    SRV --- DASH
-  end
-  subgraph agent [Ваша IDE]
-    MCP[Cursor / MCP-клиент]
-  end
-  EXT <-->|WebSocket ceb_| SRV
-  MCP <-->|HTTP MCP cem_/cek_| SRV
-```
+## Как это устроено
+
+Установите расширение Chrome для экспорта текущего чата в Markdown, PDF и другие форматы с восьми веб-площадок — файлы сохраняются локально, без обращений в сеть. Включите **мост браузера** в попапе, если нужен доступ агента к тем же вкладкам под вашей сессией: WebSocket на **chat-export-server** на `127.0.0.1` (токен `ceb_`). Любой MCP-клиент подключается к `http://127.0.0.1:8765/mcp` с ключом `cem_`/`cek_`. Опциональный **дашборд** на том же хосте показывает очереди, браузеры и токены.
+
+Сервер можно поднять **нативно**, в **Docker / Colima** или **Kubernetes** — см. README сервера и вики. Диаграммы стека, потоки данных и варианты деплоя: **[Вики — Архитектура](https://github.com/svergio/chat-export-extension/wiki/Architecture-RU)**. Инструкции: [Установка и быстрый старт](https://github.com/svergio/chat-export-extension/wiki/Installation-and-Quickstart-RU) · [Сценарии использования](https://github.com/svergio/chat-export-extension/wiki/Use-Cases-RU) · [Нативный / Docker / K8s](https://github.com/svergio/chat-export-extension/wiki/Native-and-Kubernetes-Deployment-RU) · двухуровневое соглашение в [LEGAL.md](LEGAL.md).
 
 ## Быстрый старт (3 шага)
 

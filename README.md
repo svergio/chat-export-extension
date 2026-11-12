@@ -37,24 +37,11 @@ Official UIs are great for chatting but weak for **archiving**, **batch export**
 
 Dom parsing stays in the extension; automation and MCP live in the [local server](https://github.com/svergio/chat-export-server). Optional [dashboard](https://github.com/svergio/chat-export-dashboard) for operators.
 
-```mermaid
-flowchart LR
-  subgraph browser [Your Chrome]
-    EXT[Chat Export extension]
-    TABS[Provider web tabs]
-    TABS <--> EXT
-  end
-  subgraph local [127.0.0.1]
-    SRV[chat-export-server]
-    DASH[Dashboard /dashboard]
-    SRV --- DASH
-  end
-  subgraph agent [Your IDE]
-    MCP[Cursor / MCP client]
-  end
-  EXT <-->|WebSocket ceb_| SRV
-  MCP <-->|HTTP MCP cem_/cek_| SRV
-```
+## How it fits together
+
+Install the Chrome extension for one-click export from ChatGPT, Grok, Claude, and five other web UIs — files land in your Downloads folder with no network calls. Turn on the **browser bridge** in the popup when you want a local agent to list, export, create, or ask inside those same logged-in tabs: the extension opens a WebSocket to **chat-export-server** on `127.0.0.1` (token prefix `ceb_`). Point any MCP client at `http://127.0.0.1:8765/mcp` with a `cem_`/`cek_` key. Optionally open the operator **dashboard** on the same host for queues, browsers, and token management.
+
+Deploy the server **natively**, with **Docker / Colima**, or on **Kubernetes** — see the server README and wiki. Stack diagrams (Mermaid), data flow, and deploy surfaces: **[Wiki — Architecture](https://github.com/svergio/chat-export-extension/wiki/Architecture)**. Walkthroughs: [Installation and quickstart](https://github.com/svergio/chat-export-extension/wiki/Installation-and-Quickstart) · [Use cases](https://github.com/svergio/chat-export-extension/wiki/Use-Cases) · [Native / Docker / K8s](https://github.com/svergio/chat-export-extension/wiki/Native-and-Kubernetes-Deployment) · two-tier ToS in [LEGAL.md](LEGAL.md).
 
 ## Quick start (3 steps)
 
