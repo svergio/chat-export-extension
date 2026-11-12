@@ -20,10 +20,6 @@ Regenerate: `npm run licenses` (uses `npx license-checker`; not added as a repo 
 | fontkit (bundled UMD) | MIT | `vendor/fontkit.umd.min.js` (shipped in extension zip) |
 | Noto Sans (font) | OFL-1.1 | `vendor/NotoSans-Regular.ttf` (shipped in extension zip) |
 
-## Optional integrations (not dependencies)
-
-Cursor, Claude Desktop, Open WebUI, local LLM stacks (e.g. Bonsai-27B), BibLLMsteak, and the NodeRed maintainer workspace are **optional** MCP clients or docs only. The extension runs standalone in Chrome without them.
-
 ---
 
-_Generated for chat-export-extension@2.0.3. Product license: MIT._
+_Generated for chat-export-extension@2.0.6. Product license: MIT._

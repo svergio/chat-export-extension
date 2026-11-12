@@ -6,7 +6,7 @@
   <img src="docs/media/demo-export.gif" alt="Export on ChatGPT, Grok, and Claude — pick a format and download" width="720" />
 </p>
 
-Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so coding agents (Cursor and others) can list, export, create, and ask in those UIs **without vendor API keys**.
+Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so external MCP clients can list, export, create, and ask in those UIs **without vendor API keys**.
 
 **Vs official ChatGPT export:** OpenAI’s data export is one zip of *all* chats as JSON after a request/wait cycle. This extension exports the *current* chat to Markdown or PDF (and YAML/JSON/HTML) in one click — no account dump, no waiting for a bulk archive. Same one-chat, local download pattern on the other seven providers.
 
@@ -14,7 +14,7 @@ Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok,
 
 ## Standalone
 
-Chat Export is a **full product** in three public repos (extension, server, dashboard). Manual export works with the extension alone. MCP automation uses `chat-export-server` and the **MV3 extension bridge** in your Chrome tabs — **not** Chrome DevTools MCP. Deploy the server **natively**, via **Docker / Colima**, or **Kubernetes**. Cursor, Open WebUI, and local LLMs (e.g. Bonsai-27B) are **optional external MCP clients** only.
+Chat Export is a **full product** in three public repos (extension, server, dashboard). Manual export works with the extension alone. MCP automation uses `chat-export-server` and the **MV3 extension bridge** in your Chrome tabs — **not** Chrome DevTools MCP. Deploy the server **natively**, via **Docker / Colima**, or **Kubernetes**. You supply any MCP client; none is bundled with the product.
 
 **Install zip:** [chat-export-extension-2.0.6.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.6/chat-export-extension-2.0.6.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.6](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.6).
 
@@ -110,7 +110,7 @@ Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer
 
 **Two-tier Terms of Use ([LEGAL.md](LEGAL.md)).** Because Chat Export interacts with live web UIs and in-page APIs inside your logged-in session, the extension enforces a two-step local consent flow:
 1. **Tier 1 (General Export Disclaimer)** on first popup open — explains that the software is provided "AS IS" under the MIT License and warns that automated DOM harvesting or internal API requests may violate provider Terms of Service or result in rate-limiting or account suspension.
-2. **Tier 2 (Advanced Mode / Local MCP Gateway)** when opening `Advanced` — covers external agent automation (Cursor, Claude Desktop, and local LLMs such as `bonsai-27b` via [chat-export-server](https://github.com/svergio/chat-export-server)). Chat Export keeps **create** and especially **delete** conservative by default: extension `allowDestructive` defaults to `false`, the server matches that, and delete still requires `confirm: true`.
+2. **Tier 2 (Advanced Mode / Local MCP Gateway)** when opening `Advanced` — covers external MCP clients connected to [chat-export-server](https://github.com/svergio/chat-export-server). Chat Export keeps **create** and especially **delete** conservative by default: extension `allowDestructive` defaults to `false`, the server matches that, and delete still requires `confirm: true`.
 
 **Fragility.** Export and automation read the live DOM (and sometimes in-page APIs). A provider UI redesign can break a content script overnight. Prefer filing [issues](https://github.com/svergio/chat-export-extension/issues); platform and locale checklists live in [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -147,7 +147,7 @@ Platform and locale checklists (concrete paths across extension, server, dashboa
 
 Third-party licenses: [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Regenerate after dependency bumps: `npm run licenses`.
 
-**Not required:** Cursor, Open WebUI, BibLLMsteak, Bonsai-27B, or the NodeRed maintainer workspace — optional MCP client / doc examples only. The three public GitHub repos above are the product family; see also the [extension wiki](https://github.com/svergio/chat-export-extension/wiki).
+Product family: the three public GitHub repos above. Documentation: [extension wiki](https://github.com/svergio/chat-export-extension/wiki).
 
 ## License
 

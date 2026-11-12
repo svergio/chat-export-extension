@@ -31,7 +31,7 @@ Do **not** edit `content/<id>.js`, manifest matches, or protocol enums until rec
 
 Static marketing pages (no session): HTTP/site-map only — not full-page HTML dumps. Live MCP smoke uses **`[ce-test]`** chats only; no mass deletes on real threads.
 
-Maintainer workspace rule (NodeRed): `.cursor/rules/chat-export-provider-research.mdc`.
+Before editing `content/*.js` for a new provider, follow the provider research checklist in this repo (see wiki Contributing).
 
 ## Add a new chat platform (provider)
 
@@ -216,7 +216,7 @@ Failed GitHub Actions checks or MR/PR review **must** include a structured repor
 3. **Impact** — which gate (unit, pack, platform id, ToS tier) and release risk.
 4. **Fix direction** — one concrete next file/command, or what log/SHA is still needed.
 
-NodeRed workspace rule: `.cursor/rules/chat-export-mr-review-after-tests.mdc`.
+When CI fails, document the failing job and root cause before patching (see wiki Contributing).
 
 ## Development pointers
 
