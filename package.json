@@ -1,6 +1,6 @@
 {
   "name": "chat-export-extension",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, and Perplexity chats to MD/YAML/JSON/HTML/PDF.",
   "private": true,
   "scripts": {
