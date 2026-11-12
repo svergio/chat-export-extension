@@ -1,6 +1,7 @@
 // WS URL: ws://127.0.0.1:${port}/ws — path /ws (see src/settings.js WS_PATH). Server BrowserHub must match.
 (() => {
   // src/settings.js
+  var TOS_VERSION = 1;
   var FAQ_VERSION = 1;
   var DEFAULT_HOST = "127.0.0.1";
   var DEFAULT_PORT = 8765;
@@ -52,6 +53,7 @@
     allowDestructive: false,
     allowProjects: true,
     rpcTimeoutS: 60,
+    tosVersion: 0,
     faqVersion: 0,
     ui: Object.freeze({
       skin: "chatgpt",
@@ -88,9 +90,14 @@
       allowDestructive: !!s.allowDestructive,
       allowProjects: s.allowProjects === false ? false : true,
       rpcTimeoutS: Number.isFinite(rpcRaw) && rpcRaw >= 5 && rpcRaw <= 600 ? Math.floor(rpcRaw) : 60,
+      tosVersion: Number.isFinite(Number(s.tosVersion)) ? Number(s.tosVersion) : 0,
       faqVersion: Number.isFinite(Number(s.faqVersion)) ? Number(s.faqVersion) : 0,
       ui: normalizeUi(s.ui)
     };
+  }
+  function hasTosConsent(settings) {
+    const s = normalizeSettings(settings);
+    return s.tosVersion === TOS_VERSION;
   }
   function hasFaqConsent(settings) {
     const s = normalizeSettings(settings);
@@ -98,7 +105,7 @@
   }
   function canEnableBridge(settings) {
     const s = normalizeSettings(settings);
-    return hasFaqConsent(s) && !!s.apiKey.trim();
+    return hasTosConsent(s) && hasFaqConsent(s) && !!s.apiKey.trim();
   }
   function platformsEnabledList(settings) {
     const s = normalizeSettings(settings);
@@ -866,9 +873,10 @@
   }
   function connect() {
     clearReconnect();
-    if (!currentSettings.serverOn || !hasFaqConsent(currentSettings)) {
+    const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
+    if (!currentSettings.serverOn || !consented) {
       clearKeepalive();
-      publishStatus("offline", hasFaqConsent(currentSettings) ? "" : "faq consent required");
+      publishStatus("offline", consented ? "" : "faq consent required");
       return;
     }
     intentionalClose = false;
@@ -923,8 +931,9 @@
   }
   function applySettings(settings) {
     currentSettings = normalizeSettings(settings);
+    const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
     if (!currentSettings.serverOn || !canEnableBridge(currentSettings)) {
-      disconnect(!hasFaqConsent(currentSettings) ? "faq consent required" : "");
+      disconnect(!consented ? "faq consent required" : "");
       return;
     }
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -952,7 +961,7 @@
     try {
       const ensured = await ensureLocalKey();
       const settings = ensured.settings;
-      if (!hasFaqConsent(settings)) {
+      if (!hasTosConsent(settings) || !hasFaqConsent(settings)) {
         return { ok: false, state: "offline", detail: "faq consent required" };
       }
       await enrollKeyToServer(settings, ensured.browserId);
@@ -1225,7 +1234,7 @@
     }
     if (action === "saveSettings") {
       var next = normalizeSettings(msg.settings);
-      if (next.serverOn && !hasFaqConsent(next)) next.serverOn = false;
+      if (next.serverOn && (!hasTosConsent(next) || !hasFaqConsent(next))) next.serverOn = false;
       saveSettings(next).then(function(saved) {
         pushSettingsIfConnected();
         sendResponse({ ok: true, settings: saved });

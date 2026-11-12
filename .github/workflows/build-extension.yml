@@ -1,13 +1,23 @@
-name: Build extension
+name: Build & Package Extension
 
 on:
   push:
-    branches: [main, test]
+    branches:
+      - main
+      - test
+    tags:
+      - 'v*'
   pull_request:
-    branches: [main, test]
+    branches:
+      - main
+      - test
+  release:
+    types:
+      - published
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -35,8 +45,37 @@ jobs:
             echo "No test suite or test/*.js files; skipping npm test"
           fi
 
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
       - name: Build bundles
         run: npm run build
 
       - name: Pack extension zip
         run: npm run pack
+
+      - name: Verify zip package contents
+        run: |
+          set -euo pipefail
+          ZIP_FILE=$(ls dist-pack/chat-export-extension-*.zip | head -n 1)
+          test -f "$ZIP_FILE"
+          LISTING=$(unzip -l "$ZIP_FILE")
+          echo "$LISTING" | grep -q "manifest.json"
+          echo "$LISTING" | grep -q "background.js"
+          echo "$LISTING" | grep -q "dist/popup.js"
+          echo "$LISTING" | grep -q "dist/shared.js"
+          echo "$LISTING" | grep -q "locales/LN_en.json"
+          echo "$LISTING" | grep -q "locales/LN_ru.json"
+
+      - name: Upload extension zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-export-extension-package
+          path: dist-pack/chat-export-extension-*.zip
+          if-no-files-found: error
+
+      - name: Attach zip to GitHub Release
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-pack/chat-export-extension-*.zip

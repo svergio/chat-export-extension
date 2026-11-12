@@ -1,14 +1,16 @@
 import { h, render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import {
+  TOS_VERSION,
   FAQ_VERSION,
   PLATFORMS,
   DEFAULT_SETTINGS,
+  hasTosConsent,
   hasFaqConsent,
   normalizeSettings,
   resolveUiScheme
 } from '../settings.js';
-import { createTranslator, faqKeys, resolveLocale } from '../i18n/index.js';
+import { createTranslator, faqKeys, tosKeys, resolveLocale } from '../i18n/index.js';
 import {
   SKIN_OPTIONS,
   SCHEME_OPTIONS,
@@ -16,6 +18,23 @@ import {
   PLATFORM_ICONS,
   IconChevron
 } from './skin-icons.jsx';
+
+const ISSUES_URL = 'https://github.com/svergio/chat-export-extension/issues';
+
+function renderWithIssuesLink(text) {
+  const s = String(text || '');
+  const idx = s.indexOf(ISSUES_URL);
+  if (idx < 0) return s;
+  const before = s.slice(0, idx);
+  const after = s.slice(idx + ISSUES_URL.length);
+  return [
+    before,
+    <a class="ce-link" href={ISSUES_URL} target="_blank" rel="noreferrer">
+      {ISSUES_URL}
+    </a>,
+    after
+  ];
+}
 
 function statusState(status) {
   return (status && status.state) || 'offline';
@@ -148,6 +167,71 @@ function ToneLine({ tone, text }) {
   return <p class={'ce-tone ce-tone--' + (tone || 'muted')}>{text}</p>;
 }
 
+function PrimaryTosConsent({ onAccept, busy, t, localeSetting, onSetLocale }) {
+  const [checked, setChecked] = useState(false);
+  const currentLoc = localeSetting || 'auto';
+  return (
+    <div class="ce-wrap">
+      <section class="ce-card ce-tos-card">
+        <header class="ce-head">
+          <h1>{t('app.title')}</h1>
+          <div class="ce-lang-pills" role="group" aria-label={t('label.language')}>
+            <button
+              type="button"
+              class={'ce-lang-pill' + (currentLoc === 'auto' ? ' is-active' : '')}
+              disabled={busy}
+              onClick={() => onSetLocale('auto')}
+            >
+              {t('lang.auto')}
+            </button>
+            <button
+              type="button"
+              class={'ce-lang-pill' + (currentLoc === 'en' ? ' is-active' : '')}
+              disabled={busy}
+              onClick={() => onSetLocale('en')}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              class={'ce-lang-pill' + (currentLoc === 'ru' ? ' is-active' : '')}
+              disabled={busy}
+              onClick={() => onSetLocale('ru')}
+            >
+              RU
+            </button>
+          </div>
+        </header>
+        <h2>{t('tos.title')}</h2>
+        <div class="ce-faq-compact ce-tos-body">
+          <p class="ce-lead">{t('tos.lead')}</p>
+          <ul>
+            {tosKeys().map(function (key) {
+              return <li key={key}>{renderWithIssuesLink(t(key))}</li>;
+            })}
+          </ul>
+          <label class="ce-check">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setChecked(e.currentTarget.checked)}
+            />
+            <span>{t('tos.agree')}</span>
+          </label>
+          <button
+            type="button"
+            class="ce-btn ce-btn--primary"
+            disabled={!checked || busy}
+            onClick={() => onAccept()}
+          >
+            {t('btn.acceptTos')}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function AdvancedFaqConsent({ consented, onConsent, busy, t }) {
   const [checked, setChecked] = useState(false);
   if (consented) return null;
@@ -156,7 +240,7 @@ function AdvancedFaqConsent({ consented, onConsent, busy, t }) {
       <p class="ce-lead">{t('faq.lead')}</p>
       <ul>
         {faqKeys().map(function (key) {
-          return <li key={key}>{t(key)}</li>;
+          return <li key={key}>{renderWithIssuesLink(t(key))}</li>;
         })}
       </ul>
       <label class="ce-check">
@@ -234,10 +318,17 @@ function App() {
     if (st && st.status) setStatus(st.status);
   }
 
+  async function onAcceptTos() {
+    setBusy(true);
+    await persist(Object.assign({}, settings, { tosVersion: TOS_VERSION }));
+    setBusy(false);
+  }
+
   async function onConsent() {
     setBusy(true);
     const ensured = await sendBridge('ensureKey');
     const base = Object.assign({}, settings, {
+      tosVersion: TOS_VERSION,
       faqVersion: FAQ_VERSION,
       apiKey: (ensured && ensured.settings && ensured.settings.apiKey) || settings.apiKey
     });
@@ -293,6 +384,18 @@ function App() {
 
   if (!ready) {
     return <div class="ce-wrap">{t('app.loading')}</div>;
+  }
+
+  if (!hasTosConsent(settings)) {
+    return (
+      <PrimaryTosConsent
+        onAccept={onAcceptTos}
+        busy={busy}
+        t={t}
+        localeSetting={ui.locale || 'auto'}
+        onSetLocale={(loc) => setUi({ locale: loc })}
+      />
+    );
   }
 
   const consented = hasFaqConsent(settings);
@@ -621,13 +724,22 @@ function App() {
               <summary>{t('label.faq')}</summary>
               <ul>
                 {faqKeys().map(function (key) {
-                  return <li key={key}>{t(key)}</li>;
+                  return <li key={key}>{renderWithIssuesLink(t(key))}</li>;
                 })}
               </ul>
             </details>
 
           </div>
         ) : null}
+
+        <details class="ce-more ce-more--footer">
+          <summary>{t('label.tos')}</summary>
+          <ul>
+            {tosKeys().map(function (key) {
+              return <li key={key}>{renderWithIssuesLink(t(key))}</li>;
+            })}
+          </ul>
+        </details>
       </section>
     </div>
   );

@@ -840,10 +840,51 @@ h2 {
   color: var(--ce-muted);
 }
 
+.ce-more--footer {
+  padding-top: 10px;
+  border-top: 1px solid var(--ce-line);
+  font-size: 12px;
+}
+
 .ce-more summary {
   cursor: pointer;
   font-weight: 600;
   color: var(--ce-ink);
+}
+
+.ce-tos-body {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.ce-link {
+  color: var(--ce-accent);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.ce-lang-pills {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.ce-lang-pill {
+  border: 1px solid var(--ce-line);
+  background: var(--ce-surface-2);
+  color: var(--ce-muted);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ce-lang-pill.is-active {
+  background: var(--ce-accent);
+  border-color: var(--ce-accent);
+  color: var(--ce-accent-ink);
 }
 
 [data-skin='grok-x'] .ce-card {
