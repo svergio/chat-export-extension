@@ -16,7 +16,7 @@
 
 Три публичных репозитория (extension, server, dashboard). Ручной экспорт — только расширение. MCP и автоматизация — `chat-export-server` и **мост расширения** в вкладках Chrome, **без** Chrome DevTools MCP. Сервер можно поднять **нативно**, в **Docker / Colima** или **Kubernetes**. Cursor, Open WebUI и локальные LLM (например Bonsai-27B) — **опциональные внешние MCP-клиенты**.
 
-**Zip для установки:** [chat-export-extension-2.0.3.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.3/chat-export-extension-2.0.3.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.0.3](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.3).
+**Zip для установки:** [chat-export-extension-2.0.5.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.5/chat-export-extension-2.0.5.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.0.5](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.5).
 
 ## Проблема
 
