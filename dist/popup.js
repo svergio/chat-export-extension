@@ -647,6 +647,8 @@
     "format.pdf": "PDF",
     "label.tos": "Legal / Terms of Use",
     "label.faq": "Advanced Mode Terms & FAQ",
+    "label.donate": "Support the project",
+    "donate.hint": "Optional tip via DonationAlerts",
     "label.on": "On",
     "label.off": "Off",
     "skin.auto": "Auto (match site)",
@@ -715,9 +717,9 @@
     "key.copied": "Key copied",
     "key.copyFailed": "Copy failed",
     "key.placeholder": "Generate ceb_ token\u2026",
-    "key.hint": "The extension mints a ceb_ token per browser. Rotating or re-enrolling replaces the previous token \u2014 old ceb_/cek_ keys for this browser stop working. On connect the token is registered on the local server.",
+    "key.hint": "See README: ceb_ per browser; rotate invalidates old keys.",
     "key.hintId": "Id:",
-    "browser.hint": "Each Chrome profile needs its own ceb_ token and shows up separately on the dashboard Browsers page.",
+    "browser.hint": "Per Chrome profile \u2014 see dashboard Browsers.",
     "tos.title": "Terms of Use & Risk Disclaimer",
     "tos.lead": "Please read and accept before using Chat Export:",
     "tos.1": 'Open-source software provided "AS IS" under the MIT License, without warranty of any kind.',
@@ -796,6 +798,8 @@
     "format.pdf": "PDF",
     "label.tos": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F / \u0420\u0438\u0441\u043A\u0438",
     "label.faq": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u0433\u043E \u0440\u0435\u0436\u0438\u043C\u0430 \u0438 FAQ",
+    "label.donate": "\u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0430\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442",
+    "donate.hint": "\u0414\u043E\u043D\u0430\u0442 \u0447\u0435\u0440\u0435\u0437 DonationAlerts (\u043F\u043E \u0436\u0435\u043B\u0430\u043D\u0438\u044E)",
     "label.on": "\u0412\u043A\u043B",
     "label.off": "\u0412\u044B\u043A\u043B",
     "skin.auto": "\u0410\u0432\u0442\u043E (\u043F\u043E \u0441\u0430\u0439\u0442\u0443)",
@@ -864,9 +868,9 @@
     "key.copied": "\u041A\u043B\u044E\u0447 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D",
     "key.copyFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
     "key.placeholder": "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u0442\u043E\u043A\u0435\u043D ceb_\u2026",
-    "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0420\u043E\u0442\u0430\u0446\u0438\u044F \u0438\u043B\u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u0430\u044F \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u0437\u0430\u043C\u0435\u043D\u044F\u0435\u0442 \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0442\u043E\u043A\u0435\u043D \u2014 \u0441\u0442\u0430\u0440\u044B\u0435 ceb_/cek_ \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 \u043F\u0435\u0440\u0435\u0441\u0442\u0430\u044E\u0442 \u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
+    "key.hint": "\u0421\u043C. README: ceb_ \u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440; \u0440\u043E\u0442\u0430\u0446\u0438\u044F \u0441\u0431\u0440\u0430\u0441\u044B\u0432\u0430\u0435\u0442 \u0441\u0442\u0430\u0440\u044B\u0435 \u043A\u043B\u044E\u0447\u0438.",
     "key.hintId": "Id:",
-    "browser.hint": "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0440\u043E\u0444\u0438\u043B\u044F Chrome \u0441\u0432\u043E\u0439 \u0442\u043E\u043A\u0435\u043D ceb_ \u0438 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 Browsers \u0432 \u0434\u0430\u0448\u0431\u043E\u0440\u0434\u0435.",
+    "browser.hint": "\u041D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome \u2014 \u0441\u043C. \u0434\u0430\u0448\u0431\u043E\u0440\u0434 Browsers.",
     "tos.title": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F \u0438 \u043F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435 \u043E \u0440\u0438\u0441\u043A\u0430\u0445",
     "tos.lead": "\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043E\u0437\u043D\u0430\u043A\u043E\u043C\u044C\u0442\u0435\u0441\u044C \u0438 \u043F\u0440\u0438\u043C\u0438\u0442\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u043F\u0435\u0440\u0435\u0434 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u0435\u043C Chat Export:",
     "tos.1": "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u043D\u043E\u0435 \u043E\u0431\u0435\u0441\u043F\u0435\u0447\u0435\u043D\u0438\u0435 \u0441 \u043E\u0442\u043A\u0440\u044B\u0442\u044B\u043C \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u043C \u043A\u043E\u0434\u043E\u043C \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \xAB\u041A\u0410\u041A \u0415\u0421\u0422\u042C\xBB (AS IS) \u043F\u043E \u043B\u0438\u0446\u0435\u043D\u0437\u0438\u0438 MIT \u0431\u0435\u0437 \u043A\u0430\u043A\u0438\u0445-\u043B\u0438\u0431\u043E \u0433\u0430\u0440\u0430\u043D\u0442\u0438\u0439.",
@@ -1124,6 +1128,7 @@
 
   // src/popup/main.jsx
   var ISSUES_URL = "https://github.com/svergio/chat-export-extension/issues";
+  var DONATE_URL = "https://www.donationalerts.com/r/svwergio_mel";
   function renderWithIssuesLink(text) {
     const s3 = String(text || "");
     const idx = s3.indexOf(ISSUES_URL);
@@ -1975,7 +1980,7 @@
         onClick: onCopyKey
       },
       t3("btn.copy")
-    )), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("key.hint"), browserId ? " " + t3("key.hintId") + " " + browserId : "")), /* @__PURE__ */ k("div", { class: "ce-test-row" }, /* @__PURE__ */ k(
+    ))), /* @__PURE__ */ k("div", { class: "ce-test-row" }, /* @__PURE__ */ k(
       "button",
       {
         type: "button",
@@ -2034,7 +2039,24 @@
       return /* @__PURE__ */ k("li", { key }, renderWithIssuesLink(t3(key)));
     })))) : null, /* @__PURE__ */ k("details", { class: "ce-more ce-more--footer" }, /* @__PURE__ */ k("summary", null, t3("label.tos")), /* @__PURE__ */ k("ul", null, tosKeys().map(function(key) {
       return /* @__PURE__ */ k("li", { key }, renderWithIssuesLink(t3(key)));
-    })))));
+    }))), /* @__PURE__ */ k("p", { class: "ce-donate" }, /* @__PURE__ */ k(
+      "a",
+      {
+        class: "ce-link ce-donate-link",
+        href: DONATE_URL,
+        target: "_blank",
+        rel: "noopener noreferrer nofollow",
+        onClick: (e3) => {
+          e3.preventDefault();
+          try {
+            chrome.tabs.create({ url: DONATE_URL, active: true });
+          } catch (_3) {
+          }
+          window.close();
+        }
+      },
+      t3("label.donate")
+    ), /* @__PURE__ */ k("span", { class: "ce-donate-hint" }, t3("donate.hint")))));
   }
   Q(/* @__PURE__ */ k(App, null), document.getElementById("app"));
 })();

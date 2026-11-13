@@ -804,9 +804,30 @@
       },
       hostState: function () {
         var input = findComposerInput();
+        var generating = isGenerating();
+        var captchaWidget = null;
+        var usage = null;
+        if (!generating && Ops.findCaptchaWidgets) {
+          var widgets = Ops.findCaptchaWidgets(document);
+          if (widgets && widgets[0]) captchaWidget = widgets[0].captchaWidget || widgets[0].challenge || null;
+        }
+        if (Ops.parseUsageFromText) {
+          var nodes = document.querySelectorAll('[role="alert"], [role="status"], [role="menuitem"]');
+          for (var i = 0; i < nodes.length; i++) {
+            var t = String(nodes[i].textContent || '').replace(/\s+/g, ' ').trim();
+            if (!/剩余|额度|次|请求过于频繁|rate|limit|quota/i.test(t)) continue;
+            usage = Ops.parseUsageFromText(t);
+            if (usage) {
+              usage.source = 'banner';
+              break;
+            }
+          }
+        }
         return {
-          generating: isGenerating(),
-          composerReady: visible(input) && (Ops.composerReady ? Ops.composerReady(input) : true)
+          generating: generating,
+          composerReady: visible(input) && (Ops.composerReady ? Ops.composerReady(input) : true),
+          captchaWidget: captchaWidget,
+          usage: usage
         };
       },
       send: async function (args) {

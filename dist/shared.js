@@ -2653,6 +2653,8 @@
     "format.pdf": "PDF",
     "label.tos": "Legal / Terms of Use",
     "label.faq": "Advanced Mode Terms & FAQ",
+    "label.donate": "Support the project",
+    "donate.hint": "Optional tip via DonationAlerts",
     "label.on": "On",
     "label.off": "Off",
     "skin.auto": "Auto (match site)",
@@ -2721,9 +2723,9 @@
     "key.copied": "Key copied",
     "key.copyFailed": "Copy failed",
     "key.placeholder": "Generate ceb_ token\u2026",
-    "key.hint": "The extension mints a ceb_ token per browser. Rotating or re-enrolling replaces the previous token \u2014 old ceb_/cek_ keys for this browser stop working. On connect the token is registered on the local server.",
+    "key.hint": "See README: ceb_ per browser; rotate invalidates old keys.",
     "key.hintId": "Id:",
-    "browser.hint": "Each Chrome profile needs its own ceb_ token and shows up separately on the dashboard Browsers page.",
+    "browser.hint": "Per Chrome profile \u2014 see dashboard Browsers.",
     "tos.title": "Terms of Use & Risk Disclaimer",
     "tos.lead": "Please read and accept before using Chat Export:",
     "tos.1": 'Open-source software provided "AS IS" under the MIT License, without warranty of any kind.',
@@ -2802,6 +2804,8 @@
     "format.pdf": "PDF",
     "label.tos": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F / \u0420\u0438\u0441\u043A\u0438",
     "label.faq": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u0433\u043E \u0440\u0435\u0436\u0438\u043C\u0430 \u0438 FAQ",
+    "label.donate": "\u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0430\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442",
+    "donate.hint": "\u0414\u043E\u043D\u0430\u0442 \u0447\u0435\u0440\u0435\u0437 DonationAlerts (\u043F\u043E \u0436\u0435\u043B\u0430\u043D\u0438\u044E)",
     "label.on": "\u0412\u043A\u043B",
     "label.off": "\u0412\u044B\u043A\u043B",
     "skin.auto": "\u0410\u0432\u0442\u043E (\u043F\u043E \u0441\u0430\u0439\u0442\u0443)",
@@ -2870,9 +2874,9 @@
     "key.copied": "\u041A\u043B\u044E\u0447 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D",
     "key.copyFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
     "key.placeholder": "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u0442\u043E\u043A\u0435\u043D ceb_\u2026",
-    "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0420\u043E\u0442\u0430\u0446\u0438\u044F \u0438\u043B\u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u0430\u044F \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u0437\u0430\u043C\u0435\u043D\u044F\u0435\u0442 \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0442\u043E\u043A\u0435\u043D \u2014 \u0441\u0442\u0430\u0440\u044B\u0435 ceb_/cek_ \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 \u043F\u0435\u0440\u0435\u0441\u0442\u0430\u044E\u0442 \u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
+    "key.hint": "\u0421\u043C. README: ceb_ \u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440; \u0440\u043E\u0442\u0430\u0446\u0438\u044F \u0441\u0431\u0440\u0430\u0441\u044B\u0432\u0430\u0435\u0442 \u0441\u0442\u0430\u0440\u044B\u0435 \u043A\u043B\u044E\u0447\u0438.",
     "key.hintId": "Id:",
-    "browser.hint": "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0440\u043E\u0444\u0438\u043B\u044F Chrome \u0441\u0432\u043E\u0439 \u0442\u043E\u043A\u0435\u043D ceb_ \u0438 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 Browsers \u0432 \u0434\u0430\u0448\u0431\u043E\u0440\u0434\u0435.",
+    "browser.hint": "\u041D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome \u2014 \u0441\u043C. \u0434\u0430\u0448\u0431\u043E\u0440\u0434 Browsers.",
     "tos.title": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F \u0438 \u043F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435 \u043E \u0440\u0438\u0441\u043A\u0430\u0445",
     "tos.lead": "\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043E\u0437\u043D\u0430\u043A\u043E\u043C\u044C\u0442\u0435\u0441\u044C \u0438 \u043F\u0440\u0438\u043C\u0438\u0442\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u043F\u0435\u0440\u0435\u0434 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u0435\u043C Chat Export:",
     "tos.1": "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u043D\u043E\u0435 \u043E\u0431\u0435\u0441\u043F\u0435\u0447\u0435\u043D\u0438\u0435 \u0441 \u043E\u0442\u043A\u0440\u044B\u0442\u044B\u043C \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u043C \u043A\u043E\u0434\u043E\u043C \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \xAB\u041A\u0410\u041A \u0415\u0421\u0422\u042C\xBB (AS IS) \u043F\u043E \u043B\u0438\u0446\u0435\u043D\u0437\u0438\u0438 MIT \u0431\u0435\u0437 \u043A\u0430\u043A\u0438\u0445-\u043B\u0438\u0431\u043E \u0433\u0430\u0440\u0430\u043D\u0442\u0438\u0439.",
@@ -3963,6 +3967,7 @@
     matchQuery: () => matchQuery,
     normalizeId: () => normalizeId,
     openMenu: () => openMenu,
+    parseUsageFromText: () => parseUsageFromText,
     pickMenuItem: () => pickMenuItem,
     preferGateHit: () => preferGateHit,
     quoteSelectionPrompt: () => quoteSelectionPrompt,
@@ -4714,11 +4719,12 @@
     if (details) err.details = details;
     throw err;
   }
-  var RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota|free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит/i;
+  var RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota exceeded|you('ve| have) reached (your |the )?(quota|message limit|limit)|free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит|请求过于频繁|请求频率/i;
   var PAYWALL_RE = /free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)/i;
   var AUTH_WALL_RE = /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
   var PLATFORM_BUSY_RE = /heavy (load|usage|traffic)|high demand|(at|over) capacity|overloaded|temporarily unavailable|service unavailable|something went wrong|try again (later|in|shortly|soon)|перегруж|высок\S* нагрузк|временно недоступ|попробуйте (\S+ )?(позже|снова|ещ[её] раз)|что-то пошло не так/i;
-  var CAPTCHA_RE = /captcha|hcaptcha|recaptcha|turnstile|arkose|verify you are (a )?human|i'?m not a robot|я не робот|cloudflare.*(checking|challenge)|checking (your )?browser|security (check|challenge)|complete the (security )?challenge/i;
+  var CAPTCHA_RE = /\b(h?captcha|recaptcha|turnstile|arkose|funcaptcha)\b|verify you are (a )?human|are you a robot|prove you are human|i'?m not a robot|я не робот|пройдите проверку|cloudflare.*(checking|challenge)|checking your browser|please complete the captcha|complete the (security )?challenge|请完成验证|完成验证|安全验证|验证码|进行人机验证|滑块验证/i;
+  var ASSISTANT_BODY_RE = /^(thinking|thought process|reasoning|рассуждение|思考中|推理中|思考过程)/i;
   var CAPTCHA_IFRAME_SELECTOR = [
     'iframe[src*="recaptcha" i]',
     'iframe[src*="hcaptcha" i]',
@@ -4779,19 +4785,94 @@
     if (PAYWALL_RE.test(String(text || ""))) return "paywall";
     return "quota";
   }
-  function classifyBusyText(text) {
+  function classifyBusyText(text, opts) {
+    opts = opts || {};
     var t3 = String(text || "");
     if (!t3 || t3.length > BANNER_TEXT_MAX) return null;
+    if (opts.fromAssistantBody) return null;
+    if (opts.generating === true) return null;
+    if (ASSISTANT_BODY_RE.test(t3.trim())) return null;
     if (AUTH_WALL_RE.test(t3)) return "UNAUTHORIZED";
     if (CAPTCHA_RE.test(t3)) return "CAPTCHA";
     if (RATE_LIMIT_RE.test(t3)) return "RATE_LIMIT";
     if (PLATFORM_BUSY_RE.test(t3)) return "PLATFORM_BUSY";
     return null;
   }
-  function pushGateHit(out, el, text) {
-    var code = classifyBusyText(text);
+  function pushGateHit(out, el, text, opts) {
+    var code = classifyBusyText(text, opts);
     if (!code) return;
-    out.push({ el, code, text, kind: classifyGateKind(code, text) });
+    var hit = {
+      el,
+      code,
+      text,
+      kind: classifyGateKind(code, text),
+      bannerSource: opts && opts.bannerSource || "alert"
+    };
+    out.push(hit);
+  }
+  function normalizeUsageUnit(u3) {
+    if (!u3) return null;
+    var s3 = String(u3).toLowerCase();
+    if (/^messages?$/.test(s3)) return "messages";
+    if (/^credits?$/.test(s3)) return "credits";
+    if (/^uses?$/.test(s3)) return "uses";
+    if (/^requests?$/.test(s3)) return "requests";
+    if (/^tokens?$/.test(s3)) return "tokens";
+    return s3;
+  }
+  function parseUsageFromText(text) {
+    var raw = String(text || "").replace(/\s+/g, " ").trim();
+    if (!raw || raw.length > BANNER_TEXT_MAX) return null;
+    var m3 = raw.match(/(\d+)\s*\/\s*(\d+)\s*(messages?|credits?|uses?|requests?|tokens?)?/i);
+    var left = raw.match(/(\d+)\s*(messages?|credits?|uses?|requests?|tokens?)?\s*(remaining|left|осталось)/i);
+    var zh = raw.match(/剩余\s*(\d+)\s*次/);
+    var zhQuota = raw.match(/额度[：:]\s*(\d+)\s*\/\s*(\d+)/);
+    var remaining = null;
+    var limit = null;
+    var unit = null;
+    var confidence = "medium";
+    if (m3) {
+      remaining = Number(m3[1]);
+      limit = Number(m3[2]);
+      unit = normalizeUsageUnit(m3[3]);
+      confidence = "high";
+    } else if (zhQuota) {
+      remaining = Number(zhQuota[1]);
+      limit = Number(zhQuota[2]);
+      unit = "uses";
+      confidence = "high";
+    } else if (left) {
+      remaining = Number(left[1]);
+      unit = normalizeUsageUnit(left[2]) || "uses";
+    } else if (zh) {
+      remaining = Number(zh[1]);
+      unit = "uses";
+    } else return null;
+    var plan = null;
+    var pm = raw.match(/\b(free|plus|pro|max|team|enterprise)\b/i);
+    if (pm) plan = String(pm[1]).toLowerCase();
+    return {
+      remaining,
+      limit,
+      unit,
+      plan,
+      resetAt: null,
+      window: null,
+      source: "banner",
+      raw: raw.slice(0, 200),
+      confidence
+    };
+  }
+  function captchaVendorFromEl(el) {
+    var src = (el.getAttribute && el.getAttribute("src") || "") + "";
+    var cls = String(el.className || "");
+    var blob = (src + " " + cls).toLowerCase();
+    if (/recaptcha/.test(blob)) return "recaptcha";
+    if (/hcaptcha/.test(blob)) return "hcaptcha";
+    if (/turnstile|cloudflare/.test(blob)) return "turnstile";
+    if (/arkose|funcaptcha/.test(blob)) return "arkose";
+    if (/geetest/.test(blob)) return "geetest";
+    return "unknown";
   }
   function captchaWidgetLabel(el) {
     if (!el) return "captcha challenge";
@@ -4816,16 +4897,21 @@
       if (el.closest && el.closest(OWN_UI_SELECTOR)) continue;
       if (!bannerVisible(el)) continue;
       var text = captchaWidgetLabel(el);
+      var challenge = {
+        tag: el.tagName ? String(el.tagName).toLowerCase() : null,
+        src: el.getAttribute ? el.getAttribute("src") || null : null,
+        title: el.getAttribute ? el.getAttribute("title") || null : null,
+        sitekey: el.getAttribute ? el.getAttribute("data-sitekey") || null : null,
+        vendor: captchaVendorFromEl(el)
+      };
       out.push({
         el,
         code: "CAPTCHA",
         text,
         kind: "captcha",
-        challenge: {
-          tag: el.tagName ? String(el.tagName).toLowerCase() : null,
-          src: el.getAttribute ? el.getAttribute("src") || null : null,
-          title: el.getAttribute ? el.getAttribute("title") || null : null
-        }
+        bannerSource: "challenge_overlay",
+        challenge,
+        captchaWidget: challenge
       });
     }
     return out;
@@ -4837,7 +4923,6 @@
       nodes = nodes.concat(Array.prototype.slice.call(root.querySelectorAll(UPSELL_SCAN_SELECTOR)));
     } catch (e3) {
     }
-    if (extra) nodes = nodes.concat(Array.isArray(extra) ? extra : [extra]);
     var out = [];
     for (var i3 = 0; i3 < nodes.length; i3++) {
       var el = nodes[i3];
@@ -4846,7 +4931,17 @@
       if (!bannerVisible(el)) continue;
       var text = bannerText(el);
       if (!text || text.length > BANNER_TEXT_MAX) continue;
-      pushGateHit(out, el, text);
+      pushGateHit(out, el, text, { bannerSource: "alert" });
+    }
+    var extras = extra ? Array.isArray(extra) ? extra : [extra] : [];
+    for (var j3 = 0; j3 < extras.length; j3++) {
+      var x4 = extras[j3];
+      if (!x4 || insideHit(out, x4)) continue;
+      if (x4.closest && x4.closest(OWN_UI_SELECTOR)) continue;
+      if (!bannerVisible(x4)) continue;
+      var xt = bannerText(x4);
+      if (!xt || xt.length > BANNER_TEXT_MAX) continue;
+      pushGateHit(out, x4, xt, { fromAssistantBody: true, bannerSource: "assistant_body" });
     }
     var widgets = findCaptchaWidgets(root);
     for (var w4 = 0; w4 < widgets.length; w4++) {
@@ -4868,7 +4963,9 @@
     var kind = hit.kind || classifyGateKind(hit.code, hit.text);
     var retryable = hit.code === "PLATFORM_BUSY" || hit.code === "RATE_LIMIT" && kind !== "paywall";
     var details = { retryable, banner: hit.text, kind };
+    if (hit.bannerSource) details.bannerSource = hit.bannerSource;
     if (hit.challenge) details.challenge = hit.challenge;
+    if (hit.captchaWidget) details.captchaWidget = hit.captchaWidget;
     hostErr(hit.code, hit.text, details);
   }
   async function guardBusy(run, candidates) {
@@ -4921,7 +5018,27 @@
   function buildHostState(platform, state, candidates) {
     var hit = detectBusyBanner(document, candidates || null);
     var generating = !!(state && state.generating);
+    var thinking = !!(state && state.thinking);
+    var streaming = !!(state && state.streaming);
     var composerReady2 = !!(state && state.composerReady);
+    var usage = state && state.usage && typeof state.usage === "object" ? state.usage : hit && hit.code === "RATE_LIMIT" ? parseUsageFromText(hit.text) : null;
+    var captchaWidget = hit && (hit.captchaWidget || hit.challenge) || state && (state.captchaWidget || state.challenge) || null;
+    if (generating && hit && hit.code !== "UNAUTHORIZED") {
+      hit = null;
+      captchaWidget = null;
+    }
+    if (usage && usage.remaining === 0 && !captchaWidget && !generating) {
+      hit = hit || {
+        code: "RATE_LIMIT",
+        text: usage.raw || "usage exhausted",
+        kind: "quota",
+        bannerSource: usage.source || "banner"
+      };
+      if (hit.code !== "UNAUTHORIZED" && hit.code !== "CAPTCHA") {
+        hit.code = "RATE_LIMIT";
+        hit.kind = "quota";
+      }
+    }
     var code = hit ? hit.code : null;
     var kind = hit ? hit.kind || classifyGateKind(hit.code, hit.text) : null;
     var retryable = !hit ? true : hit.code === "PLATFORM_BUSY" || hit.code === "RATE_LIMIT" && kind !== "paywall";
@@ -4936,15 +5053,22 @@
     var out = {
       platform,
       generating,
+      thinking: thinking || null,
+      streaming: streaming || null,
       busy: !!hit,
       banner: hit ? hit.text : null,
+      bannerSource: hit ? hit.bannerSource || null : null,
       composerReady: composerReady2,
       code,
       kind,
       retryable,
-      state: gateState
+      state: gateState,
+      usage: usage || null,
+      captchaWidget: captchaWidget || null,
+      httpEvidence: state && state.httpEvidence || null
     };
     if (hit && hit.challenge) out.challenge = hit.challenge;
+    else if (captchaWidget) out.challenge = captchaWidget;
     return out;
   }
 

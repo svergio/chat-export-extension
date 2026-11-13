@@ -28,6 +28,7 @@ import {
 import { resolveUiDataSkinForPopup, SKIN_AUTO_FALLBACK } from '../skinResolve.js';
 
 const ISSUES_URL = 'https://github.com/svergio/chat-export-extension/issues';
+const DONATE_URL = 'https://www.donationalerts.com/r/svwergio_mel';
 
 function renderWithIssuesLink(text) {
   const s = String(text || '');
@@ -1038,10 +1039,6 @@ function App() {
                   {t('btn.copy')}
                 </button>
               </div>
-              <p class="ce-hint">
-                {t('key.hint')}
-                {browserId ? ' ' + t('key.hintId') + ' ' + browserId : ''}
-              </p>
             </div>
 
             <div class="ce-test-row">
@@ -1140,6 +1137,25 @@ function App() {
             })}
           </ul>
         </details>
+
+        <p class="ce-donate">
+          <a
+            class="ce-link ce-donate-link"
+            href={DONATE_URL}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            onClick={(e) => {
+              e.preventDefault();
+              try {
+                chrome.tabs.create({ url: DONATE_URL, active: true });
+              } catch (_) {}
+              window.close();
+            }}
+          >
+            {t('label.donate')}
+          </a>
+          <span class="ce-donate-hint">{t('donate.hint')}</span>
+        </p>
       </section>
     </div>
   );

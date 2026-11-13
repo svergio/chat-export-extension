@@ -16,7 +16,7 @@ Export and control your **web** chats on **twelve** providers (ChatGPT, Grok, X 
 
 Chat Export is a **full product** in three public repos (extension, server, dashboard). Manual export works with the extension alone. MCP automation uses `chat-export-server` and the **MV3 extension bridge** in your Chrome tabs — **not** Chrome DevTools MCP. Deploy the server **natively**, via **Docker / Colima**, or **Kubernetes**. You supply the MCP client — common choices include **Cursor** (Chrome extension + MCP; Cursor marketplace listing pending approval), **Claude Desktop** and Claude MCP integrations (submission in progress), and **LangChain**-based local agents. None are bundled with the product.
 
-**Install zip:** [chat-export-extension-2.0.9.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.9/chat-export-extension-2.0.9.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.9](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.9).
+**Install zip:** [chat-export-extension-2.1.0.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.1.0/chat-export-extension-2.1.0.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.1.0](https://github.com/svergio/chat-export-extension/releases/tag/v2.1.0).
 
 ## The problem
 

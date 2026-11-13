@@ -106,6 +106,41 @@
     return null;
   }
 
+  function detectCaptcha() {
+    if (Ops.findCaptchaWidgets) {
+      var widgets = Ops.findCaptchaWidgets(document);
+      if (widgets && widgets.length && widgets[0].captchaWidget) return widgets[0].captchaWidget;
+      if (widgets && widgets.length && widgets[0].challenge) return widgets[0].challenge;
+    }
+    return null;
+  }
+
+  function detectUsage() {
+    var sel =
+      '[aria-label*="usage" i], [aria-label*="credit" i], [class*="usage" i], [class*="credit" i], [role="menuitem"], [role="menu"] *';
+    var nodes;
+    try {
+      nodes = document.querySelectorAll(sel);
+    } catch (e) {
+      nodes = [];
+    }
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      if (!visible(nodes[i])) continue;
+      var t = ((nodes[i].getAttribute && nodes[i].getAttribute('aria-label')) || '') + ' ' + (nodes[i].textContent || '');
+      t = t.replace(/\s+/g, ' ').trim();
+      if (!t || t.length > 400) continue;
+      if (!/usage|credit|uses|remaining|额度|剩余|次/i.test(t)) continue;
+      var parsed = Ops.parseUsageFromText ? Ops.parseUsageFromText(t) : null;
+      if (parsed) {
+        parsed.source = 'user_menu';
+        parsed.confidence = 'high';
+        return parsed;
+      }
+    }
+    return null;
+  }
+
   function findModelButton() {
     return (
       document.querySelector('button.modelSelectorButton') ||
@@ -754,9 +789,15 @@
       },
       hostState: function () {
         var input = findComposerInput();
+        var generating = isGenerating();
+        var captcha = detectCaptcha();
+        var usage = detectUsage();
         return {
-          generating: isGenerating(),
-          composerReady: visible(input) && (Ops.composerReady ? Ops.composerReady(input) : true)
+          generating: generating,
+          thinking: generating,
+          composerReady: visible(input) && (Ops.composerReady ? Ops.composerReady(input) : true),
+          captchaWidget: captcha,
+          usage: usage
         };
       },
       send: async function (args) {
