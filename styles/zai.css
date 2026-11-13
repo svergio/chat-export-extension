@@ -10,6 +10,7 @@
 }
 
 .chat-export-bar--zai > .chat-export-fmt,
+.chat-export-bar--zai > .chat-export-folder,
 .chat-export-bar--zai > .chat-export-dl {
   box-sizing: border-box !important;
   position: relative !important;
@@ -38,7 +39,8 @@
   border: 0 solid transparent !important;
 }
 
-.chat-export-bar--zai > .chat-export-dl {
+.chat-export-bar--zai > .chat-export-dl,
+.chat-export-bar--zai > .chat-export-folder {
   min-width: 28px !important;
   width: 28px !important;
   padding: 0 !important;
@@ -46,13 +48,20 @@
   color: var(--color-icon-tertiary, #888) !important;
 }
 
+.chat-export-bar--zai > .chat-export-folder--warn {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
+}
+
 .chat-export-bar--zai > .chat-export-fmt:hover,
 .chat-export-bar--zai > .chat-export-fmt.is-open,
+.chat-export-bar--zai > .chat-export-folder:hover,
 .chat-export-bar--zai > .chat-export-dl:hover {
   background: var(--color-bg-hover, rgba(13, 13, 13, 0.05)) !important;
 }
 
 .chat-export-bar--zai > .chat-export-fmt:focus-visible,
+.chat-export-bar--zai > .chat-export-folder:focus-visible,
 .chat-export-bar--zai > .chat-export-dl:focus-visible {
   box-shadow: 0 0 0 2px var(--color-text-accent, #0b7fff) !important;
 }

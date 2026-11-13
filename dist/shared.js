@@ -2699,6 +2699,10 @@
     "toast.saved": "Saved to \xAB{folder}\xBB: {name}",
     "toast.downloaded": "Downloaded: {name}",
     "toast.failed": "Export failed",
+    "toast.regrant": "Folder access needed \u2014 click the folder button on the bar",
+    "bar.folder": "Save folder",
+    "bar.folder.regrant": "Restore folder access",
+    "bar.folder.set": "Set folder",
     "toast.empty": "Nothing to export yet",
     "bar.shift.rebind": "new default folder",
     "bar.shift.saveAs": "ask where to save",
@@ -2850,6 +2854,10 @@
     "toast.saved": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB{folder}\xBB: {name}",
     "toast.downloaded": "\u0421\u043A\u0430\u0447\u0430\u043D\u043E: {name}",
     "toast.failed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F",
+    "toast.regrant": "\u041D\u0443\u0436\u0435\u043D \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435 \u2014 \u043D\u0430\u0436\u043C\u0438 \u043A\u043D\u043E\u043F\u043A\u0443 \u043F\u0430\u043F\u043A\u0438 \u043D\u0430 \u043F\u0430\u043D\u0435\u043B\u0438",
+    "bar.folder": "\u041F\u0430\u043F\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
+    "bar.folder.regrant": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435",
+    "bar.folder.set": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
     "toast.empty": "\u041F\u043E\u043A\u0430 \u043D\u0435\u0447\u0435\u0433\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
     "bar.shift.rebind": "\u043D\u043E\u0432\u0430\u044F \u043F\u0430\u043F\u043A\u0430 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
     "bar.shift.saveAs": "\u0441\u043F\u0440\u043E\u0441\u0438\u0442\u044C, \u043A\u0443\u0434\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C",
@@ -3315,8 +3323,18 @@
     );
     const [localeCode, setLocaleCode] = d2(() => resolveLocale(getPlatformSettings().ui.locale));
     const [shiftMode, setShiftMode] = d2(() => shiftModeOf(getPlatformSettings()));
+    const [folderState, setFolderState] = d2({ state: "none", name: null });
+    const [pendingJobId, setPendingJobId] = d2(null);
+    const folderBtnRef = T2(null);
     const lastIntentRef = T2(0);
     const t3 = w2(() => createTranslator(localeCode), [localeCode]);
+    function refreshFolderStatus() {
+      if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) return;
+      chrome.runtime.sendMessage({ type: "ce-bridge", action: "folderStatus" }, function(resp) {
+        if (chrome.runtime.lastError || !resp) return;
+        setFolderState({ state: resp.state || "none", name: resp.name || null });
+      });
+    }
     A2(() => {
       return onPlatformSettings((settings) => {
         setLocaleCode(resolveLocale(settings.ui.locale));
@@ -3327,6 +3345,34 @@
       if (typeof CE2.watchHostScheme !== "function") return void 0;
       return CE2.watchHostScheme(platform, setScheme);
     }, [platform]);
+    A2(() => {
+      refreshFolderStatus();
+      if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.onMessage) return void 0;
+      function onMsg(msg) {
+        if (!msg || typeof msg !== "object") return;
+        if (msg.type === "ce-folder-changed") {
+          setFolderState({ state: msg.state || "none", name: msg.name || null });
+          return;
+        }
+        if (msg.type === "ce-regrant-folder") {
+          setPendingJobId(msg.jobId || null);
+          setFolderState((prev) => ({
+            state: msg.mode === "pick" ? "none" : "prompt",
+            name: prev.name
+          }));
+          CE2.showToast(CE2.toastText("toast.regrant"));
+          const btn = folderBtnRef.current;
+          if (btn) {
+            btn.classList.add("chat-export-folder--pulse");
+            setTimeout(function() {
+              btn.classList.remove("chat-export-folder--pulse");
+            }, 2400);
+          }
+        }
+      }
+      chrome.runtime.onMessage.addListener(onMsg);
+      return () => chrome.runtime.onMessage.removeListener(onMsg);
+    }, []);
     const nativeClass = options.nativeClass || CE2.nativeButtonClass(options.nativeFrom);
     const nativeIconClass = options.nativeIconClass || CE2.nativeButtonClass(options.nativeIconFrom) || nativeClass;
     const cdsFmt = cdsButtonParts(options.nativeFrom);
@@ -3386,6 +3432,58 @@
       CE2.savePack(v3);
       setPackMode(v3);
     }
+    function pickFolder(ev) {
+      if (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      if (busy) return;
+      if (typeof window.showDirectoryPicker !== "function") {
+        chrome.runtime.sendMessage({ type: "ce-bridge", action: "folderPick", mode: "pick" });
+        return;
+      }
+      setBusy(true);
+      window.showDirectoryPicker({ mode: "readwrite", id: "chat-export", startIn: "downloads" }).then(function(handle) {
+        return new Promise(function(resolve) {
+          chrome.runtime.sendMessage(
+            {
+              type: "ce-bridge",
+              action: "folderStore",
+              handle,
+              jobId: pendingJobId || null,
+              originTabId: null
+            },
+            function(res) {
+              resolve(res || { ok: false });
+            }
+          );
+        });
+      }).then(function(res) {
+        if (res && res.ok) {
+          setPendingJobId(null);
+          refreshFolderStatus();
+          if (res.name) {
+            CE2.showToast(
+              CE2.toastText("toast.saved", {
+                folder: res.name,
+                name: res.written && res.written[0] || res.name
+              })
+            );
+          }
+          return;
+        }
+        if (res && res.reason === "permission") {
+          CE2.showToast(CE2.toastText("toast.regrant"));
+          return;
+        }
+        if (!(res && res.reason === "AbortError")) CE2.showToast(CE2.toastText("toast.failed"));
+      }).catch(function(err) {
+        if (err && err.name === "AbortError") return;
+        CE2.showToast(CE2.toastText("toast.failed"));
+      }).finally(function() {
+        setBusy(false);
+      });
+    }
     function runDownload(ev) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -3434,7 +3532,18 @@
           exportSchemas: settings && settings.exportSchemas
         });
       }).then((res) => {
-        if (res && res.pending) return;
+        if (res && res.pending) {
+          if (res.reason === "needs_regrant" || res.reason === "permission" || res.reason === "no-folder") {
+            setPendingJobId(res.jobId || null);
+            setFolderState((prev) => ({
+              state: res.reason === "no-folder" ? "none" : "prompt",
+              name: prev.name
+            }));
+            CE2.showToast(CE2.toastText("toast.regrant"));
+          }
+          return;
+        }
+        if (res && res.ok && res.via === "folder") refreshFolderStatus();
         if (res && !res.ok) {
           console.warn("[chat-export] save failed", res);
           CE2.showToast(CE2.toastText("toast.failed"));
@@ -3453,6 +3562,9 @@
     const iconHtml = resolveDownloadSvg();
     const formatBtnClass = (nativeClass || "") + (menuOpen ? " is-open" : "");
     const dlClass = (nativeIconClass || "") + " chat-export-dl" + (superLook ? " is-super" : "");
+    const folderNeeds = folderState.state === "none" || folderState.state === "prompt" || !!pendingJobId;
+    const folderLabel = folderNeeds ? folderState.state === "none" ? t3("bar.folder.set") : t3("bar.folder.regrant") : folderState.name ? folderState.name : t3("bar.folder");
+    const folderClass = "chat-export-folder" + (folderNeeds ? " chat-export-folder--warn" : "");
     return /* @__PURE__ */ k(
       "div",
       {
@@ -3478,6 +3590,19 @@
         },
         /* @__PURE__ */ k(CdsPaint, { parts: cdsFmt }),
         cdsFmt ? /* @__PURE__ */ k("span", { class: cdsFmt.contentClass || "inline-flex min-w-0 items-center gap-1" }, /* @__PURE__ */ k("span", { class: "chat-export-format-text" }, pillLabel), /* @__PURE__ */ k(Chevron, null)) : /* @__PURE__ */ k($, null, /* @__PURE__ */ k("span", { class: "chat-export-format-text" + (formatLabelClass ? " " + formatLabelClass : "") }, pillLabel), formatChevronClass ? /* @__PURE__ */ k("span", { class: formatChevronClass, "aria-hidden": "true" }, /* @__PURE__ */ k(Chevron, null)) : /* @__PURE__ */ k(Chevron, null))
+      ),
+      /* @__PURE__ */ k(
+        "button",
+        {
+          ref: folderBtnRef,
+          type: "button",
+          class: folderClass,
+          "aria-label": folderLabel,
+          title: folderLabel,
+          disabled: busy,
+          onClick: pickFolder
+        },
+        /* @__PURE__ */ k("span", { class: "chat-export-folder-text", "aria-hidden": "true" }, folderNeeds ? "!" : "F")
       ),
       /* @__PURE__ */ k(
         "button",

@@ -19,6 +19,42 @@
   cursor: wait;
 }
 
+.chat-export-folder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.chat-export-folder--warn {
+  border-color: #c45c26;
+  color: #c45c26;
+}
+
+.chat-export-folder--pulse {
+  animation: ce-folder-pulse 0.8s ease-in-out 3;
+}
+
+@keyframes ce-folder-pulse {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(196, 92, 38, 0.35);
+  }
+}
+
 .chat-export-format-text {
   overflow: hidden;
   text-overflow: ellipsis;
