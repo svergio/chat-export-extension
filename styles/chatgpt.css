@@ -163,3 +163,12 @@
   --ce-menu-pack-bg: var(--color-background-secondary-ghost-hover, #0000000d);
   --ce-menu-pack-active: var(--color-background-secondary-ghost-active, rgba(13, 13, 13, 0.12));
 }
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] {
+  --ce-menu-motion-ms: 100ms;
+  --ce-menu-scale-x-from: 1;
+  --ce-menu-scale-y-from: 1;
+  --ce-menu-tx-from: 0px;
+  --ce-menu-ty-from: 0px;
+  --ce-menu-blur-from: 0px;
+}

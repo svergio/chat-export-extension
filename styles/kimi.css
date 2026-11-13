@@ -145,3 +145,11 @@
   border-radius: 8px;
   font-weight: 500;
 }
+
+.chat-export-menu[data-chat-export-menu='kimi'] {
+  --ce-menu-motion-ms: 150ms;
+  --ce-menu-ease-in: cubic-bezier(0, 0, 0.2, 1);
+  --ce-menu-ease-out: cubic-bezier(0.4, 0, 1, 1);
+  --ce-menu-scale-x-from: 0.85;
+  --ce-menu-scale-y-from: 0.85;
+}

@@ -107,3 +107,9 @@
   padding: 6px 12px;
   font-weight: 400;
 }
+
+.chat-export-menu[data-chat-export-menu='qwen'] {
+  --ce-menu-motion-ms: 200ms;
+  --ce-menu-scale-x-from: 0.8;
+  --ce-menu-scale-y-from: 0.8;
+}

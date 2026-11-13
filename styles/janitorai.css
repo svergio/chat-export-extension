@@ -144,3 +144,14 @@
   border-radius: 6px;
   font-weight: 500;
 }
+
+.chat-export-menu[data-chat-export-menu='janitorai'] {
+  --ce-menu-motion-ms: 250ms;
+  --ce-menu-ease-in: cubic-bezier(0.22, 1, 0.36, 1);
+  --ce-menu-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ce-menu-scale-x-from: 1;
+  --ce-menu-scale-y-from: 1;
+  --ce-menu-tx-from: 0px;
+  --ce-menu-ty-from: -4px;
+  transform-origin: right var(--ce-menu-origin-y, top);
+}

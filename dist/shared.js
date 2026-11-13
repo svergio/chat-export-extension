@@ -3218,6 +3218,16 @@
     if (!parts || !parts.paintWrapClass) return null;
     return /* @__PURE__ */ k("span", { "aria-hidden": "true", class: parts.paintWrapClass }, /* @__PURE__ */ k("span", { "data-cds-part": "paint", class: parts.paintClass || void 0 }));
   }
+  function readMenuMotionMs(el) {
+    if (!el) return 150;
+    const raw = getComputedStyle(el).getPropertyValue("--ce-menu-motion-ms").trim();
+    if (!raw) return 150;
+    const n2 = parseFloat(raw);
+    if (Number.isNaN(n2)) return 150;
+    if (/ms$/i.test(raw)) return Math.max(0, Math.round(n2));
+    if (/s$/i.test(raw)) return Math.max(0, Math.round(n2 * 1e3));
+    return Math.max(0, Math.round(n2));
+  }
   function FormatMenu({
     platform,
     scheme,
@@ -3232,8 +3242,31 @@
   }) {
     const menuRef = T2(null);
     const CE2 = window.ChatExport;
+    const [phase, setPhase] = d2(null);
     A2(() => {
-      if (!open) return void 0;
+      if (open) {
+        setPhase((prev) => prev === "open" || prev === "entering" ? prev : "entering");
+        return void 0;
+      }
+      setPhase((prev) => prev === "entering" || prev === "open" ? "exiting" : prev);
+      return void 0;
+    }, [open]);
+    A2(() => {
+      if (phase !== "entering") return void 0;
+      const menu = menuRef.current;
+      const ms = readMenuMotionMs(menu);
+      const t4 = setTimeout(() => setPhase("open"), ms);
+      return () => clearTimeout(t4);
+    }, [phase]);
+    A2(() => {
+      if (phase !== "exiting") return void 0;
+      const menu = menuRef.current;
+      const ms = readMenuMotionMs(menu);
+      const t4 = setTimeout(() => setPhase(null), ms);
+      return () => clearTimeout(t4);
+    }, [phase]);
+    A2(() => {
+      if (phase !== "entering" && phase !== "open") return void 0;
       const menu = menuRef.current;
       if (!menu) return void 0;
       function place() {
@@ -3250,20 +3283,26 @@
         const spaceAbove = r3.top;
         const preferBelow = platform === "claude" || spaceBelow >= h3 + gap || spaceBelow >= spaceAbove;
         let top;
+        let below = true;
         if (preferBelow && spaceBelow >= h3 + gap) {
           top = r3.bottom + gap;
+          below = true;
         } else if (spaceAbove >= h3 + gap) {
           top = r3.top - h3 - gap;
+          below = false;
         } else if (spaceBelow >= spaceAbove) {
           top = Math.min(r3.bottom + gap, window.innerHeight - h3 - 8);
+          below = true;
         } else {
           top = Math.max(8, r3.top - h3 - gap);
+          below = false;
         }
         menu.style.position = "fixed";
         menu.style.left = left + "px";
         menu.style.top = Math.max(8, top) + "px";
         menu.style.bottom = "auto";
         menu.style.zIndex = "2147483646";
+        menu.style.setProperty("--ce-menu-origin-y", below ? "top" : "bottom");
       }
       place();
       requestAnimationFrame(place);
@@ -3292,16 +3331,17 @@
         window.removeEventListener("resize", onScroll);
         window.removeEventListener("scroll", onScroll, true);
       };
-    }, [open, formats, packMode, formatBtnRef, onClose, platform]);
-    if (!open) return null;
+    }, [phase, formats, packMode, formatBtnRef, onClose, platform]);
+    if (!phase) return null;
     const ids = CE2.FORMAT_IDS;
     const labels = CE2.FORMAT_LABEL;
+    const phaseClass = phase === "entering" ? " is-entering" : phase === "exiting" ? " is-exiting" : " is-open";
     return U2(
       /* @__PURE__ */ k(
         "div",
         {
           ref: menuRef,
-          class: "chat-export-menu",
+          class: "chat-export-menu" + phaseClass,
           "data-chat-export-menu": platform,
           "data-ce-scheme": scheme || "dark",
           role: "menu"
