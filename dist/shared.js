@@ -3156,6 +3156,47 @@
       /* @__PURE__ */ k("polyline", { points: "4,6 8,10 12,6" })
     );
   }
+  function FolderIcon({ off }) {
+    if (off) {
+      return /* @__PURE__ */ k(
+        "svg",
+        {
+          xmlns: "http://www.w3.org/2000/svg",
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          "stroke-width": "2",
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          class: "chat-export-folder-icon",
+          width: "16",
+          height: "16",
+          "aria-hidden": "true"
+        },
+        /* @__PURE__ */ k("path", { d: "M3 3l18 18" }),
+        /* @__PURE__ */ k("path", { d: "M19 19h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 1.172 -1.821m3.828 -.179h1l3 3h7a2 2 0 0 1 2 2v7" }),
+        /* @__PURE__ */ k("path", { d: "M21 15.5v-2.5a2 2 0 0 0 -2 -2h-2" }),
+        /* @__PURE__ */ k("path", { d: "M3 19v-9" })
+      );
+    }
+    return /* @__PURE__ */ k(
+      "svg",
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round",
+        class: "chat-export-folder-icon",
+        width: "16",
+        height: "16",
+        "aria-hidden": "true"
+      },
+      /* @__PURE__ */ k("path", { d: "M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" })
+    );
+  }
   function shiftModeOf(settings) {
     return settings && settings.saveFolder && settings.saveFolder.shiftMode === "saveAs" ? "saveAs" : "rebind";
   }
@@ -3602,7 +3643,7 @@
           disabled: busy,
           onClick: pickFolder
         },
-        /* @__PURE__ */ k("span", { class: "chat-export-folder-text", "aria-hidden": "true" }, folderNeeds ? "!" : "F")
+        /* @__PURE__ */ k(FolderIcon, { off: folderNeeds })
       ),
       /* @__PURE__ */ k(
         "button",
