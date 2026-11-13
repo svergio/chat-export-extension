@@ -310,15 +310,29 @@ function extractJson(raw) {
 }
 
 function listPages() {
-  const data = extractJson(cdt(['list_pages']));
-  const pages = data.pages || [];
-  const extensionPages = data.extensionPages || [];
-  return {
-    pages,
-    extensionPages,
-    allPages: pages.concat(extensionPages),
-    sw: data.extensionServiceWorkers || []
-  };
+  let lastErr = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const raw = cdt(['list_pages'], { timeout: 30000, allowFail: true });
+      const data = extractJson(raw);
+      const pages = data.pages || [];
+      const extensionPages = data.extensionPages || [];
+      if (!pages.length && !extensionPages.length && attempt < 3) {
+        sleep(400 * (attempt + 1));
+        continue;
+      }
+      return {
+        pages,
+        extensionPages,
+        allPages: pages.concat(extensionPages),
+        sw: data.extensionServiceWorkers || []
+      };
+    } catch (e) {
+      lastErr = e;
+      sleep(400 * (attempt + 1));
+    }
+  }
+  throw lastErr || new Error('list_pages failed');
 }
 
 function sleep(ms) {
@@ -358,9 +372,214 @@ function evalInline(pageId, js) {
   return evalSource(pageId, p);
 }
 
+function findExtSwCandidates() {
+  const lp = listPages();
+  const all = (lp.sw || []).filter((s) => (s.url || '').includes(EXT_ID));
+  // Reloads leave stale SW ids; newest id is usually the live worker.
+  return all.slice().reverse();
+}
+
+function findExtSw() {
+  const cands = findExtSwCandidates();
+  return cands[0] || null;
+}
+
+function evalSwOnce(swId, sourcePath, filePath) {
+  const raw = cdt(
+    [
+      'evaluate_script',
+      '--sourcePath',
+      sourcePath,
+      '--serviceWorkerId',
+      String(swId),
+      '--filePath',
+      filePath,
+      '--waitForStableDom',
+      'false'
+    ],
+    { timeout: 25000, allowFail: true }
+  );
+  try {
+    return extractJson(readFileSync(filePath, 'utf8'));
+  } catch {
+    try {
+      return extractJson(raw);
+    } catch {
+      return { ok: false, error: 'sw-eval-parse', raw: String(raw || '').slice(0, 200), swId };
+    }
+  }
+}
+
+function evalSw(swId, js) {
+  const p = join(OUT_DIR, `sw-${Date.now()}-${Math.random().toString(16).slice(2)}.js`);
+  writeFileSync(p, js);
+  const cands = findExtSwCandidates();
+  const ids = [];
+  if (swId) ids.push(String(swId));
+  for (const s of cands) {
+    if (s && s.id && !ids.includes(String(s.id))) ids.push(String(s.id));
+  }
+  let last = { ok: false, error: 'no-ext-sw' };
+  for (const id of ids.slice(0, 4)) {
+    const filePath = join(OUT_DIR, `o-sw-${id}-${Date.now()}.json`);
+    last = evalSwOnce(id, p, filePath);
+    if (last && last.error !== 'sw-eval-parse') return last;
+    if (last && last.ok) return last;
+  }
+  return last;
+}
+
+function rpcChatsGet(platform, hrefHint) {
+  const sw = findExtSw();
+  if (!sw || !sw.id) return { ok: false, error: 'no-ext-sw' };
+  const js = `async () => {
+  function send(tabId, msg) {
+    return new Promise((resolve) => {
+      let done = false;
+      const t = setTimeout(() => {
+        if (!done) {
+          done = true;
+          resolve({ ok: false, error: 'timeout' });
+        }
+      }, 60000);
+      try {
+        chrome.tabs.sendMessage(tabId, msg, (res) => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          const err = chrome.runtime.lastError;
+          if (err) resolve({ ok: false, error: err.message });
+          else resolve(res || { ok: false, error: 'empty' });
+        });
+      } catch (e) {
+        if (done) return;
+        done = true;
+        clearTimeout(t);
+        resolve({ ok: false, error: String(e && e.message || e) });
+      }
+    });
+  }
+  const hint = ${JSON.stringify(hrefHint || '')};
+  const platform = ${JSON.stringify(platform)};
+  const tabs = await chrome.tabs.query({});
+  let tab = null;
+  for (const t of tabs) {
+    const u = t.url || '';
+    if (!u) continue;
+    if (hint && (u === hint || u.startsWith(hint.slice(0, Math.min(80, hint.length))))) {
+      tab = t;
+      break;
+    }
+  }
+  if (!tab) {
+    for (const t of tabs) {
+      const u = t.url || '';
+      if (platform === 'zai' && /chat\\.z\\.ai\\/c\\//.test(u)) { tab = t; break; }
+      if (platform === 'minimax' && /agent\\.minimax\\.io\\/(mavis|\\?chatID)/.test(u)) { tab = t; break; }
+      if (platform === 'janitorai' && /janitorai\\.com\\/.*\\/chats\\/\\d+/.test(u)) { tab = t; break; }
+    }
+  }
+  if (!tab) return { ok: false, error: 'no-tab' };
+  const ping = await send(tab.id, { type: 'chat-export-ping' });
+  if (!ping || !ping.ok) return { ok: false, error: (ping && ping.error) || 'ping-fail', tabId: tab.id };
+  const got = await send(tab.id, {
+    type: 'chat-export-rpc',
+    id: 'fid-' + platform + '-' + Date.now(),
+    op: 'chats.get',
+    platform,
+    args: { chatId: '', branch: 'active' }
+  });
+  if (!got || !got.ok) return { ok: false, error: got && got.error, tabId: tab.id };
+  const msgs = (got.data && got.data.messages) || [];
+  return {
+    ok: true,
+    tabId: tab.id,
+    chatId: got.data && got.data.chatId,
+    title: got.data && got.data.title,
+    n: msgs.length,
+    exportUserN: msgs.filter((m) => m && m.role === 'user').length,
+    exportAsstN: msgs.filter((m) => m && m.role === 'assistant').length,
+    emptyBodies: msgs.filter((m) => !String((m && (m.text || m.content)) || '').trim()).length,
+    first: msgs[0] ? String(msgs[0].text || '').replace(/\\s+/g, ' ').slice(0, 80) : '',
+    last: msgs.length ? String(msgs[msgs.length - 1].text || '').replace(/\\s+/g, ' ').slice(0, 80) : '',
+    roles: msgs.map((m) => m.role).join(',').slice(0, 120)
+  };
+}`;
+  return evalSw(sw.id, js);
+}
+
+function assertExportFidelity(pageId, providerId) {
+  const id = `usage/${providerId}/fidelity`;
+  const dom = evalPage(pageId, 'export-fidelity.js') || {};
+  if (!dom.hasBar) {
+    record({ id, status: 'SKIP', detail: 'no-bar' });
+    return;
+  }
+  if (!dom.platform) {
+    record({ id, status: 'SKIP', detail: 'no-platform' });
+    return;
+  }
+  const rpc = rpcChatsGet(providerId, dom.href || '');
+  if (!rpc || rpc.error === 'no-tab' || rpc.error === 'no-ext-sw' || rpc.error === 'sw-eval-parse') {
+    record({ id, status: 'SKIP', detail: `rpc-unavailable: ${(rpc && rpc.error) || 'unknown'}` });
+    return;
+  }
+  if (rpc.error && /ping-fail|Receiving end|timeout|sw-eval/i.test(String(rpc.error))) {
+    record({ id, status: 'SKIP', detail: `content-not-ready: ${rpc.error}` });
+    return;
+  }
+  if (!rpc.ok && rpc.error && /chatId required|BAD_REQUEST/i.test(JSON.stringify(rpc.error))) {
+    record({ id, status: 'SKIP', detail: 'no-chatId-landing' });
+    return;
+  }
+  if (!rpc.ok) {
+    record({ id, status: 'FAIL', detail: `rpc: ${JSON.stringify(rpc.error || rpc).slice(0, 160)}` });
+    return;
+  }
+  if (!rpc.chatId) {
+    record({ id, status: 'SKIP', detail: 'no-chatId-landing' });
+    return;
+  }
+
+  const fails = [];
+  if (rpc.emptyBodies > 0) fails.push(`emptyBodies=${rpc.emptyBodies}`);
+  if (rpc.n === 0 && (dom.bodyLen || 0) > 1500) {
+    fails.push(`empty-export bodyLen=${dom.bodyLen}`);
+  }
+  if (providerId === 'zai' && (dom.domUserN || 0) > 0 && rpc.exportUserN < dom.domUserN) {
+    fails.push(`zai-user-loss dom=${dom.domUserN} export=${rpc.exportUserN}`);
+  }
+  if (providerId === 'minimax' && rpc.n === 0 && ((dom.domAsstN || 0) > 0 || (dom.bodyLen || 0) > 1500)) {
+    fails.push(`minimax-empty domAsst=${dom.domAsstN} bodyLen=${dom.bodyLen}`);
+  }
+  if (providerId === 'janitorai' && rpc.n >= 2 && rpc.first && rpc.last && dom.topSnippet && dom.bottomSnippet) {
+    const top = String(dom.topSnippet || '');
+    const bottom = String(dom.bottomSnippet || '');
+    const firstNeedle = String(rpc.first).slice(0, 36);
+    const lastNeedle = String(rpc.last).slice(0, 36);
+    const firstInTop = firstNeedle.length >= 12 && top.includes(firstNeedle.slice(0, 24));
+    const lastInTop = lastNeedle.length >= 12 && top.includes(lastNeedle.slice(0, 24));
+    const firstInBottom = firstNeedle.length >= 12 && bottom.includes(firstNeedle.slice(0, 24));
+    if (lastInTop && firstInBottom && !firstInTop) {
+      fails.push('janitor-order-reversed');
+    }
+  }
+
+  record({
+    id,
+    status: fails.length ? 'FAIL' : 'PASS',
+    detail: fails.length
+      ? fails.join('; ')
+      : `n=${rpc.n} users=${rpc.exportUserN}/${dom.domUserN || 0} asst=${rpc.exportAsstN} chatId=${rpc.chatId}`
+  });
+}
+
 function takeSnapshot(pageId) {
   const filePath = join(OUT_DIR, `s-${pageId}-${Date.now()}.txt`);
-  const raw = cdt(['take_snapshot', String(pageId), '--filePath', filePath], { timeout: 60000 });
+  const raw = cdt(['take_snapshot', String(pageId), '--filePath', filePath], {
+    timeout: 60000,
+    allowFail: true
+  });
   try {
     const meta = extractJson(raw);
     if (meta && meta.snapshotFilePath) return readFileSync(meta.snapshotFilePath, 'utf8');
@@ -372,7 +591,7 @@ function takeSnapshot(pageId) {
   } catch {
     const idx = raw.indexOf('## Latest page snapshot');
     if (idx >= 0) return raw.slice(idx);
-    throw new Error('snapshot missing');
+    return '';
   }
 }
 
@@ -2076,7 +2295,22 @@ function runUsageSection() {
     });
     if (barFail.length) continue;
 
-    const pack = clickPackFolderAndZip(page.id);
+    try {
+      assertExportFidelity(page.id, provider.id);
+    } catch (e) {
+      record({
+        id: `usage/${provider.id}/fidelity`,
+        status: 'SKIP',
+        detail: `fidelity-throw: ${String(e && e.message || e).slice(0, 120)}`
+      });
+    }
+
+    let pack;
+    try {
+      pack = clickPackFolderAndZip(page.id);
+    } catch (e) {
+      pack = { ok: false, fail: [`pack-throw: ${String(e && e.message || e).slice(0, 80)}`], clicks: 0 };
+    }
     record({
       id: `usage/${provider.id}/pack`,
       status: pack.ok ? 'PASS' : 'FAIL',

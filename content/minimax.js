@@ -38,29 +38,31 @@
     if (signedOut()) rpcErr('UNAUTHORIZED', 'MiniMax Agent requires sign-in');
   }
 
-  function idFromHref(href) {
-    if (!href) return '';
+  function chatIdFromUrl(href) {
     try {
-      var u = new URL(href, location.origin);
+      var u = new URL(href || location.href, location.origin);
       var q = u.searchParams.get('chatID') || u.searchParams.get('chatId');
       if (q) return String(q);
-      var m = (u.pathname || '').match(/\/(?:task|session|chat|c)\/([^/?#]+)/i);
+      if (/^\/mavis\b/i.test(u.pathname || '')) {
+        var mid = u.searchParams.get('id') || u.searchParams.get('session_id');
+        if (mid) return String(mid);
+      }
+      var m = (u.pathname || '').match(/\/(?:mavis|task|session|chat|c)\/([^/?#]+)/i);
       return m ? decodeURIComponent(m[1]) : '';
     } catch (e) {
       return '';
     }
   }
 
+  function idFromHref(href) {
+    return chatIdFromUrl(href);
+  }
+
   function currentChatId() {
-    try {
-      var u = new URL(location.href);
-      var q = u.searchParams.get('chatID') || u.searchParams.get('chatId');
-      if (q) return String(q);
-    } catch (e0) {}
-    var m = (location.pathname || '').match(/\/(?:task|session|chat|c)\/([^/?#]+)/i);
-    if (m) return decodeURIComponent(m[1]);
+    var fromUrl = chatIdFromUrl(location.href);
+    if (fromUrl) return fromUrl;
     var active = document.querySelector(
-      '[data-session-id].is-active, [data-session-id][aria-current="page"], a[href*="chatID="][aria-current="page"]'
+      '[data-session-id].is-active, [data-session-id][aria-current="page"], a[href*="chatID="][aria-current="page"], a[href*="/mavis"][aria-current="page"]'
     );
     if (active) {
       var sid = active.getAttribute('data-session-id') || idFromHref(active.getAttribute('href') || '');
@@ -71,7 +73,7 @@
 
   function chatUrl(id) {
     if (!id) return location.origin + '/';
-    return location.origin + '/?chatID=' + encodeURIComponent(id);
+    return location.origin + '/mavis?id=' + encodeURIComponent(id);
   }
 
   function findComposerInput() {
@@ -225,8 +227,10 @@
   }
 
   function liveScroller() {
+    var viewport = document.querySelector('.message-container-viewport, .message-container-chat-content');
+    if (viewport) return viewport;
     var turn = document.querySelector(
-      '[data-testid="user-message"], [data-testid="assistant-message"], [data-message-role], [class*="message-item"]'
+      '[data-testid="user-message"], [data-testid="assistant-message"], [data-message-role], .message-animate-in, [class*="message-item"]'
     );
     if (turn && CE.findOverflowScroller) return CE.findOverflowScroller(turn);
     return (
@@ -235,20 +239,55 @@
     );
   }
 
+  function isComposerChrome(el) {
+    if (!el) return true;
+    if (el.closest('.mavis-message-input-card, [data-testid="message-input"], [data-message-input-toolbar-right]')) {
+      return true;
+    }
+    var cls = String(el.className || '');
+    if (/-input-card\b|-input-toolbar\b|-composer\b/i.test(cls)) return true;
+    return false;
+  }
+
   function turnNodes(root) {
     root = root || liveScroller() || document;
     var sel =
       '[data-testid="user-message"], [data-testid="assistant-message"], [data-message-role="user"], [data-message-role="assistant"], [data-role="user"], [data-role="assistant"]';
     var nodes = Array.prototype.slice.call(root.querySelectorAll(sel));
-    if (nodes.length) return nodes;
+    if (nodes.length) {
+      return nodes.filter(function (el) {
+        return !isComposerChrome(el);
+      });
+    }
+    var mavisTurns = Array.prototype.slice.call(
+      root.querySelectorAll(
+        '.message-animate-in.group, .message-content, .matrix-markdown, .mavis-chat-markdown-flow, .mavis-markdown-blocks'
+      )
+    );
+    var filtered = mavisTurns.filter(function (el) {
+      if (!visible(el)) return false;
+      if (isComposerChrome(el)) return false;
+      var text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+      return text.length > 40;
+    });
+    if (filtered.length) {
+      // Prefer outermost message-animate-in shells when nested markdown matches also fire.
+      var shells = filtered.filter(function (el) {
+        return el.classList && el.classList.contains('message-animate-in');
+      });
+      if (shells.length) return shells;
+      return filtered;
+    }
     var loose = Array.prototype.slice.call(
-      root.querySelectorAll('[class*="message-item"], [class*="chat-message"], [class*="mavis-message"]')
+      root.querySelectorAll(
+        '[class*="message-item"], [class*="chat-message"], [class*="mavis-turn"], [class*="agent-message"], [class*="task-message"]'
+      )
     );
     return loose.filter(function (el) {
       if (!visible(el)) return false;
-      if (el.closest('.mavis-message-input-card, [data-testid="message-input"]')) return false;
+      if (isComposerChrome(el)) return false;
       var text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
-      return text.length > 0;
+      return text.length > 40;
     });
   }
 
@@ -360,7 +399,7 @@
     }
 
     var links = document.querySelectorAll(
-      'a[href*="chatID="], a[href*="chatId="], a[href*="/session/"], a[href*="/task/"], [data-session-id]'
+      'a[href*="chatID="], a[href*="chatId="], a[href*="/mavis"], a[href*="/session/"], a[href*="/task/"], [data-session-id]'
     );
     var i;
     for (i = 0; i < links.length; i++) {
@@ -444,13 +483,29 @@
   function unwrapMessages(data) {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    var keys = ['messages', 'message_list', 'history', 'turns', 'items', 'data', 'records'];
+    var keys = [
+      'messages',
+      'message_list',
+      'msg_list',
+      'chat_messages',
+      'turn_list',
+      'history',
+      'turns',
+      'items',
+      'data',
+      'records'
+    ];
     var i;
     for (i = 0; i < keys.length; i++) {
       var v = data[keys[i]];
       if (Array.isArray(v)) return v;
       if (v && Array.isArray(v.messages)) return v.messages;
       if (v && Array.isArray(v.list)) return v.list;
+      if (v && Array.isArray(v.turn_list)) return v.turn_list;
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        var nested = unwrapMessages(v);
+        if (nested.length) return nested;
+      }
     }
     if (data.session && Array.isArray(data.session.messages)) return data.session.messages;
     return [];
@@ -462,15 +517,40 @@
     for (i = 0; i < (messages || []).length; i++) {
       var m = messages[i];
       if (!m) continue;
-      var role = String(m.role || m.sender || m.type || '').toLowerCase();
-      if (role === 'human' || role === 'query') role = 'user';
-      if (role === 'bot' || role === 'agent' || role === 'ai' || role === 'model') role = 'assistant';
-      if (role !== 'user' && role !== 'assistant') continue;
+      var role = String(m.role || m.sender || m.from || m.type || '').toLowerCase();
+      if (role === 'human' || role === 'query' || role === 'user_message') role = 'user';
+      if (
+        role === 'bot' ||
+        role === 'agent' ||
+        role === 'ai' ||
+        role === 'model' ||
+        role === 'assistant_message' ||
+        role === 'gpt'
+      ) {
+        role = 'assistant';
+      }
+      if (role !== 'user' && role !== 'assistant') {
+        if (m.thinking_content || m.tool_calls || m.finish_reason) role = 'assistant';
+        else continue;
+      }
       var text = '';
       if (typeof m.content === 'string') text = m.content;
       else if (typeof m.text === 'string') text = m.text;
       else if (typeof m.message === 'string') text = m.message;
-      else if (Array.isArray(m.content)) {
+      else if (typeof m.body === 'string') text = m.body;
+      else if (typeof m.answer === 'string') text = m.answer;
+      else if (typeof m.contents === 'string') text = m.contents;
+      else if (typeof m.thinking_content === 'string') text = m.thinking_content;
+      else if (Array.isArray(m.contents)) {
+        text = m.contents
+          .map(function (p) {
+            if (!p) return '';
+            if (typeof p === 'string') return p;
+            return p.text || p.content || p.value || '';
+          })
+          .filter(Boolean)
+          .join('\n\n');
+      } else if (Array.isArray(m.content)) {
         text = m.content
           .map(function (p) {
             if (!p) return '';
@@ -515,7 +595,10 @@
 
   async function loadChatFromApi(chatId) {
     var paths = [
+      API_BASE + '/session/' + encodeURIComponent(chatId) + '/message?limit=80',
+      API_BASE + '/session/' + encodeURIComponent(chatId),
       API_BASE + '/session/history?session_id=' + encodeURIComponent(chatId),
+      API_BASE + '/session/history?id=' + encodeURIComponent(chatId),
       API_BASE + '/session/detail?session_id=' + encodeURIComponent(chatId),
       API_BASE + '/session/info?session_id=' + encodeURIComponent(chatId)
     ];
@@ -529,6 +612,7 @@
         continue;
       }
       var messages = mapApiMessages(unwrapMessages(tried.data), findModel());
+      if (!messages.length) continue;
       var title =
         (tried.data && (tried.data.title || (tried.data.session && tried.data.session.title))) || findTitle();
       return {
@@ -548,7 +632,7 @@
 
   async function navigateToChat(chatId) {
     if (currentChatId() === chatId) return;
-    var path = '/?chatID=' + encodeURIComponent(chatId);
+    var path = '/mavis?id=' + encodeURIComponent(chatId);
     if (Ops.softNavigate) Ops.softNavigate(path);
     else location.assign(path);
     await Ops.waitFor(
