@@ -210,9 +210,20 @@ function ExportBarInner({ options }) {
   );
   const [localeCode, setLocaleCode] = useState(() => resolveLocale(getPlatformSettings().ui.locale));
   const [shiftMode, setShiftMode] = useState(() => shiftModeOf(getPlatformSettings()));
+  const [folderState, setFolderState] = useState({ state: 'none', name: null });
+  const [pendingJobId, setPendingJobId] = useState(null);
+  const folderBtnRef = useRef(null);
   const lastIntentRef = useRef(0);
 
   const t = useMemo(() => createTranslator(localeCode), [localeCode]);
+
+  function refreshFolderStatus() {
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) return;
+    chrome.runtime.sendMessage({ type: 'ce-bridge', action: 'folderStatus' }, function (resp) {
+      if (chrome.runtime.lastError || !resp) return;
+      setFolderState({ state: resp.state || 'none', name: resp.name || null });
+    });
+  }
 
   useEffect(() => {
     return onPlatformSettings((settings) => {
@@ -225,6 +236,35 @@ function ExportBarInner({ options }) {
     if (typeof CE.watchHostScheme !== 'function') return undefined;
     return CE.watchHostScheme(platform, setScheme);
   }, [platform]);
+
+  useEffect(() => {
+    refreshFolderStatus();
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.onMessage) return undefined;
+    function onMsg(msg) {
+      if (!msg || typeof msg !== 'object') return;
+      if (msg.type === 'ce-folder-changed') {
+        setFolderState({ state: msg.state || 'none', name: msg.name || null });
+        return;
+      }
+      if (msg.type === 'ce-regrant-folder') {
+        setPendingJobId(msg.jobId || null);
+        setFolderState((prev) => ({
+          state: msg.mode === 'pick' ? 'none' : 'prompt',
+          name: prev.name
+        }));
+        CE.showToast(CE.toastText('toast.regrant'));
+        const btn = folderBtnRef.current;
+        if (btn) {
+          btn.classList.add('chat-export-folder--pulse');
+          setTimeout(function () {
+            btn.classList.remove('chat-export-folder--pulse');
+          }, 2400);
+        }
+      }
+    }
+    chrome.runtime.onMessage.addListener(onMsg);
+    return () => chrome.runtime.onMessage.removeListener(onMsg);
+  }, []);
 
   const nativeClass = options.nativeClass || CE.nativeButtonClass(options.nativeFrom);
   const nativeIconClass =
@@ -294,6 +334,64 @@ function ExportBarInner({ options }) {
     setPackMode(v);
   }
 
+  function pickFolder(ev) {
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    if (busy) return;
+    if (typeof window.showDirectoryPicker !== 'function') {
+      chrome.runtime.sendMessage({ type: 'ce-bridge', action: 'folderPick', mode: 'pick' });
+      return;
+    }
+    setBusy(true);
+    window
+      .showDirectoryPicker({ mode: 'readwrite', id: 'chat-export', startIn: 'downloads' })
+      .then(function (handle) {
+        return new Promise(function (resolve) {
+          chrome.runtime.sendMessage(
+            {
+              type: 'ce-bridge',
+              action: 'folderStore',
+              handle: handle,
+              jobId: pendingJobId || null,
+              originTabId: null
+            },
+            function (res) {
+              resolve(res || { ok: false });
+            }
+          );
+        });
+      })
+      .then(function (res) {
+        if (res && res.ok) {
+          setPendingJobId(null);
+          refreshFolderStatus();
+          if (res.name) {
+            CE.showToast(
+              CE.toastText('toast.saved', {
+                folder: res.name,
+                name: (res.written && res.written[0]) || res.name
+              })
+            );
+          }
+          return;
+        }
+        if (res && res.reason === 'permission') {
+          CE.showToast(CE.toastText('toast.regrant'));
+          return;
+        }
+        if (!(res && res.reason === 'AbortError')) CE.showToast(CE.toastText('toast.failed'));
+      })
+      .catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        CE.showToast(CE.toastText('toast.failed'));
+      })
+      .finally(function () {
+        setBusy(false);
+      });
+  }
+
   function runDownload(ev) {
     ev.preventDefault();
     ev.stopPropagation();
@@ -348,7 +446,18 @@ function ExportBarInner({ options }) {
         });
       })
       .then((res) => {
-        if (res && res.pending) return;
+        if (res && res.pending) {
+          if (res.reason === 'needs_regrant' || res.reason === 'permission' || res.reason === 'no-folder') {
+            setPendingJobId(res.jobId || null);
+            setFolderState((prev) => ({
+              state: res.reason === 'no-folder' ? 'none' : 'prompt',
+              name: prev.name
+            }));
+            CE.showToast(CE.toastText('toast.regrant'));
+          }
+          return;
+        }
+        if (res && res.ok && res.via === 'folder') refreshFolderStatus();
         if (res && !res.ok) {
           console.warn('[chat-export] save failed', res);
           CE.showToast(CE.toastText('toast.failed'));
@@ -371,6 +480,17 @@ function ExportBarInner({ options }) {
   const iconHtml = resolveDownloadSvg();
   const formatBtnClass = (nativeClass || '') + (menuOpen ? ' is-open' : '');
   const dlClass = (nativeIconClass || '') + ' chat-export-dl' + (superLook ? ' is-super' : '');
+  const folderNeeds =
+    folderState.state === 'none' || folderState.state === 'prompt' || !!pendingJobId;
+  const folderLabel = folderNeeds
+    ? folderState.state === 'none'
+      ? t('bar.folder.set')
+      : t('bar.folder.regrant')
+    : folderState.name
+      ? folderState.name
+      : t('bar.folder');
+  const folderClass =
+    'chat-export-folder' + (folderNeeds ? ' chat-export-folder--warn' : '');
 
   return (
     <div
@@ -412,6 +532,19 @@ function ExportBarInner({ options }) {
             )}
           </>
         )}
+      </button>
+      <button
+        ref={folderBtnRef}
+        type="button"
+        class={folderClass}
+        aria-label={folderLabel}
+        title={folderLabel}
+        disabled={busy}
+        onClick={pickFolder}
+      >
+        <span class="chat-export-folder-text" aria-hidden="true">
+          {folderNeeds ? '!' : 'F'}
+        </span>
       </button>
       <button
         ref={dlBtnRef}

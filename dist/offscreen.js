@@ -40,6 +40,11 @@
       return h || null;
     });
   }
+  function saveHandle(handle) {
+    return tx("readwrite", function(s) {
+      return s.put(handle, KEY);
+    });
+  }
   function clearHandle() {
     return tx("readwrite", function(s) {
       return s.delete(KEY);
@@ -115,7 +120,12 @@
   async function write(msg) {
     const root = await loadHandle();
     const state = await folderState(root);
-    if (state !== "granted") return { ok: false, reason: state === "none" ? "no-folder" : state === "unsupported" ? "unsupported" : "permission" };
+    if (state !== "granted") {
+      return {
+        ok: false,
+        reason: state === "none" ? "no-folder" : state === "unsupported" ? "unsupported" : "permission"
+      };
+    }
     const files = Array.isArray(msg.files) ? msg.files : [];
     let dir = root;
     let written = null;
@@ -131,6 +141,38 @@
     const h = await loadHandle();
     return { ok: true, state: await folderState(h), name: h ? h.name : null };
   }
+  async function store(msg) {
+    const handle = msg && msg.handle;
+    if (!handle || typeof handle.getFileHandle !== "function") {
+      return { ok: false, reason: "error", error: "no handle" };
+    }
+    let perm = "prompt";
+    try {
+      perm = await handle.requestPermission({ mode: "readwrite" });
+    } catch (e) {
+      try {
+        perm = await handle.queryPermission({ mode: "readwrite" });
+      } catch (e2) {
+        perm = "prompt";
+      }
+    }
+    if (perm !== "granted") return { ok: false, reason: "permission", state: perm, name: handle.name || null };
+    await saveHandle(handle);
+    return { ok: true, state: "granted", name: handle.name || null };
+  }
+  async function tryGrant() {
+    const h = await loadHandle();
+    if (!h) return { ok: false, reason: "no-folder", state: "none" };
+    let perm = await h.queryPermission({ mode: "readwrite" });
+    if (perm === "granted") return { ok: true, state: "granted", name: h.name || null };
+    try {
+      perm = await h.requestPermission({ mode: "readwrite" });
+    } catch (e) {
+      return { ok: false, reason: "permission", state: "prompt", name: h.name || null };
+    }
+    if (perm === "granted") return { ok: true, state: "granted", name: h.name || null };
+    return { ok: false, reason: "permission", state: perm || "prompt", name: h.name || null };
+  }
   function errorReason(e) {
     const n = e && e.name;
     if (n === "NotAllowedError" || n === "SecurityError") return "permission";
@@ -142,6 +184,8 @@
     let job;
     if (msg.op === "write") job = write(msg);
     else if (msg.op === "status") job = status();
+    else if (msg.op === "store") job = store(msg);
+    else if (msg.op === "tryGrant") job = tryGrant();
     else if (msg.op === "forget") job = clearHandle().then(() => ({ ok: true }));
     else return;
     job.then(sendResponse, function(e) {

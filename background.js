@@ -1375,6 +1375,8 @@
   var JOB_PREFIX = "ce.job.";
   var FOLDER_WIN_KEY = "ce.folderWindow";
   var OFFSCREEN_URL = "offscreen.html";
+  var WIN_W = 420;
+  var WIN_H = 380;
   var creating = null;
   async function ensureOffscreen() {
     if (await chrome.offscreen.hasDocument()) return;
@@ -1419,17 +1421,20 @@
   async function readFolderWindow() {
     const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
     const rec = got[FOLDER_WIN_KEY];
-    if (!rec || rec.tabId == null) return null;
-    const page = chrome.runtime.getURL("folder.html");
-    const tab = await chrome.tabs.get(rec.tabId).catch(function() {
+    if (!rec || rec.windowId == null) return null;
+    const win = await chrome.windows.get(rec.windowId, { populate: true }).catch(function() {
       return null;
     });
-    if (!tab || String(tab.url || tab.pendingUrl || "").indexOf(page) !== 0) {
+    const page = chrome.runtime.getURL("folder.html");
+    const tab = win && (win.tabs || []).find(function(x) {
+      return x.id === rec.tabId && String(x.url || x.pendingUrl || "").indexOf(page) === 0;
+    });
+    if (!tab) {
       await dropJobs(rec.jobs);
       await chrome.storage.session.remove(FOLDER_WIN_KEY);
       return null;
     }
-    return { rec, tab };
+    return { rec, win };
   }
   function writeFolderRecord(rec) {
     return chrome.storage.session.set({ [FOLDER_WIN_KEY]: rec });
@@ -1443,20 +1448,27 @@
   function notifyQueue(rec) {
     broadcast({ type: "ce-folder-queue", tabId: rec.tabId, mode: rec.mode, count: rec.jobs.length });
   }
-  async function createFolderPage(mode, sender) {
+  async function createFolderPopup(mode, sender) {
     const url = chrome.runtime.getURL("folder.html") + "?mode=" + encodeURIComponent(mode);
-    const anchorWinId = sender && sender.tab ? sender.tab.windowId : null;
-    let winId = anchorWinId;
-    if (winId == null) {
-      const focused = await chrome.windows.getLastFocused({ windowTypes: ["normal"] }).catch(function() {
-        return null;
-      });
-      winId = focused && focused.id != null ? focused.id : void 0;
+    const props = { url, type: "popup", state: "normal", width: WIN_W, height: WIN_H, focused: true };
+    const anchorId = sender && sender.tab ? sender.tab.windowId : null;
+    const anchor = await (anchorId != null ? chrome.windows.get(anchorId) : Promise.reject()).catch(function() {
+      return chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    }).catch(function() {
+      return null;
+    });
+    if (anchor && anchor.width != null && anchor.left != null) {
+      props.left = Math.max(0, Math.round(anchor.left + (anchor.width - WIN_W) / 2));
+      props.top = Math.max(0, Math.round(anchor.top + (anchor.height - WIN_H) / 2));
     }
-    const props = { url, active: true };
-    if (winId != null) props.windowId = winId;
-    const tab = await chrome.tabs.create(props);
-    return { tab, windowId: tab.windowId, tabId: tab.id };
+    const win = await chrome.windows.create(props);
+    if (win.state !== "normal" || win.width !== WIN_W || win.height !== WIN_H) {
+      const bounds = { state: "normal", width: WIN_W, height: WIN_H, focused: true };
+      if (props.left != null) Object.assign(bounds, { left: props.left, top: props.top });
+      await chrome.windows.update(win.id, bounds).catch(function() {
+      });
+    }
+    return win;
   }
   function openFolderPage(mode, jobId, sender) {
     return serial(async function() {
@@ -1467,29 +1479,26 @@
         rec.mode = strongerMode(rec.mode, mode);
         await writeFolderRecord(rec);
         notifyQueue(rec);
-        await chrome.tabs.update(rec.tabId, { active: true }).catch(function() {
+        await chrome.windows.update(rec.windowId, { focused: true }).catch(function() {
         });
-        if (rec.windowId != null) {
-          await chrome.windows.update(rec.windowId, { focused: true }).catch(function() {
-          });
-        }
-        return open.tab;
+        return open.win;
       }
-      const created = await createFolderPage(mode, sender);
+      const win = await createFolderPopup(mode, sender);
+      const tab = win.tabs && win.tabs[0];
       await writeFolderRecord({
-        windowId: created.windowId,
-        tabId: created.tabId,
+        windowId: win.id,
+        tabId: tab ? tab.id : null,
         mode,
         jobs: jobId ? [jobId] : []
       });
-      return created.tab;
+      return win;
     });
   }
-  function dropTabJobs(tabId) {
+  function dropWindowJobs(windowId) {
     return serial(async function() {
       const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
       const rec = got[FOLDER_WIN_KEY];
-      if (!rec || rec.tabId !== tabId) return;
+      if (!rec || rec.windowId !== windowId) return;
       await dropJobs(rec.jobs);
       await chrome.storage.session.remove(FOLDER_WIN_KEY);
     });
@@ -1552,10 +1561,56 @@
     await chrome.storage.session.remove(key);
     return got[key] || null;
   }
-  async function deferJob(job, mode, reason, sender) {
+  async function attachJobToSender(jobId, mode, sender) {
+    const tabId = sender && sender.tab ? sender.tab.id : null;
+    if (tabId == null) return false;
+    return serial(async function() {
+      const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
+      let rec = got[FOLDER_WIN_KEY];
+      if (!rec || rec.tabId !== tabId) {
+        rec = {
+          windowId: sender.tab.windowId != null ? sender.tab.windowId : null,
+          tabId,
+          mode,
+          jobs: []
+        };
+      }
+      if (rec.jobs.indexOf(jobId) < 0) rec.jobs.push(jobId);
+      rec.mode = strongerMode(rec.mode, mode);
+      await writeFolderRecord(rec);
+      notifyQueue(rec);
+      return true;
+    });
+  }
+  async function notifyRegrant(sender, jobId, mode) {
+    const tabId = sender && sender.tab ? sender.tab.id : null;
+    if (tabId == null) return false;
+    const opts = sender.frameId != null ? { frameId: sender.frameId } : void 0;
+    try {
+      await chrome.tabs.sendMessage(
+        tabId,
+        { type: "ce-regrant-folder", jobId, mode },
+        opts
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  async function deferToRegrant(job, mode, sender) {
     const jobId = await storeJob(job);
+    await attachJobToSender(jobId, mode, sender);
+    const pinged = await notifyRegrant(sender, jobId, mode);
+    if (pinged) {
+      return { ok: false, reason: "needs_regrant", jobId, pending: true };
+    }
     await openFolderPage(mode, jobId, sender);
-    return { ok: false, reason, jobId, pending: true };
+    return {
+      ok: false,
+      reason: mode === "pick" ? "no-folder" : "permission",
+      jobId,
+      pending: true
+    };
   }
   async function handleSave(msg, sender) {
     const files = normalizeFiles(msg.files);
@@ -1568,15 +1623,19 @@
     if (sender && sender.tab && sender.tab.id != null && sender.tab.id >= 0) {
       job.origin = { tabId: sender.tab.id, frameId: sender.frameId != null ? sender.frameId : null };
     }
-    const st = await offscreen("status");
+    if (msg.rebind) return deferToRegrant(job, "rebind", sender);
+    let st = await offscreen("status");
     if (st.state === "unsupported") return { ok: false, reason: "unsupported" };
-    if (msg.rebind) return deferJob(job, "rebind", "rebind", sender);
-    if (st.state === "none") return deferJob(job, "pick", "no-folder", sender);
-    if (st.state !== "granted") return deferJob(job, "grant", "permission", sender);
+    if (st.state === "none") return deferToRegrant(job, "pick", sender);
+    if (st.state !== "granted") {
+      const granted = await offscreen("tryGrant");
+      if (granted && granted.ok) st = granted;
+    }
+    if (st.state !== "granted") return deferToRegrant(job, "grant", sender);
     const res = await offscreen("write", job);
     if (res.ok) return { ok: true, via: "folder", name: res.name, folder: res.folder };
-    if (res.reason === "no-folder") return deferJob(job, "pick", "no-folder", sender);
-    if (res.reason === "permission") return deferJob(job, "grant", "permission", sender);
+    if (res.reason === "no-folder") return deferToRegrant(job, "pick", sender);
+    if (res.reason === "permission") return deferToRegrant(job, "grant", sender);
     return res;
   }
   function notifyOrigin(origin, res) {
@@ -1589,6 +1648,12 @@
     const tabId = sender && sender.tab ? sender.tab.id : null;
     const ids = tabId != null ? await takeQueuedJobs(tabId) : [];
     if (msg.jobId && ids.indexOf(msg.jobId) < 0) ids.push(msg.jobId);
+    if (msg.originTabId != null && msg.originTabId !== tabId) {
+      const extra = await takeQueuedJobs(msg.originTabId);
+      for (let i = 0; i < extra.length; i++) {
+        if (ids.indexOf(extra[i]) < 0) ids.push(extra[i]);
+      }
+    }
     const written = [];
     let failure = null;
     for (let i = 0; i < ids.length; i++) {
@@ -1610,6 +1675,13 @@
     if (failure) Object.assign(out, { reason: failure.reason, error: failure.error });
     return out;
   }
+  async function handleStoreHandle(msg, sender) {
+    const stored = await offscreen("store", { handle: msg.handle });
+    if (!stored || !stored.ok) return stored || { ok: false, reason: "permission" };
+    await broadcastStatus();
+    const originTabId = msg.originTabId != null ? msg.originTabId : sender && sender.tab ? sender.tab.id : null;
+    return handlePicked({ jobId: msg.jobId || null, originTabId }, sender);
+  }
   async function handleBridge(msg, sender) {
     switch (msg.action) {
       case "folderStatus": {
@@ -1627,6 +1699,8 @@
         return { ok: true };
       case "folderPicked":
         return handlePicked(msg, sender);
+      case "folderStore":
+        return handleStoreHandle(msg, sender);
       case "folderQueue":
         return queueInfo(sender && sender.tab ? sender.tab.id : null);
       case "folderCancel":
@@ -1635,10 +1709,18 @@
         return null;
     }
   }
-  var BRIDGE_ACTIONS = ["folderStatus", "folderPick", "folderForget", "folderPicked", "folderQueue", "folderCancel"];
+  var BRIDGE_ACTIONS = [
+    "folderStatus",
+    "folderPick",
+    "folderForget",
+    "folderPicked",
+    "folderStore",
+    "folderQueue",
+    "folderCancel"
+  ];
   function registerSaveHandlers() {
-    chrome.tabs.onRemoved.addListener(function(tabId) {
-      dropTabJobs(tabId).catch(function() {
+    chrome.windows.onRemoved.addListener(function(windowId) {
+      dropWindowJobs(windowId).catch(function() {
       });
     });
     chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
