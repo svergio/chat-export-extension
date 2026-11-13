@@ -16,7 +16,7 @@
 
 Три публичных репозитория (extension, server, dashboard). Ручной экспорт — только расширение. MCP и автоматизация — `chat-export-server` и **мост расширения** в вкладках Chrome, **без** Chrome DevTools MCP. Сервер можно поднять **нативно**, в **Docker / Colima** или **Kubernetes**. MCP-клиент выбираете вы — типичные варианты: **Cursor** (расширение Chrome + MCP; листинг в маркетплейсе Cursor на согласовании), **Claude Desktop** и MCP-интеграции Claude (подача на модерацию в процессе), локальные агенты на **LangChain**. В состав продукта клиенты не входят.
 
-**Zip для установки:** [chat-export-extension-2.1.4.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.1.4/chat-export-extension-2.1.4.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.1.4](https://github.com/svergio/chat-export-extension/releases/tag/v2.1.4).
+**Zip для установки:** [chat-export-extension-2.1.5.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.1.5/chat-export-extension-2.1.5.zip) — распакуйте, затем Chrome → режим разработчика → **Загрузить распакованное**. Релиз: [v2.1.5](https://github.com/svergio/chat-export-extension/releases/tag/v2.1.5).
 
 ## Проблема
 

@@ -8,6 +8,7 @@ import {
   hasTosConsent,
   hasFaqConsent,
   isPlatformEnabledIn,
+  isWirePlatform,
   loadStored,
   normalizeSettings,
   platformsEnabledList,
@@ -266,7 +267,7 @@ async function collectTabsSnapshot() {
   for (let i = 0; i < tabs.length; i++) {
     const tab = tabs[i];
     const platform = platformFromUrl(tab.url || '');
-    if (!platform) continue;
+    if (!platform || !isWirePlatform(platform)) continue;
     out.push({
       tabId: tab.id,
       platform: platform,

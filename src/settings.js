@@ -208,10 +208,12 @@ export function platformsEnabledList(settings) {
   return out;
 }
 
+export function isWirePlatform(platformId) {
+  return EXTENSION_ONLY_PLATFORMS.indexOf(platformId) === -1;
+}
+
 export function platformsEnabledForWire(settings) {
-  return platformsEnabledList(settings).filter(function (id) {
-    return EXTENSION_ONLY_PLATFORMS.indexOf(id) === -1;
-  });
+  return platformsEnabledList(settings).filter(isWirePlatform);
 }
 
 export function isPlatformEnabledIn(settings, platformId) {

@@ -166,10 +166,11 @@
     }
     return out;
   }
+  function isWirePlatform(platformId) {
+    return EXTENSION_ONLY_PLATFORMS.indexOf(platformId) === -1;
+  }
   function platformsEnabledForWire(settings) {
-    return platformsEnabledList(settings).filter(function(id) {
-      return EXTENSION_ONLY_PLATFORMS.indexOf(id) === -1;
-    });
+    return platformsEnabledList(settings).filter(isWirePlatform);
   }
   function isPlatformEnabledIn(settings, platformId) {
     const s = normalizeSettings(settings);
@@ -535,7 +536,7 @@
     for (let i = 0; i < tabs.length; i++) {
       const tab = tabs[i];
       const platform = platformFromUrl(tab.url || "");
-      if (!platform) continue;
+      if (!platform || !isWirePlatform(platform)) continue;
       out.push({
         tabId: tab.id,
         platform,
