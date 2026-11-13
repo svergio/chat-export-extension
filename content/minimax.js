@@ -403,6 +403,7 @@
   async function tryApiJson(path, opts) {
     var res = await apiFetch(path, opts);
     if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', path + ' ' + res.status);
+    if (res.status === 429) rpcErr('RATE_LIMIT', path + ' rate limited', { retryable: true, kind: 'http_429' });
     if (res.status === 404) return { ok: false, status: 404, data: null };
     var text = '';
     try {
@@ -892,9 +893,34 @@
       },
       hostState: function () {
         var input = findComposerInput();
+        var generating = isGenerating();
+        var captchaWidget = null;
+        var usage = null;
+        if (!generating && Ops.findCaptchaWidgets) {
+          var widgets = Ops.findCaptchaWidgets(document);
+          if (widgets && widgets[0]) captchaWidget = widgets[0].captchaWidget || widgets[0].challenge || null;
+        }
+        if (Ops.parseUsageFromText) {
+          var nodes = document.querySelectorAll('[aria-label*="credit" i], [class*="credit" i], [role="menuitem"]');
+          for (var i = 0; i < nodes.length; i++) {
+            var t =
+              ((nodes[i].getAttribute && nodes[i].getAttribute('aria-label')) || '') +
+              ' ' +
+              String(nodes[i].textContent || '');
+            t = t.replace(/\s+/g, ' ').trim();
+            if (!/credit|usage|remaining|\d+\s*\/\s*\d+/i.test(t)) continue;
+            usage = Ops.parseUsageFromText(t);
+            if (usage) {
+              usage.source = 'user_menu';
+              break;
+            }
+          }
+        }
         return {
-          generating: isGenerating(),
-          composerReady: visible(input) && (Ops.composerReady ? Ops.composerReady(input) : true)
+          generating: generating,
+          composerReady: visible(input) && (Ops.composerReady ? Ops.composerReady(input) : true),
+          captchaWidget: captchaWidget,
+          usage: usage
         };
       },
       send: async function (args) {

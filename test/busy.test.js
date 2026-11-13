@@ -49,6 +49,15 @@ test('classifyBusyText and kind map captcha banners', () => {
   assert.equal(classifyBusyText('Я не робот'), 'CAPTCHA');
   assert.equal(classifyBusyText('Cloudflare is checking your browser'), 'CAPTCHA');
   assert.equal(classifyGateKind('CAPTCHA', 'Verify you are human'), 'captcha');
+  assert.equal(
+    classifyBusyText('Thinking… let me check the security of this approach', { generating: true }),
+    null
+  );
+  assert.equal(
+    classifyBusyText('security check needed for the deploy', { fromAssistantBody: true }),
+    null
+  );
+  assert.equal(classifyBusyText('security check needed for the deploy'), null);
 });
 
 test('detectBusyBanner scans alerts/toasts and skips own UI and hidden nodes', () => {
@@ -63,10 +72,16 @@ test('detectBusyBanner scans alerts/toasts and skips own UI and hidden nodes', (
   assert.equal(detectBusyBanner(page('<main><p>hello</p></main>')), null);
 });
 
-test('detectBusyBanner prefers RATE_LIMIT and checks extra nodes', () => {
-  const doc = page('<div role="status">Something went wrong</div><article id="t">Message limit reached</article>');
-  assert.equal(detectBusyBanner(doc).code, 'PLATFORM_BUSY');
-  assert.equal(detectBusyBanner(doc, doc.getElementById('t')).code, 'RATE_LIMIT');
+test('detectBusyBanner prefers RATE_LIMIT; assistant extras never gate', () => {
+  const doc = page(
+    '<div role="status">Something went wrong</div><div role="alert">Message limit reached</div>'
+  );
+  assert.equal(detectBusyBanner(doc).code, 'RATE_LIMIT');
+  const withBody = page(
+    '<div role="status">Something went wrong</div><article id="t">Message limit reached</article>'
+  );
+  assert.equal(detectBusyBanner(withBody).code, 'PLATFORM_BUSY');
+  assert.equal(detectBusyBanner(withBody, withBody.getElementById('t')).code, 'PLATFORM_BUSY');
 });
 
 test('detectBusyBanner prefers auth wall and scans main upsell buttons', () => {
@@ -117,29 +132,16 @@ test('composerReady and buildHostState', () => {
   assert.equal(composerReady(doc.getElementById('a')), true);
   assert.equal(composerReady(doc.getElementById('b')), false);
   assert.equal(composerReady(null), false);
-  assert.deepEqual(buildHostState('grok', { generating: true, composerReady: true }), {
-    platform: 'grok',
-    generating: true,
-    busy: true,
-    banner: 'Rate limit exceeded',
-    composerReady: true,
-    code: 'RATE_LIMIT',
-    kind: 'quota',
-    retryable: true,
-    state: 'rate_limit'
-  });
+  const gen = buildHostState('grok', { generating: true, composerReady: true });
+  assert.equal(gen.state, 'generating');
+  assert.equal(gen.code, null);
+  assert.equal(gen.busy, false);
+  assert.equal(gen.generating, true);
   page('<main><textarea></textarea></main>');
-  assert.deepEqual(buildHostState('chatgpt', { generating: false, composerReady: true }), {
-    platform: 'chatgpt',
-    generating: false,
-    busy: false,
-    banner: null,
-    composerReady: true,
-    code: null,
-    kind: null,
-    retryable: true,
-    state: 'ok'
-  });
+  const ok = buildHostState('chatgpt', { generating: false, composerReady: true });
+  assert.equal(ok.state, 'ok');
+  assert.equal(ok.busy, false);
+  assert.equal(ok.code, null);
   page('<main><button>Перейти на Pro</button></main>');
   const paywall = buildHostState('perplexity', { generating: false, composerReady: true });
   assert.equal(paywall.state, 'rate_limit');
@@ -153,6 +155,15 @@ test('composerReady and buildHostState', () => {
   assert.equal(captcha.kind, 'captcha');
   assert.equal(captcha.retryable, false);
   assert.equal(captcha.busy, true);
+  assert.ok(captcha.captchaWidget);
+
+  page(
+    '<main><div role="alert">Thinking… security check of the approach</div></main>'
+  );
+  const thinking = buildHostState('zai', { generating: true, composerReady: true });
+  assert.equal(thinking.state, 'generating');
+  assert.equal(thinking.code, null);
+  assert.equal(thinking.captchaWidget, null);
 });
 
 test('guardBusy ignores stale banners and maps new ones to retryable codes', async () => {

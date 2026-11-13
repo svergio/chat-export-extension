@@ -57,22 +57,17 @@ function strongerMode(a, b) {
 async function readFolderWindow() {
   const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
   const rec = got[FOLDER_WIN_KEY];
-  if (!rec || rec.windowId == null) return null;
-  const win = await chrome.windows.get(rec.windowId, { populate: true }).catch(function () {
+  if (!rec || rec.tabId == null) return null;
+  const page = chrome.runtime.getURL('folder.html');
+  const tab = await chrome.tabs.get(rec.tabId).catch(function () {
     return null;
   });
-  const page = chrome.runtime.getURL('folder.html');
-  const tab =
-    win &&
-    (win.tabs || []).find(function (x) {
-      return x.id === rec.tabId && String(x.url || x.pendingUrl || '').indexOf(page) === 0;
-    });
-  if (!tab) {
+  if (!tab || String(tab.url || tab.pendingUrl || '').indexOf(page) !== 0) {
     await dropJobs(rec.jobs);
     await chrome.storage.session.remove(FOLDER_WIN_KEY);
     return null;
   }
-  return { rec: rec, win: win };
+  return { rec: rec, tab: tab };
 }
 
 function writeFolderRecord(rec) {
@@ -90,31 +85,20 @@ function notifyQueue(rec) {
   broadcast({ type: 'ce-folder-queue', tabId: rec.tabId, mode: rec.mode, count: rec.jobs.length });
 }
 
-const WIN_W = 420;
-const WIN_H = 380;
-
-async function createFolderWindow(mode, sender) {
+async function createFolderPage(mode, sender) {
   const url = chrome.runtime.getURL('folder.html') + '?mode=' + encodeURIComponent(mode);
-  const props = { url: url, type: 'popup', state: 'normal', width: WIN_W, height: WIN_H, focused: true };
-  const anchorId = sender && sender.tab ? sender.tab.windowId : null;
-  const anchor = await (anchorId != null ? chrome.windows.get(anchorId) : Promise.reject())
-    .catch(function () {
-      return chrome.windows.getLastFocused({ windowTypes: ['normal'] });
-    })
-    .catch(function () {
+  const anchorWinId = sender && sender.tab ? sender.tab.windowId : null;
+  let winId = anchorWinId;
+  if (winId == null) {
+    const focused = await chrome.windows.getLastFocused({ windowTypes: ['normal'] }).catch(function () {
       return null;
     });
-  if (anchor && anchor.width != null && anchor.left != null) {
-    props.left = Math.max(0, Math.round(anchor.left + (anchor.width - WIN_W) / 2));
-    props.top = Math.max(0, Math.round(anchor.top + (anchor.height - WIN_H) / 2));
+    winId = focused && focused.id != null ? focused.id : undefined;
   }
-  const win = await chrome.windows.create(props);
-  if (win.state !== 'normal' || win.width !== WIN_W || win.height !== WIN_H) {
-    const bounds = { state: 'normal', width: WIN_W, height: WIN_H, focused: true };
-    if (props.left != null) Object.assign(bounds, { left: props.left, top: props.top });
-    await chrome.windows.update(win.id, bounds).catch(function () {});
-  }
-  return win;
+  const props = { url: url, active: true };
+  if (winId != null) props.windowId = winId;
+  const tab = await chrome.tabs.create(props);
+  return { tab: tab, windowId: tab.windowId, tabId: tab.id };
 }
 
 function openFolderPage(mode, jobId, sender) {
@@ -126,21 +110,28 @@ function openFolderPage(mode, jobId, sender) {
       rec.mode = strongerMode(rec.mode, mode);
       await writeFolderRecord(rec);
       notifyQueue(rec);
-      await chrome.windows.update(rec.windowId, { focused: true }).catch(function () {});
-      return open.win;
+      await chrome.tabs.update(rec.tabId, { active: true }).catch(function () {});
+      if (rec.windowId != null) {
+        await chrome.windows.update(rec.windowId, { focused: true }).catch(function () {});
+      }
+      return open.tab;
     }
-    const win = await createFolderWindow(mode, sender);
-    const tab = win.tabs && win.tabs[0];
-    await writeFolderRecord({ windowId: win.id, tabId: tab ? tab.id : null, mode: mode, jobs: jobId ? [jobId] : [] });
-    return win;
+    const created = await createFolderPage(mode, sender);
+    await writeFolderRecord({
+      windowId: created.windowId,
+      tabId: created.tabId,
+      mode: mode,
+      jobs: jobId ? [jobId] : []
+    });
+    return created.tab;
   });
 }
 
-function dropWindowJobs(windowId) {
+function dropTabJobs(tabId) {
   return serial(async function () {
     const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
     const rec = got[FOLDER_WIN_KEY];
-    if (!rec || rec.windowId !== windowId) return;
+    if (!rec || rec.tabId !== tabId) return;
     await dropJobs(rec.jobs);
     await chrome.storage.session.remove(FOLDER_WIN_KEY);
   });
@@ -305,8 +296,8 @@ async function handleBridge(msg, sender) {
 const BRIDGE_ACTIONS = ['folderStatus', 'folderPick', 'folderForget', 'folderPicked', 'folderQueue', 'folderCancel'];
 
 export function registerSaveHandlers() {
-  chrome.windows.onRemoved.addListener(function (windowId) {
-    dropWindowJobs(windowId).catch(function () {});
+  chrome.tabs.onRemoved.addListener(function (tabId) {
+    dropTabJobs(tabId).catch(function () {});
   });
   chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     if (!msg || typeof msg !== 'object') return;

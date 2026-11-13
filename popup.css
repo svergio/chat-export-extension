@@ -1097,6 +1097,34 @@ h2 {
   font-size: 12px;
 }
 
+.ce-donate {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--ce-line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ce-muted);
+}
+
+.ce-donate-link {
+  font-weight: 500;
+  font-size: 11px;
+  opacity: 0.75;
+  word-break: normal;
+  color: var(--ce-muted);
+}
+
+.ce-donate-link:hover {
+  opacity: 1;
+}
+
+.ce-donate-hint {
+  color: var(--ce-muted);
+}
+
 .ce-more summary {
   cursor: pointer;
   font-weight: 600;
