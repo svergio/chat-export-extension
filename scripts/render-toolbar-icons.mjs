@@ -15,7 +15,11 @@ const kinds = [
   'claude',
   'qwen',
   'deepseek',
-  'perplexity'
+  'perplexity',
+  'kimi',
+  'zai',
+  'minimax',
+  'janitorai'
 ];
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');

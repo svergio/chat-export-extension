@@ -54,12 +54,22 @@ export function clearHandle() {
   });
 }
 
+export function canPickFolder() {
+  const g = typeof globalThis !== 'undefined' ? globalThis : self;
+  return typeof g.showDirectoryPicker === 'function';
+}
+
+export function fsWritable() {
+  return typeof FileSystemDirectoryHandle === 'function';
+}
+
 export function fsSupported() {
-  return typeof self.showDirectoryPicker === 'function';
+  return canPickFolder();
 }
 
 export async function folderState(handle) {
-  if (!fsSupported()) return 'unsupported';
+  // Offscreen can write via a stored handle without showDirectoryPicker.
+  if (!fsWritable()) return 'unsupported';
   if (!handle) return 'none';
   try {
     const p = await handle.queryPermission({ mode: 'readwrite' });

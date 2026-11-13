@@ -11,6 +11,7 @@ import {
   loadStored,
   normalizeSettings,
   platformsEnabledList,
+  platformsEnabledForWire,
   saveSettings,
   setBridgeStatus,
   getBridgeStatus,
@@ -52,7 +53,11 @@ const PLATFORM_START = {
   claude: 'https://claude.ai/new',
   qwen: 'https://chat.qwen.ai/',
   deepseek: 'https://chat.deepseek.com/',
-  perplexity: 'https://www.perplexity.ai/'
+  perplexity: 'https://www.perplexity.ai/',
+  kimi: 'https://www.kimi.com/',
+  zai: 'https://chat.z.ai/',
+  minimax: 'https://agent.minimax.io/',
+  janitorai: 'https://janitorai.com/'
 };
 
 const PLATFORM_CONTENT = {
@@ -63,7 +68,11 @@ const PLATFORM_CONTENT = {
   claude: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/claude.js'],
   qwen: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/qwen.js'],
   deepseek: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/deepseek.js'],
-  perplexity: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/perplexity.js']
+  perplexity: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/perplexity.js'],
+  kimi: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/kimi.js'],
+  zai: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/zai.js'],
+  minimax: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/minimax.js'],
+  janitorai: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/janitorai.js']
 };
 
 let socket = null;
@@ -71,12 +80,24 @@ let reconnectTimer = null;
 let keepaliveTimer = null;
 let reconnectAttempt = 0;
 let intentionalClose = false;
+let connectEpoch = 0;
 let currentSettings = normalizeSettings({});
 let browserId = '';
 let started = false;
 let tabsSyncTimer = null;
 const KEEPALIVE_ALARM = 'ce-bridge-keepalive';
 const KEEPALIVE_MS = 20000;
+
+export function isBridgeLiveAllowed(settings) {
+  const s = normalizeSettings(settings == null ? currentSettings : settings);
+  return !!s.serverOn && canEnableBridge(s);
+}
+
+function bridgeDeniedDetail(settings) {
+  const s = normalizeSettings(settings == null ? currentSettings : settings);
+  if (!hasTosConsent(s) || !hasFaqConsent(s)) return 'faq consent required';
+  return '';
+}
 
 function sleep(ms) {
   return new Promise(function (resolve) {
@@ -121,6 +142,18 @@ function matchPlatform(platform, url) {
   }
   if (platform === 'perplexity') {
     return host === 'perplexity.ai' || host.endsWith('.perplexity.ai');
+  }
+  if (platform === 'kimi') {
+    return host === 'kimi.com' || host === 'www.kimi.com' || host.endsWith('.kimi.com');
+  }
+  if (platform === 'zai') {
+    return host === 'chat.z.ai' || host.endsWith('.z.ai');
+  }
+  if (platform === 'minimax') {
+    return host === 'agent.minimax.io';
+  }
+  if (platform === 'janitorai') {
+    return host === 'janitorai.com' || host === 'www.janitorai.com' || host.endsWith('.janitorai.com');
   }
   return false;
 }
@@ -202,6 +235,24 @@ function extractChatId(platform, url) {
     const m = path.match(/\/(?:search|session)\/([^/?#]+)/);
     return m ? m[1] : '';
   }
+  if (platform === 'kimi') {
+    const m = path.match(/\/chat\/([^/?#]+)/);
+    return m ? m[1] : '';
+  }
+  if (platform === 'zai') {
+    const m = path.match(/\/c\/([^/?#]+)/);
+    return m ? m[1] : '';
+  }
+  if (platform === 'minimax') {
+    const fromQuery = u.searchParams.get('chatID') || u.searchParams.get('chatId');
+    if (fromQuery) return fromQuery;
+    const m = path.match(/\/(?:task|session|chat|c)\/([^/?#]+)/i);
+    return m ? m[1] : '';
+  }
+  if (platform === 'janitorai') {
+    const m = path.match(/\/(?:[a-z]{2}\/)?chats\/(\d+)/i);
+    return m ? m[1] : '';
+  }
   return '';
 }
 
@@ -242,7 +293,7 @@ async function helloPayload() {
     browserId: browserId,
     browserLabel: currentSettings.browserLabel || 'Chrome',
     extVersion: EXT_VERSION,
-    platformsEnabled: platformsEnabledList(currentSettings),
+    platformsEnabled: platformsEnabledForWire(currentSettings),
     allowCreate: currentSettings.allowCreate !== false,
     allowDestructive: !!currentSettings.allowDestructive,
     allowProjects: currentSettings.allowProjects !== false,
@@ -306,7 +357,7 @@ export async function enrollKeyToServer(settings, id) {
 function settingsPayload() {
   return {
     type: 'settings',
-    platformsEnabled: platformsEnabledList(currentSettings),
+    platformsEnabled: platformsEnabledForWire(currentSettings),
     allowCreate: currentSettings.allowCreate !== false,
     allowDestructive: !!currentSettings.allowDestructive,
     allowProjects: currentSettings.allowProjects !== false,
@@ -413,20 +464,20 @@ async function ensurePlatformTab(platform, args) {
       await chrome.tabs.reload(best.id);
       await waitTabComplete(best.id);
     }
-    return best.id;
+    return { tabId: best.id, created: false };
   }
   const start = PLATFORM_START[platform];
   if (!start) throw Object.assign(new Error('unknown platform'), { code: 'BAD_REQUEST' });
   if (landing) {
     await navigateTab(landing.id, start);
     await assertCopilotSession(landing.id);
-    return landing.id;
+    return { tabId: landing.id, created: false };
   }
   const tab = await chrome.tabs.create({ url: start, active: false });
   await waitTabComplete(tab.id);
   await sleep(400);
   if (platform === 'copilot') await assertCopilotSession(tab.id);
-  return tab.id;
+  return { tabId: tab.id, created: true };
 }
 
 function runTabLoad(tabId, start) {
@@ -580,6 +631,14 @@ async function forwardRpc(frame) {
   const platform = frame.platform;
   const args = frame.args || {};
 
+  if (!isBridgeLiveAllowed(currentSettings)) {
+    disconnect(bridgeDeniedDetail(currentSettings));
+    return rpcResult(id, {
+      ok: false,
+      error: { code: 'UNAUTHORIZED', message: 'bridge disabled (serverOff or consent)' }
+    });
+  }
+
   if (!isPlatformEnabledIn(currentSettings, platform)) {
     return rpcResult(id, {
       ok: false,
@@ -605,11 +664,38 @@ async function forwardRpc(frame) {
     });
   }
 
+  if (op === 'tabs.ensure') {
+    try {
+      const ensured = await ensurePlatformTab(platform, args);
+      const tab = await chrome.tabs.get(ensured.tabId);
+      const url = (tab && tab.url) || '';
+      scheduleTabsSync();
+      return rpcResult(id, {
+        ok: true,
+        data: {
+          tabId: ensured.tabId,
+          platform: platform,
+          url: url,
+          chatId: extractChatId(platform, url),
+          title: (tab && tab.title) || '',
+          active: !!(tab && tab.active),
+          created: !!ensured.created
+        }
+      });
+    } catch (e) {
+      return rpcResult(id, {
+        ok: false,
+        error: { code: e.code || 'HOST_ERROR', message: e.message || String(e), details: e.details }
+      });
+    }
+  }
+
   const msg = { type: CONTENT_RPC_TYPE, id: id, op: op, platform: platform, args: args };
   const retryable = !MUTATING_OPS[op];
   let last = null;
   try {
-    const tabId = await ensurePlatformTab(platform, args);
+    const ensured = await ensurePlatformTab(platform, args);
+    const tabId = ensured.tabId;
     if (op === 'chats.create' && CREATE_FRESH_TAB[platform]) await resetTabToStart(tabId, platform);
     for (let attempt = 0; attempt < 2; attempt++) {
       await ensureContentReady(tabId, platform);
@@ -695,6 +781,10 @@ function handleServerMessage(raw) {
   if (!frame || typeof frame !== 'object') return;
 
   if (frame.type === 'welcome') {
+    if (!isBridgeLiveAllowed(currentSettings)) {
+      disconnect(bridgeDeniedDetail(currentSettings));
+      return;
+    }
     reconnectAttempt = 0;
     startKeepalive();
     publishStatus('connected', frame.serverVersion ? 'server ' + frame.serverVersion : '');
@@ -718,7 +808,12 @@ function handleServerMessage(raw) {
   }
 }
 
-function openSocket() {
+function openSocket(epoch) {
+  if (epoch !== connectEpoch) return;
+  if (!isBridgeLiveAllowed(currentSettings)) {
+    disconnect(bridgeDeniedDetail(currentSettings));
+    return;
+  }
   if (socket) {
     try {
       socket.onopen = null;
@@ -742,8 +837,24 @@ function openSocket() {
   socket = ws;
 
   ws.onopen = function () {
+    if (epoch !== connectEpoch || !isBridgeLiveAllowed(currentSettings)) {
+      intentionalClose = true;
+      try {
+        ws.close();
+      } catch (e) {}
+      if (socket === ws) socket = null;
+      publishStatus('offline', bridgeDeniedDetail(currentSettings));
+      return;
+    }
     helloPayload()
       .then(function (payload) {
+        if (epoch !== connectEpoch || !isBridgeLiveAllowed(currentSettings)) {
+          intentionalClose = true;
+          try {
+            ws.close();
+          } catch (e) {}
+          return;
+        }
         sendJson(payload);
       })
       .catch(function () {
@@ -772,27 +883,34 @@ function openSocket() {
 
 function connect() {
   clearReconnect();
-  const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
-  if (!currentSettings.serverOn || !consented) {
+  if (!isBridgeLiveAllowed(currentSettings)) {
     clearKeepalive();
-    publishStatus('offline', consented ? '' : 'faq consent required');
+    publishStatus('offline', bridgeDeniedDetail(currentSettings));
     return;
   }
 
+  const epoch = ++connectEpoch;
   intentionalClose = false;
   publishStatus('connecting', '');
 
   ensureLocalKey()
     .then(function () {
+      if (epoch !== connectEpoch || !isBridgeLiveAllowed(currentSettings)) return null;
       // HTTP /enroll can fail under Chrome private-network rules; WS hello still carries the key.
       return enrollKeyToServer(currentSettings, browserId).catch(function () {
         return null;
       });
     })
     .then(function () {
-      openSocket();
+      if (epoch !== connectEpoch) return;
+      if (!isBridgeLiveAllowed(currentSettings)) {
+        disconnect(bridgeDeniedDetail(currentSettings));
+        return;
+      }
+      openSocket(epoch);
     })
     .catch(function (err) {
+      if (epoch !== connectEpoch) return;
       publishStatus('offline', (err && err.message) || 'connect failed');
       scheduleReconnect();
     });
@@ -819,6 +937,7 @@ export async function reconnectBridge() {
 }
 
 function disconnect(reason) {
+  connectEpoch += 1;
   clearReconnect();
   clearKeepalive();
   if (tabsSyncTimer) {
@@ -837,9 +956,8 @@ function disconnect(reason) {
 
 function applySettings(settings) {
   currentSettings = normalizeSettings(settings);
-  const consented = hasTosConsent(currentSettings) && hasFaqConsent(currentSettings);
-  if (!currentSettings.serverOn || !canEnableBridge(currentSettings)) {
-    disconnect(!consented ? 'faq consent required' : '');
+  if (!isBridgeLiveAllowed(currentSettings)) {
+    disconnect(bridgeDeniedDetail(currentSettings));
     return;
   }
   if (socket && socket.readyState === WebSocket.OPEN) {
@@ -851,11 +969,21 @@ function applySettings(settings) {
   connect();
 }
 
+export function rememberSettings(settings) {
+  currentSettings = normalizeSettings(settings);
+}
+
 export function pushSettingsIfConnected() {
+  if (!isBridgeLiveAllowed(currentSettings)) return;
   if (socket && socket.readyState === WebSocket.OPEN) {
     sendJson(settingsPayload());
     scheduleTabsSync();
   }
+}
+
+export function commitSavedSettings(saved) {
+  applySettings(saved);
+  return normalizeSettings(saved);
 }
 
 export function getRuntimeState() {
@@ -907,7 +1035,7 @@ export async function testConnection() {
                 browserId: ensured.browserId,
                 browserLabel: settings.browserLabel || 'Chrome',
                 extVersion: EXT_VERSION,
-                platformsEnabled: platformsEnabledList(settings),
+                platformsEnabled: platformsEnabledForWire(settings),
                 allowCreate: settings.allowCreate !== false,
                 allowDestructive: !!settings.allowDestructive,
                 allowProjects: settings.allowProjects !== false,

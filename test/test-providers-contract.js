@@ -14,7 +14,7 @@ const REQUIRED_OPS = ['list', 'get', 'create', 'send', 'delete'];
 const START_RE = /const PLATFORM_START = \{([^}]+)\}/s;
 const CONTENT_RE = /const PLATFORM_CONTENT = \{([^}]+)\}/s;
 
-test('bridge registers all 8 platforms with start URLs and content bundles', () => {
+test('bridge registers all platforms with start URLs and content bundles', () => {
   const startBlock = START_RE.exec(bridgeSrc);
   assert.ok(startBlock, 'PLATFORM_START');
   for (const id of PLATFORMS) {
@@ -29,6 +29,20 @@ test('bridge registers all 8 platforms with start URLs and content bundles', () 
   }
 });
 
+test('bridge handles tabs.ensure as light op without content rpc', () => {
+  assert.match(bridgeSrc, /op === ['"]tabs\.ensure['"]/);
+  assert.match(bridgeSrc, /created:\s*!!ensured\.created/);
+  assert.match(bridgeSrc, /return \{\s*tabId:\s*tab\.id,\s*created:\s*true\s*\}/);
+  const ensureIdx = bridgeSrc.indexOf("op === 'tabs.ensure'");
+  const contentRpcIdx = bridgeSrc.indexOf('CONTENT_RPC_TYPE', ensureIdx);
+  assert.ok(ensureIdx > 0, 'tabs.ensure branch');
+  assert.ok(contentRpcIdx > ensureIdx, 'content rpc after light branch');
+  const lightSlice = bridgeSrc.slice(ensureIdx, contentRpcIdx);
+  assert.doesNotMatch(lightSlice, /sendMessageAsync/);
+  assert.match(lightSlice, /ensurePlatformTab/);
+  assert.match(lightSlice, /scheduleTabsSync/);
+});
+
 test('manifest host_permissions cover provider origins', () => {
   const hosts = manifest.host_permissions || [];
   const need = [
@@ -39,7 +53,11 @@ test('manifest host_permissions cover provider origins', () => {
     'github.com',
     'chat.qwen.ai',
     'perplexity.ai',
-    'deepseek.com'
+    'deepseek.com',
+    'kimi.com',
+    'chat.z.ai',
+    'agent.minimax.io',
+    'janitorai.com'
   ];
   for (const fragment of need) {
     assert.ok(hosts.some((h) => h.includes(fragment)), `missing host ${fragment}`);

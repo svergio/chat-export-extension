@@ -16,8 +16,15 @@ export const PLATFORMS = Object.freeze([
   'claude',
   'qwen',
   'deepseek',
-  'perplexity'
+  'perplexity',
+  'kimi',
+  'zai',
+  'minimax',
+  'janitorai'
 ]);
+
+/** Extension bar-only ids — not in protocol / MCP wire hello. */
+export const EXTENSION_ONLY_PLATFORMS = Object.freeze(['janitorai']);
 
 export const UI_SKINS = Object.freeze([
   'chatgpt',
@@ -27,7 +34,11 @@ export const UI_SKINS = Object.freeze([
   'claude',
   'qwen',
   'deepseek',
-  'perplexity'
+  'perplexity',
+  'kimi',
+  'zai',
+  'minimax',
+  'janitorai'
 ]);
 
 export const UI_SCHEMES = Object.freeze(['auto', 'light', 'dark']);
@@ -62,7 +73,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     claude: true,
     qwen: true,
     deepseek: true,
-    perplexity: true
+    perplexity: true,
+    kimi: true,
+    zai: true,
+    minimax: true,
+    janitorai: true
   }),
   allowCreate: true,
   allowDestructive: false,
@@ -193,6 +208,12 @@ export function platformsEnabledList(settings) {
   return out;
 }
 
+export function platformsEnabledForWire(settings) {
+  return platformsEnabledList(settings).filter(function (id) {
+    return EXTENSION_ONLY_PLATFORMS.indexOf(id) === -1;
+  });
+}
+
 export function isPlatformEnabledIn(settings, platformId) {
   const s = normalizeSettings(settings);
   return s.platforms[platformId] !== false;
@@ -242,6 +263,65 @@ export function enrollUrl(host, port) {
   return 'http://' + h + ':' + safe + '/enroll';
 }
 
+export function mergeSettingsPatch(existing, patch) {
+  const base = existing && typeof existing === 'object' ? existing : {};
+  const p = patch && typeof patch === 'object' ? patch : {};
+  const merged = Object.assign({}, base, p);
+  if (base.ui || p.ui) {
+    merged.ui = Object.assign({}, base.ui || {}, p.ui || {});
+  }
+  if (base.platforms || p.platforms) {
+    merged.platforms = Object.assign({}, base.platforms || {}, p.platforms || {});
+  }
+  if (base.exportSchemas || p.exportSchemas) {
+    const be = base.exportSchemas && typeof base.exportSchemas === 'object' ? base.exportSchemas : {};
+    const pe = p.exportSchemas && typeof p.exportSchemas === 'object' ? p.exportSchemas : {};
+    merged.exportSchemas = Object.assign({}, be, pe);
+    if (be.byFormat || pe.byFormat) {
+      merged.exportSchemas.byFormat = Object.assign({}, be.byFormat || {}, pe.byFormat || {});
+    }
+  }
+  if (base.saveFolder || p.saveFolder) {
+    merged.saveFolder = Object.assign({}, base.saveFolder || {}, p.saveFolder || {});
+  }
+  const prevTos = Number(base.tosVersion);
+  const nextTos = Number(merged.tosVersion);
+  if (Number.isFinite(prevTos) && prevTos > 0 && (!Number.isFinite(nextTos) || nextTos < prevTos)) {
+    merged.tosVersion = prevTos;
+  }
+  const prevFaq = Number(base.faqVersion);
+  const nextFaq = Number(merged.faqVersion);
+  if (Number.isFinite(prevFaq) && prevFaq > 0 && (!Number.isFinite(nextFaq) || nextFaq < prevFaq)) {
+    merged.faqVersion = prevFaq;
+  }
+  return merged;
+}
+
+export function settingsJson(settings) {
+  return JSON.stringify(normalizeSettings(settings));
+}
+
+export function settingsNeedRewrite(raw) {
+  if (raw == null || typeof raw !== 'object') return true;
+  return JSON.stringify(raw) !== settingsJson(raw);
+}
+
+export function reconcileSavedSettings(sent, saved) {
+  const want = normalizeSettings(sent);
+  const got = normalizeSettings(saved);
+  if (want.tosVersion > 0 && got.tosVersion < want.tosVersion) {
+    got.tosVersion = want.tosVersion;
+  }
+  if (want.faqVersion > 0 && got.faqVersion < want.faqVersion) {
+    got.faqVersion = want.faqVersion;
+  }
+  return got;
+}
+
+export function persistSaveFailed(res) {
+  return !res || res.ok !== true || !res.settings;
+}
+
 /**
  * @returns {Promise<{ browserId: string, settings: ReturnType<typeof normalizeSettings> }>}
  */
@@ -253,19 +333,28 @@ export function loadStored() {
         browserId = newBrowserId();
         chrome.storage.local.set({ [STORAGE_KEYS.browserId]: browserId });
       }
+      const raw = got && got[STORAGE_KEYS.settings];
+      const settings = normalizeSettings(raw);
+      if (settingsNeedRewrite(raw)) {
+        chrome.storage.local.set({ [STORAGE_KEYS.settings]: settings });
+      }
       resolve({
         browserId: browserId,
-        settings: normalizeSettings(got && got[STORAGE_KEYS.settings])
+        settings: settings
       });
     });
   });
 }
 
 export function saveSettings(settings) {
-  const next = normalizeSettings(settings);
   return new Promise(function (resolve) {
-    chrome.storage.local.set({ [STORAGE_KEYS.settings]: next }, function () {
-      resolve(next);
+    chrome.storage.local.get([STORAGE_KEYS.settings], function (got) {
+      const existing = got && got[STORAGE_KEYS.settings];
+      const merged = mergeSettingsPatch(existing, settings);
+      const next = normalizeSettings(merged);
+      chrome.storage.local.set({ [STORAGE_KEYS.settings]: next }, function () {
+        resolve(next);
+      });
     });
   });
 }

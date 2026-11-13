@@ -1,0 +1,124 @@
+.chat-export-bar--zai {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+  align-self: center !important;
+  height: 28px !important;
+}
+
+.chat-export-bar--zai > .chat-export-fmt,
+.chat-export-bar--zai > .chat-export-dl {
+  box-sizing: border-box !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  border-radius: 9999px !important;
+  background: transparent !important;
+  color: var(--color-text-secondary, #5c5c5c) !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  box-shadow: none !important;
+  outline: none !important;
+  opacity: 1 !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+
+.chat-export-bar--zai > .chat-export-fmt {
+  padding: 0 6px 0 12px !important;
+  border: 0 solid transparent !important;
+}
+
+.chat-export-bar--zai > .chat-export-dl {
+  min-width: 28px !important;
+  width: 28px !important;
+  padding: 0 !important;
+  border: 0.5px solid var(--color-border-default, rgba(13, 13, 13, 0.1)) !important;
+  color: var(--color-icon-tertiary, #888) !important;
+}
+
+.chat-export-bar--zai > .chat-export-fmt:hover,
+.chat-export-bar--zai > .chat-export-fmt.is-open,
+.chat-export-bar--zai > .chat-export-dl:hover {
+  background: var(--color-bg-hover, rgba(13, 13, 13, 0.05)) !important;
+}
+
+.chat-export-bar--zai > .chat-export-fmt:focus-visible,
+.chat-export-bar--zai > .chat-export-dl:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-text-accent, #0b7fff) !important;
+}
+
+.chat-export-bar--zai > .chat-export-dl[aria-busy='true'] {
+  opacity: 0.55 !important;
+}
+
+.chat-export-bar--zai .chat-export-format-text {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  color: inherit !important;
+}
+
+.chat-export-bar--zai .chat-export-chevron {
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 1;
+}
+
+.chat-export-bar--zai .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-bar--zai .chat-export-dl svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.chat-export-menu[data-chat-export-menu='zai'] {
+  --ce-menu-bg: var(--popover, #fff);
+  --ce-menu-fg: var(--popover-foreground, #0d0d0d);
+  --ce-menu-border: var(--color-border-default, rgba(13, 13, 13, 0.1));
+  --ce-menu-hover: var(--color-bg-hover, rgba(13, 13, 13, 0.05));
+  --ce-menu-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --ce-menu-sep: var(--color-border-default, rgba(13, 13, 13, 0.1));
+  --ce-menu-pack-bg: var(--color-interactive-bg-secondary-page, rgba(13, 13, 13, 0.02));
+  --ce-menu-pack-active: var(--color-interactive-bg-secondary-selected, rgba(13, 13, 13, 0.05));
+  padding: 4px;
+  border-radius: 12px;
+  font-family: inherit;
+}
+
+.chat-export-menu[data-chat-export-menu='zai'] .chat-export-menu-item {
+  min-height: 28px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.chat-export-menu[data-chat-export-menu='zai'] .chat-export-menu-sep {
+  margin: 4px 8px;
+}
+
+.chat-export-menu[data-chat-export-menu='zai'] .chat-export-pack {
+  border-radius: 8px;
+}
+
+.chat-export-menu[data-chat-export-menu='zai'] .chat-export-pack-btn {
+  border-radius: 6px;
+  font-weight: 500;
+}

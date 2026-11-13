@@ -5,10 +5,24 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const kinds = ['idle', 'chatgpt', 'grok', 'x', 'copilot', 'claude', 'qwen', 'deepseek', 'perplexity'];
+const kinds = [
+  'idle',
+  'chatgpt',
+  'grok',
+  'x',
+  'copilot',
+  'claude',
+  'qwen',
+  'deepseek',
+  'perplexity',
+  'kimi',
+  'zai',
+  'minimax',
+  'janitorai'
+];
 const sizes = [16, 32, 48, 128];
 
-test('toolbar PNGs exist for all 9 kinds and 4 sizes', () => {
+test('toolbar PNGs exist for all toolbar kinds and 4 sizes', () => {
   for (const kind of kinds) {
     for (const size of sizes) {
       const path = join(root, 'icons', `toolbar-${kind}-${size}.png`);

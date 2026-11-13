@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
 import {
   classifyBusyText,
+  classifyGateKind,
   detectBusyBanner,
   findStopControl,
   composerReady,
@@ -28,6 +29,28 @@ test('classifyBusyText separates rate limits from overload', () => {
   assert.equal(classifyBusyText('try again later ' + 'x'.repeat(500)), null);
 });
 
+test('classifyBusyText maps paywall and auth walls', () => {
+  assert.equal(classifyBusyText('Upgrade to Pro for unlimited searches'), 'RATE_LIMIT');
+  assert.equal(classifyBusyText('Бесплатный предпросмотр расширенного поиска'), 'RATE_LIMIT');
+  assert.equal(classifyBusyText('Try a more powerful model'), 'RATE_LIMIT');
+  assert.equal(classifyBusyText('Перейти на Pro'), 'RATE_LIMIT');
+  assert.equal(classifyBusyText('Sign up and repeat your request'), 'UNAUTHORIZED');
+  assert.equal(classifyBusyText('Зарегистрируйтесь и повторите свой запрос'), 'UNAUTHORIZED');
+  assert.equal(classifyBusyText('Log in to continue'), 'UNAUTHORIZED');
+  assert.equal(classifyGateKind('RATE_LIMIT', 'Upgrade to Pro'), 'paywall');
+  assert.equal(classifyGateKind('RATE_LIMIT', 'Too many requests'), 'quota');
+  assert.equal(classifyGateKind('UNAUTHORIZED', 'Sign up and repeat'), 'auth_wall');
+  assert.equal(classifyGateKind('PLATFORM_BUSY', 'heavy load'), 'busy');
+});
+
+test('classifyBusyText and kind map captcha banners', () => {
+  assert.equal(classifyBusyText('Please complete the captcha to continue'), 'CAPTCHA');
+  assert.equal(classifyBusyText('Verify you are human'), 'CAPTCHA');
+  assert.equal(classifyBusyText('Я не робот'), 'CAPTCHA');
+  assert.equal(classifyBusyText('Cloudflare is checking your browser'), 'CAPTCHA');
+  assert.equal(classifyGateKind('CAPTCHA', 'Verify you are human'), 'captcha');
+});
+
 test('detectBusyBanner scans alerts/toasts and skips own UI and hidden nodes', () => {
   const doc = page(
     '<div data-chat-export-bar="grok"><div role="alert">rate limit</div></div>' +
@@ -44,6 +67,41 @@ test('detectBusyBanner prefers RATE_LIMIT and checks extra nodes', () => {
   const doc = page('<div role="status">Something went wrong</div><article id="t">Message limit reached</article>');
   assert.equal(detectBusyBanner(doc).code, 'PLATFORM_BUSY');
   assert.equal(detectBusyBanner(doc, doc.getElementById('t')).code, 'RATE_LIMIT');
+});
+
+test('detectBusyBanner prefers auth wall and scans main upsell buttons', () => {
+  const doc = page(
+    '<main><div role="status">Something went wrong</div>' +
+      '<button type="button">Перейти на Pro</button></main>'
+  );
+  assert.equal(detectBusyBanner(doc).code, 'RATE_LIMIT');
+  assert.equal(detectBusyBanner(doc).kind, 'paywall');
+
+  const auth = page(
+    '<main><div role="alert">Too many requests</div>' +
+      '<div role="status">Зарегистрируйтесь и повторите свой запрос</div></main>'
+  );
+  assert.equal(detectBusyBanner(auth).code, 'UNAUTHORIZED');
+  assert.equal(detectBusyBanner(auth).kind, 'auth_wall');
+});
+
+test('detectBusyBanner prefers captcha over rate limit and finds iframes', () => {
+  const banner = page(
+    '<main><div role="alert">Too many requests</div>' +
+      '<div role="status">Please complete the captcha</div></main>'
+  );
+  assert.equal(detectBusyBanner(banner).code, 'CAPTCHA');
+  assert.equal(detectBusyBanner(banner).kind, 'captcha');
+
+  const iframe = page(
+    '<main><iframe src="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile" title="Widget containing a Cloudflare security challenge"></iframe>' +
+      '<div role="alert">Too many requests</div></main>'
+  );
+  const hit = detectBusyBanner(iframe);
+  assert.equal(hit.code, 'CAPTCHA');
+  assert.equal(hit.kind, 'captcha');
+  assert.equal(hit.challenge.tag, 'iframe');
+  assert.match(hit.challenge.src, /cloudflare/);
 });
 
 test('findStopControl matches stop labels and test ids, ignores disabled', () => {
@@ -64,8 +122,37 @@ test('composerReady and buildHostState', () => {
     generating: true,
     busy: true,
     banner: 'Rate limit exceeded',
-    composerReady: true
+    composerReady: true,
+    code: 'RATE_LIMIT',
+    kind: 'quota',
+    retryable: true,
+    state: 'rate_limit'
   });
+  page('<main><textarea></textarea></main>');
+  assert.deepEqual(buildHostState('chatgpt', { generating: false, composerReady: true }), {
+    platform: 'chatgpt',
+    generating: false,
+    busy: false,
+    banner: null,
+    composerReady: true,
+    code: null,
+    kind: null,
+    retryable: true,
+    state: 'ok'
+  });
+  page('<main><button>Перейти на Pro</button></main>');
+  const paywall = buildHostState('perplexity', { generating: false, composerReady: true });
+  assert.equal(paywall.state, 'rate_limit');
+  assert.equal(paywall.kind, 'paywall');
+  assert.equal(paywall.retryable, false);
+
+  page('<main><iframe src="https://www.google.com/recaptcha/api2/anchor" title="reCAPTCHA"></iframe></main>');
+  const captcha = buildHostState('chatgpt', { generating: false, composerReady: true });
+  assert.equal(captcha.state, 'captcha');
+  assert.equal(captcha.code, 'CAPTCHA');
+  assert.equal(captcha.kind, 'captcha');
+  assert.equal(captcha.retryable, false);
+  assert.equal(captcha.busy, true);
 });
 
 test('guardBusy ignores stale banners and maps new ones to retryable codes', async () => {
@@ -82,7 +169,22 @@ test('guardBusy ignores stale banners and maps new ones to retryable codes', asy
       err.code = 'TIMEOUT';
       throw err;
     }),
-    (err) => err.code === 'RATE_LIMIT' && err.details.retryable === true && err.details.banner === 'Too many requests'
+    (err) =>
+      err.code === 'RATE_LIMIT' &&
+      err.details.retryable === true &&
+      err.details.kind === 'quota' &&
+      err.details.banner === 'Too many requests'
+  );
+
+  page('<main></main>');
+  await assert.rejects(
+    guardBusy(async () => {
+      const t = document.createElement('button');
+      t.textContent = 'Upgrade to Pro';
+      document.querySelector('main').appendChild(t);
+      return { chatId: 'x' };
+    }),
+    (err) => err.code === 'RATE_LIMIT' && err.details.kind === 'paywall' && err.details.retryable === false
   );
 
   page('');
@@ -109,6 +211,26 @@ test('guardBusy ignores stale banners and maps new ones to retryable codes', asy
       throw err;
     }),
     (err) => err.code === 'OPTION_NOT_FOUND'
+  );
+
+  page('<div role="alert">Verify you are human (stale)</div>');
+  assert.equal(await guardBusy(async () => 'ok'), 'ok');
+
+  page('');
+  await assert.rejects(
+    guardBusy(async () => {
+      const t = document.createElement('iframe');
+      t.setAttribute('src', 'https://newassets.hcaptcha.com/captcha/v1/x/static/hcaptcha.html');
+      t.setAttribute('title', 'hCaptcha challenge');
+      document.body.appendChild(t);
+      return { chatId: 'x' };
+    }),
+    (err) =>
+      err.code === 'CAPTCHA' &&
+      err.details.retryable === false &&
+      err.details.kind === 'captcha' &&
+      err.details.challenge &&
+      /hcaptcha/i.test(err.details.challenge.src || '')
   );
 });
 

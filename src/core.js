@@ -854,6 +854,10 @@
     if (tag === 'qwen') return 'Qwen';
     if (tag === 'deepseek') return 'DeepSeek';
     if (tag === 'perplexity') return 'Perplexity';
+    if (tag === 'kimi') return 'Kimi';
+    if (tag === 'zai') return 'Z.ai';
+    if (tag === 'minimax') return 'MiniMax';
+    if (tag === 'janitorai') return 'JanitorAI';
     if (tag === 'assistant') return 'Assistant';
     if (tag === 'user') return 'User';
     return tag;
@@ -1283,8 +1287,9 @@
 
   function saveViaExtension(job) {
     var runtime = global.chrome && chrome.runtime;
+    // After extension reload, old content scripts lose runtime.id — not FS "unsupported".
     if (!runtime || !runtime.id || typeof runtime.sendMessage !== 'function') {
-      return Promise.resolve({ ok: false, reason: 'unsupported' });
+      return Promise.resolve({ ok: false, reason: 'no-runtime' });
     }
     return Promise.all(job.files.map(function (f) {
       return toBytesAsync(f.data).then(function (u8) {
@@ -1717,7 +1722,15 @@
         notifyExportOutcome(res, job);
         return res;
       }
-      console.warn('[chat-export] folder save fell back to Downloads:', res && (res.reason + (res.error ? ' ' + res.error : '')));
+      // Expected fallbacks (no-runtime after reload, FS unsupported, too-large) must not
+      // console.warn — Chrome surfaces warns on chrome://extensions/?errors= as Errors.
+      var reason = res && res.reason;
+      if (reason === 'error') {
+        console.warn(
+          '[chat-export] folder save fell back to Downloads:',
+          reason + (res.error ? ' ' + res.error : '')
+        );
+      }
       var prefix = FALLBACK_DIR + (job.subdir ? job.subdir + '/' : '');
       job.files.forEach(function (f, i) {
         setTimeout(function () {

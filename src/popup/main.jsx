@@ -12,7 +12,10 @@ import {
   hasFaqConsent,
   normalizeSettings,
   normalizeExportSchemas,
-  resolveUiScheme
+  persistSaveFailed,
+  reconcileSavedSettings,
+  resolveUiScheme,
+  STORAGE_KEYS
 } from '../settings.js';
 import { createTranslator, faqKeys, tosKeys, resolveLocale } from '../i18n/index.js';
 import {
@@ -373,22 +376,57 @@ function App() {
   }, [refreshFolderStatus]);
 
   async function persist(next) {
+    const prev = settings;
     const normalized = normalizeSettings(next);
     if (normalized.serverOn && (!hasTosConsent(normalized) || !hasFaqConsent(normalized))) {
       normalized.serverOn = false;
     }
     setSettings(normalized);
     setBusy(true);
-    await sendBridge('saveSettings', { settings: normalized });
+    const res = await sendBridge('saveSettings', { settings: normalized });
     setBusy(false);
+    if (persistSaveFailed(res)) {
+      setSettings(prev);
+      setTone({ kind: 'danger', text: t('test.fail') });
+      return null;
+    }
+    let saved = reconcileSavedSettings(normalized, res.settings);
+    if (
+      (normalized.tosVersion || 0) !== (saved.tosVersion || 0) ||
+      (normalized.faqVersion || 0) !== (saved.faqVersion || 0)
+    ) {
+      await writeSettingsLocal(saved);
+    }
+    setSettings(saved);
     const st = await sendBridge('getState');
     if (st && st.status) setStatus(st.status);
+    if (st && st.ok && st.settings) {
+      saved = reconcileSavedSettings(normalized, st.settings);
+      setSettings(saved);
+    }
+    return saved;
+  }
+
+  function writeSettingsLocal(settingsObj) {
+    return new Promise(function (resolve) {
+      chrome.storage.local.set({ [STORAGE_KEYS.settings]: normalizeSettings(settingsObj) }, function () {
+        resolve();
+      });
+    });
   }
 
   async function onAcceptTos() {
     setBusy(true);
-    await persist(Object.assign({}, settings, { tosVersion: TOS_VERSION }));
+    const saved = await persist(Object.assign({}, settings, { tosVersion: TOS_VERSION }));
     setBusy(false);
+    if (saved && !hasTosConsent(saved)) {
+      const forced = reconcileSavedSettings(
+        { tosVersion: TOS_VERSION },
+        saved
+      );
+      await writeSettingsLocal(forced);
+      setSettings(forced);
+    }
   }
 
   async function onConsent() {
@@ -399,8 +437,13 @@ function App() {
       faqVersion: FAQ_VERSION,
       apiKey: (ensured && ensured.settings && ensured.settings.apiKey) || settings.apiKey
     });
-    await persist(base);
+    const saved = await persist(base);
     setBusy(false);
+    if (saved && (!hasTosConsent(saved) || !hasFaqConsent(saved))) {
+      const forced = reconcileSavedSettings(base, saved);
+      await writeSettingsLocal(forced);
+      setSettings(forced);
+    }
   }
 
   async function onGenerateKey() {

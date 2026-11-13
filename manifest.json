@@ -1,9 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Chat Export",
-  "version": "2.0.6",
-  "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, and Perplexity chats to Markdown, YAML, JSON, HTML, and PDF.",
-  "permissions": ["downloads", "tabs", "storage", "alarms", "scripting", "offscreen"],
+  "version": "2.0.9",
+  "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, Perplexity, Kimi, Z.ai, MiniMax, and JanitorAI chats to Markdown, YAML, JSON, HTML, and PDF.",
+  "permissions": [
+    "downloads",
+    "tabs",
+    "storage",
+    "alarms",
+    "scripting",
+    "offscreen"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"
   },
@@ -38,11 +45,19 @@
     "https://chat.qwen.ai/*",
     "https://www.perplexity.ai/*",
     "https://perplexity.ai/*",
-    "https://chat.deepseek.com/*"
+    "https://chat.deepseek.com/*",
+    "https://www.kimi.com/*",
+    "https://kimi.com/*",
+    "https://chat.z.ai/*",
+    "https://agent.minimax.io/*",
+    "https://janitorai.com/*",
+    "https://www.janitorai.com/*"
   ],
   "web_accessible_resources": [
     {
-      "resources": ["vendor/NotoSans-Regular.ttf"],
+      "resources": [
+        "vendor/NotoSans-Regular.ttf"
+      ],
       "matches": [
         "https://grok.com/*",
         "https://chatgpt.com/*",
@@ -54,7 +69,13 @@
         "https://chat.qwen.ai/*",
         "https://www.perplexity.ai/*",
         "https://perplexity.ai/*",
-        "https://chat.deepseek.com/*"
+        "https://chat.deepseek.com/*",
+        "https://www.kimi.com/*",
+        "https://kimi.com/*",
+        "https://chat.z.ai/*",
+        "https://agent.minimax.io/*",
+        "https://janitorai.com/*",
+        "https://www.janitorai.com/*"
       ]
     }
   ],
@@ -71,14 +92,26 @@
         "https://github.com/copilot?*",
         "https://github.com/copilot/*"
       ],
-      "js": ["content/page-harvest.js"],
+      "js": [
+        "content/page-harvest.js"
+      ],
       "run_at": "document_idle",
       "world": "MAIN"
     },
     {
-      "matches": ["https://grok.com/*"],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok.js"],
-      "css": ["styles/base.css", "styles/grok.css"],
+      "matches": [
+        "https://grok.com/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/grok.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/grok.css"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -86,8 +119,16 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*"
       ],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/chatgpt.js"],
-      "css": ["styles/base.css", "styles/chatgpt.css"],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/chatgpt.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/chatgpt.css"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -95,14 +136,32 @@
         "https://x.com/*",
         "https://twitter.com/*"
       ],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/grok-x.js"],
-      "css": ["styles/base.css", "styles/grok-x.css"],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/grok-x.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/grok-x.css"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://claude.ai/*"],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/claude.js"],
-      "css": ["styles/base.css", "styles/claude.css"],
+      "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/claude.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/claude.css"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -111,26 +170,131 @@
         "https://github.com/copilot?*",
         "https://github.com/copilot/*"
       ],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/copilot.js"],
-      "css": ["styles/base.css", "styles/copilot.css"],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/copilot.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/copilot.css"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://chat.qwen.ai/*"],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/qwen.js"],
-      "css": ["styles/base.css", "styles/qwen.css"],
+      "matches": [
+        "https://chat.qwen.ai/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/qwen.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/qwen.css"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://www.perplexity.ai/*", "https://perplexity.ai/*"],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/perplexity.js"],
-      "css": ["styles/base.css", "styles/perplexity.css"],
+      "matches": [
+        "https://www.perplexity.ai/*",
+        "https://perplexity.ai/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/perplexity.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/perplexity.css"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://chat.deepseek.com/*"],
-      "js": ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/deepseek.js"],
-      "css": ["styles/base.css", "styles/deepseek.css"],
+      "matches": [
+        "https://chat.deepseek.com/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/deepseek.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/deepseek.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.kimi.com/*",
+        "https://kimi.com/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/kimi.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/kimi.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://chat.z.ai/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/zai.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/zai.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://agent.minimax.io/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/minimax.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/minimax.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://janitorai.com/*",
+        "https://www.janitorai.com/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/janitorai.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/janitorai.css"
+      ],
       "run_at": "document_idle"
     }
   ]

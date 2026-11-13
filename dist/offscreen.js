@@ -45,11 +45,11 @@
       return s.delete(KEY);
     });
   }
-  function fsSupported() {
-    return typeof self.showDirectoryPicker === "function";
+  function fsWritable() {
+    return typeof FileSystemDirectoryHandle === "function";
   }
   async function folderState(handle) {
-    if (!fsSupported()) return "unsupported";
+    if (!fsWritable()) return "unsupported";
     if (!handle) return "none";
     try {
       const p = await handle.queryPermission({ mode: "readwrite" });

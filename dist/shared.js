@@ -788,6 +788,10 @@
       if (tag === "qwen") return "Qwen";
       if (tag === "deepseek") return "DeepSeek";
       if (tag === "perplexity") return "Perplexity";
+      if (tag === "kimi") return "Kimi";
+      if (tag === "zai") return "Z.ai";
+      if (tag === "minimax") return "MiniMax";
+      if (tag === "janitorai") return "JanitorAI";
       if (tag === "assistant") return "Assistant";
       if (tag === "user") return "User";
       return tag;
@@ -1179,7 +1183,7 @@
     function saveViaExtension(job) {
       var runtime = global.chrome && chrome.runtime;
       if (!runtime || !runtime.id || typeof runtime.sendMessage !== "function") {
-        return Promise.resolve({ ok: false, reason: "unsupported" });
+        return Promise.resolve({ ok: false, reason: "no-runtime" });
       }
       return Promise.all(job.files.map(function(f3) {
         return toBytesAsync(f3.data).then(function(u8) {
@@ -1587,7 +1591,13 @@
           notifyExportOutcome(res, job);
           return res;
         }
-        console.warn("[chat-export] folder save fell back to Downloads:", res && res.reason + (res.error ? " " + res.error : ""));
+        var reason = res && res.reason;
+        if (reason === "error") {
+          console.warn(
+            "[chat-export] folder save fell back to Downloads:",
+            reason + (res.error ? " " + res.error : "")
+          );
+        }
         var prefix = FALLBACK_DIR + (job.subdir ? job.subdir + "/" : "");
         job.files.forEach(function(f3, i3) {
           setTimeout(function() {
@@ -2654,6 +2664,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "System",
     "theme.light": "Light",
     "theme.dark": "Dark",
@@ -2668,6 +2682,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "Export settings",
     "bar.pack": "Pack",
     "bar.pack.folder": "Folder",
@@ -2703,7 +2721,7 @@
     "key.copied": "Key copied",
     "key.copyFailed": "Copy failed",
     "key.placeholder": "Generate ceb_ token\u2026",
-    "key.hint": "The extension mints a ceb_ token per browser. Legacy cek_ tokens still work. On connect the token is enrolled on the local server.",
+    "key.hint": "The extension mints a ceb_ token per browser. Rotating or re-enrolling replaces the previous token \u2014 old ceb_/cek_ keys for this browser stop working. On connect the token is registered on the local server.",
     "key.hintId": "Id:",
     "browser.hint": "Each Chrome profile needs its own ceb_ token and shows up separately on the dashboard Browsers page.",
     "tos.title": "Terms of Use & Risk Disclaimer",
@@ -2795,6 +2813,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "\u0421\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0439",
     "theme.light": "\u0421\u0432\u0435\u0442\u043B\u0430\u044F",
     "theme.dark": "\u0422\u0451\u043C\u043D\u0430\u044F",
@@ -2809,6 +2831,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.pack": "\u0423\u043F\u0430\u043A\u043E\u0432\u043A\u0430",
     "bar.pack.folder": "\u041F\u0430\u043F\u043A\u0430",
@@ -2844,7 +2870,7 @@
     "key.copied": "\u041A\u043B\u044E\u0447 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D",
     "key.copyFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
     "key.placeholder": "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439\u0442\u0435 \u0442\u043E\u043A\u0435\u043D ceb_\u2026",
-    "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0421\u0442\u0430\u0440\u044B\u0435 cek_ \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u0440\u0430\u0431\u043E\u0447\u0438\u043C\u0438. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
+    "key.hint": "\u0422\u043E\u043A\u0435\u043D ceb_ \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0438 (\u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440 \u0441\u0432\u043E\u0439). \u0420\u043E\u0442\u0430\u0446\u0438\u044F \u0438\u043B\u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u0430\u044F \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u0437\u0430\u043C\u0435\u043D\u044F\u0435\u0442 \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0442\u043E\u043A\u0435\u043D \u2014 \u0441\u0442\u0430\u0440\u044B\u0435 ceb_/cek_ \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 \u043F\u0435\u0440\u0435\u0441\u0442\u0430\u044E\u0442 \u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C. \u041F\u0440\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0442\u043E\u043A\u0435\u043D \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435.",
     "key.hintId": "Id:",
     "browser.hint": "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0440\u043E\u0444\u0438\u043B\u044F Chrome \u0441\u0432\u043E\u0439 \u0442\u043E\u043A\u0435\u043D ceb_ \u0438 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 Browsers \u0432 \u0434\u0430\u0448\u0431\u043E\u0440\u0434\u0435.",
     "tos.title": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F \u0438 \u043F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435 \u043E \u0440\u0438\u0441\u043A\u0430\u0445",
@@ -2924,8 +2950,13 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
+  var EXTENSION_ONLY_PLATFORMS = Object.freeze(["janitorai"]);
   var UI_SKINS = Object.freeze([
     "chatgpt",
     "grok",
@@ -2934,7 +2965,11 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
@@ -2961,7 +2996,11 @@
       claude: true,
       qwen: true,
       deepseek: true,
-      perplexity: true
+      perplexity: true,
+      kimi: true,
+      zai: true,
+      minimax: true,
+      janitorai: true
     }),
     allowCreate: true,
     allowDestructive: false,
@@ -3905,6 +3944,7 @@
     buildHostState: () => buildHostState,
     clampLimit: () => clampLimit,
     classifyBusyText: () => classifyBusyText,
+    classifyGateKind: () => classifyGateKind,
     clickEl: () => clickEl,
     closeMenu: () => closeMenu,
     composerReady: () => composerReady,
@@ -3914,6 +3954,7 @@
     fillEditable: () => fillEditable,
     fillRichComposer: () => fillRichComposer,
     findBusyBanners: () => findBusyBanners,
+    findCaptchaWidgets: () => findCaptchaWidgets,
     findStopControl: () => findStopControl,
     guardBusy: () => guardBusy,
     hostErr: () => hostErr,
@@ -3923,6 +3964,7 @@
     normalizeId: () => normalizeId,
     openMenu: () => openMenu,
     pickMenuItem: () => pickMenuItem,
+    preferGateHit: () => preferGateHit,
     quoteSelectionPrompt: () => quoteSelectionPrompt,
     readMenuItems: () => readMenuItems,
     setFileInputFiles: () => setFileInputFiles,
@@ -4672,8 +4714,25 @@
     if (details) err.details = details;
     throw err;
   }
-  var RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит/i;
+  var RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota|free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит/i;
+  var PAYWALL_RE = /free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)/i;
+  var AUTH_WALL_RE = /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
   var PLATFORM_BUSY_RE = /heavy (load|usage|traffic)|high demand|(at|over) capacity|overloaded|temporarily unavailable|service unavailable|something went wrong|try again (later|in|shortly|soon)|перегруж|высок\S* нагрузк|временно недоступ|попробуйте (\S+ )?(позже|снова|ещ[её] раз)|что-то пошло не так/i;
+  var CAPTCHA_RE = /captcha|hcaptcha|recaptcha|turnstile|arkose|verify you are (a )?human|i'?m not a robot|я не робот|cloudflare.*(checking|challenge)|checking (your )?browser|security (check|challenge)|complete the (security )?challenge/i;
+  var CAPTCHA_IFRAME_SELECTOR = [
+    'iframe[src*="recaptcha" i]',
+    'iframe[src*="hcaptcha" i]',
+    'iframe[src*="challenges.cloudflare.com" i]',
+    'iframe[src*="cf-turnstile" i]',
+    'iframe[src*="turnstile" i]',
+    'iframe[src*="arkoselabs" i]',
+    'iframe[src*="funcaptcha" i]',
+    'iframe[title*="captcha" i]',
+    "[data-sitekey]",
+    ".g-recaptcha",
+    ".h-captcha",
+    ".cf-turnstile"
+  ].join(",");
   var BANNER_SELECTOR = [
     '[role="alert"]',
     '[role="alertdialog"]',
@@ -4684,10 +4743,13 @@
     '[data-testid*="toast" i]',
     '[data-testid*="error" i]',
     '[data-testid*="banner" i]',
+    '[data-testid*="upsell" i]',
+    '[data-testid*="upgrade" i]',
     '[class*="toast" i]',
     '[class*="banner" i]',
     '[class*="error" i]'
   ].join(",");
+  var UPSELL_SCAN_SELECTOR = 'main button, main [role="button"], main [role="status"], main [role="alert"], main a[href*="upgrade" i], main a[href*="pricing" i]';
   var BANNER_TEXT_MAX = 400;
   var OWN_UI_SELECTOR = "[data-chat-export-bar], [data-ce-host]";
   var BUSY_OVERRIDABLE = [void 0, null, "", "HOST_ERROR", "TIMEOUT", "NOT_FOUND", "ATTACH_TIMEOUT"];
@@ -4710,16 +4772,71 @@
     }
     return false;
   }
+  function classifyGateKind(code, text) {
+    if (code === "UNAUTHORIZED") return "auth_wall";
+    if (code === "CAPTCHA") return "captcha";
+    if (code === "PLATFORM_BUSY") return "busy";
+    if (PAYWALL_RE.test(String(text || ""))) return "paywall";
+    return "quota";
+  }
   function classifyBusyText(text) {
     var t3 = String(text || "");
     if (!t3 || t3.length > BANNER_TEXT_MAX) return null;
+    if (AUTH_WALL_RE.test(t3)) return "UNAUTHORIZED";
+    if (CAPTCHA_RE.test(t3)) return "CAPTCHA";
     if (RATE_LIMIT_RE.test(t3)) return "RATE_LIMIT";
     if (PLATFORM_BUSY_RE.test(t3)) return "PLATFORM_BUSY";
     return null;
   }
+  function pushGateHit(out, el, text) {
+    var code = classifyBusyText(text);
+    if (!code) return;
+    out.push({ el, code, text, kind: classifyGateKind(code, text) });
+  }
+  function captchaWidgetLabel(el) {
+    if (!el) return "captcha challenge";
+    var src = el.getAttribute && (el.getAttribute("src") || "");
+    var title = el.getAttribute && (el.getAttribute("title") || el.getAttribute("aria-label") || "");
+    var label = String(title || src || el.className || "captcha challenge").replace(/\s+/g, " ").trim();
+    if (label.length > BANNER_TEXT_MAX) label = label.slice(0, BANNER_TEXT_MAX);
+    return label || "captcha challenge";
+  }
+  function findCaptchaWidgets(root) {
+    root = root || document;
+    var out = [];
+    var nodes;
+    try {
+      nodes = Array.prototype.slice.call(root.querySelectorAll(CAPTCHA_IFRAME_SELECTOR));
+    } catch (e3) {
+      return out;
+    }
+    for (var i3 = 0; i3 < nodes.length; i3++) {
+      var el = nodes[i3];
+      if (!el || insideHit(out, el)) continue;
+      if (el.closest && el.closest(OWN_UI_SELECTOR)) continue;
+      if (!bannerVisible(el)) continue;
+      var text = captchaWidgetLabel(el);
+      out.push({
+        el,
+        code: "CAPTCHA",
+        text,
+        kind: "captcha",
+        challenge: {
+          tag: el.tagName ? String(el.tagName).toLowerCase() : null,
+          src: el.getAttribute ? el.getAttribute("src") || null : null,
+          title: el.getAttribute ? el.getAttribute("title") || null : null
+        }
+      });
+    }
+    return out;
+  }
   function findBusyBanners(root, extra) {
     root = root || document;
     var nodes = Array.prototype.slice.call(root.querySelectorAll(BANNER_SELECTOR));
+    try {
+      nodes = nodes.concat(Array.prototype.slice.call(root.querySelectorAll(UPSELL_SCAN_SELECTOR)));
+    } catch (e3) {
+    }
     if (extra) nodes = nodes.concat(Array.isArray(extra) ? extra : [extra]);
     var out = [];
     for (var i3 = 0; i3 < nodes.length; i3++) {
@@ -4728,18 +4845,31 @@
       if (el.closest && el.closest(OWN_UI_SELECTOR)) continue;
       if (!bannerVisible(el)) continue;
       var text = bannerText(el);
-      var code = classifyBusyText(text);
-      if (code) out.push({ el, code, text });
+      if (!text || text.length > BANNER_TEXT_MAX) continue;
+      pushGateHit(out, el, text);
+    }
+    var widgets = findCaptchaWidgets(root);
+    for (var w4 = 0; w4 < widgets.length; w4++) {
+      if (!insideHit(out, widgets[w4].el)) out.push(widgets[w4]);
     }
     return out;
   }
-  function detectBusyBanner(root, extra) {
-    var hits = findBusyBanners(root, extra);
-    for (var i3 = 0; i3 < hits.length; i3++) if (hits[i3].code === "RATE_LIMIT") return hits[i3];
+  function preferGateHit(hits) {
+    if (!hits || !hits.length) return null;
+    for (var i3 = 0; i3 < hits.length; i3++) if (hits[i3].code === "UNAUTHORIZED") return hits[i3];
+    for (var c3 = 0; c3 < hits.length; c3++) if (hits[c3].code === "CAPTCHA") return hits[c3];
+    for (var j3 = 0; j3 < hits.length; j3++) if (hits[j3].code === "RATE_LIMIT") return hits[j3];
     return hits[0] || null;
   }
+  function detectBusyBanner(root, extra) {
+    return preferGateHit(findBusyBanners(root, extra));
+  }
   function throwBusy(hit) {
-    hostErr(hit.code, hit.text, { retryable: true, banner: hit.text });
+    var kind = hit.kind || classifyGateKind(hit.code, hit.text);
+    var retryable = hit.code === "PLATFORM_BUSY" || hit.code === "RATE_LIMIT" && kind !== "paywall";
+    var details = { retryable, banner: hit.text, kind };
+    if (hit.challenge) details.challenge = hit.challenge;
+    hostErr(hit.code, hit.text, details);
   }
   async function guardBusy(run, candidates) {
     var collect = typeof candidates === "function" ? candidates : function() {
@@ -4752,8 +4882,7 @@
       var hits = findBusyBanners(document, collect()).filter(function(h3) {
         return before.indexOf(h3.el) < 0;
       });
-      for (var i3 = 0; i3 < hits.length; i3++) if (hits[i3].code === "RATE_LIMIT") return hits[i3];
-      return hits[0] || null;
+      return preferGateHit(hits);
     }
     var result;
     try {
@@ -4791,13 +4920,32 @@
   }
   function buildHostState(platform, state, candidates) {
     var hit = detectBusyBanner(document, candidates || null);
-    return {
+    var generating = !!(state && state.generating);
+    var composerReady2 = !!(state && state.composerReady);
+    var code = hit ? hit.code : null;
+    var kind = hit ? hit.kind || classifyGateKind(hit.code, hit.text) : null;
+    var retryable = !hit ? true : hit.code === "PLATFORM_BUSY" || hit.code === "RATE_LIMIT" && kind !== "paywall";
+    var gateState = "ok";
+    if (hit) {
+      if (code === "UNAUTHORIZED") gateState = "auth_wall";
+      else if (code === "CAPTCHA") gateState = "captcha";
+      else if (code === "RATE_LIMIT") gateState = "rate_limit";
+      else gateState = "busy";
+    } else if (generating) gateState = "generating";
+    else if (!composerReady2) gateState = "composer_blocked";
+    var out = {
       platform,
-      generating: !!(state && state.generating),
+      generating,
       busy: !!hit,
       banner: hit ? hit.text : null,
-      composerReady: !!(state && state.composerReady)
+      composerReady: composerReady2,
+      code,
+      kind,
+      retryable,
+      state: gateState
     };
+    if (hit && hit.challenge) out.challenge = hit.challenge;
+    return out;
   }
 
   // schemas/chat-export-1/manifest.json

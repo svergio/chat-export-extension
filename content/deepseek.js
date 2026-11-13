@@ -356,7 +356,7 @@
   async function failFromResponse(res, what) {
     if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', what + ' ' + res.status);
     if (res.status === 404) rpcErr('NOT_FOUND', what + ' not found');
-    if (res.status === 429) rpcErr('RATE_LIMIT', what + ' rate limited');
+    if (res.status === 429) rpcErr('RATE_LIMIT', what + ' rate limited', { retryable: true, kind: 'http' });
     var body = '';
     try {
       body = (await res.text()).slice(0, 160);
