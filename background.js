@@ -516,7 +516,11 @@
     if (platform === "minimax") {
       const fromQuery = u.searchParams.get("chatID") || u.searchParams.get("chatId");
       if (fromQuery) return fromQuery;
-      const m = path.match(/\/(?:task|session|chat|c)\/([^/?#]+)/i);
+      if (/^\/mavis\b/i.test(path)) {
+        const mid = u.searchParams.get("id") || u.searchParams.get("session_id");
+        if (mid) return mid;
+      }
+      const m = path.match(/\/(?:mavis|task|session|chat|c)\/([^/?#]+)/i);
       return m ? m[1] : "";
     }
     if (platform === "janitorai") {

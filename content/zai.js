@@ -420,8 +420,42 @@
     return String(md || '').trim();
   }
 
+  function domUserTextsInOrder() {
+    var nodes = turnNodes();
+    var out = [];
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!(el.classList && el.classList.contains('user-message'))) continue;
+      var body = el.querySelector('.chat-user, .markdown-prose') || el;
+      var ut = (body.innerText || body.textContent || '').trim();
+      if (ut) out.push(ut);
+    }
+    return out;
+  }
+
+  function countBranchRole(branch, role) {
+    var n = 0;
+    var i;
+    for (i = 0; i < (branch || []).length; i++) {
+      if (String((branch[i] && branch[i].role) || '').toLowerCase() === role) n++;
+    }
+    return n;
+  }
+
+  function countMappedRole(mapped, role) {
+    var n = 0;
+    var i;
+    for (i = 0; i < (mapped || []).length; i++) {
+      if ((mapped[i] && mapped[i].role) === role) n++;
+    }
+    return n;
+  }
+
   function mapApiMessages(branch, fallbackModel) {
     var out = [];
+    var userDom = null;
+    var userDomIdx = 0;
     var i;
     for (i = 0; i < (branch || []).length; i++) {
       var m = branch[i];
@@ -435,6 +469,12 @@
         '';
       if (role === 'user') {
         var ut = String(m.content || '').trim();
+        if (!ut) {
+          if (!userDom) userDom = domUserTextsInOrder();
+          if (userDomIdx < userDom.length) {
+            ut = userDom[userDomIdx++];
+          }
+        }
         if (!ut) continue;
         out.push({ role: 'user', roleTag: 'user', text: ut, links: [] });
         continue;
@@ -603,7 +643,11 @@
         if (!domAssistantText(branch[i].id)) missingAssistant = true;
       }
     }
-    if ((missingAssistant || !mapped.length) && opts.allowNavigate !== false) {
+    var branchUserN = countBranchRole(branch, 'user');
+    var mappedUserN = countMappedRole(mapped, 'user');
+    var mappedAssistantN = countMappedRole(mapped, 'assistant');
+    var missingUser = branchUserN > mappedUserN || (mappedUserN === 0 && mappedAssistantN > 0);
+    if ((missingAssistant || missingUser || !mapped.length) && opts.allowNavigate !== false) {
       if (currentChatId() !== chatId) await navigateToChat(chatId);
       await Ops.waitFor(
         function () {
@@ -612,7 +656,13 @@
         { timeoutMs: 15000, message: 'Z.ai messages timeout' }
       ).catch(function () {});
       mapped = mapApiMessages(branch, model);
-      if (!mapped.length) mapped = messagesFromDom();
+      mappedUserN = countMappedRole(mapped, 'user');
+      mappedAssistantN = countMappedRole(mapped, 'assistant');
+      missingUser = branchUserN > mappedUserN || (mappedUserN === 0 && mappedAssistantN > 0);
+      if (!mapped.length || missingUser) mapped = messagesFromDom();
+    } else if (missingUser && currentChatId() === chatId) {
+      var fromDom = messagesFromDom();
+      if (fromDom.length > mapped.length) mapped = fromDom;
     }
     var user = sessionUser();
     return {

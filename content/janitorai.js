@@ -510,10 +510,41 @@
     return out;
   }
 
+  function messageTimestamp(m) {
+    if (!m) return 0;
+    var raw = m.created_at || m.createdAt || m.updated_at || m.updatedAt || m.timestamp || '';
+    var parsed = Date.parse(raw);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    var idn = Number(m.id || m.message_id || m.messageId || 0);
+    return Number.isFinite(idn) ? idn : 0;
+  }
+
+  function chronologicalMessages(messages) {
+    var list = Array.isArray(messages) ? messages.slice() : [];
+    if (list.length < 2) return list;
+    var hasTs = false;
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (messageTimestamp(list[i])) {
+        hasTs = true;
+        break;
+      }
+    }
+    if (hasTs) {
+      list.sort(function (a, b) {
+        return messageTimestamp(a) - messageTimestamp(b);
+      });
+      return list;
+    }
+    return list.reverse();
+  }
+
   function payloadFromGet(data, chatId) {
     var chat = (data && data.chat) || {};
     var character = (data && data.character) || {};
-    var messages = (data && data.chatMessages) || (data && data.chat_messages) || chat.messages || [];
+    var messages = chronologicalMessages(
+      (data && data.chatMessages) || (data && data.chat_messages) || chat.messages || []
+    );
     var title =
       String(chat.title || chat.name || character.name || character.char_name || findTitle() || 'chat').trim() ||
       'chat';

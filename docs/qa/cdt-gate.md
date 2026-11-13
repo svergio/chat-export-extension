@@ -10,7 +10,7 @@ Live Chrome DevTools. **Not** unit/happy-dom.
 | --- | --- |
 | `styles` | Skin×scheme×locale sample; drawers; `data-skin` / `data-scheme`; fmtParity hook (Agent B) |
 | `ui-random` | Seeded CE-popup allowlist clicks + ExportBar **fmt-menu only** (never Скачать / host Download) |
-| `usage` | All providers bar+ver; Folder\|Zip; Download toast; mode2/rebind; 1 platform toggle |
+| `usage` | All providers bar+ver; **export fidelity** (`chats.get` vs DOM); Folder\|Zip; Download toast; mode2/rebind; 1 platform toggle |
 | `console` | FAIL (or explicit SKIP) on `[chat-export] unauthorized` / Token expired / save failed |
 
 Debug only (not in `--full`): `--section=popup` exhaust.
@@ -75,6 +75,15 @@ Hard-coded in `scripts/cdt-gate.mjs` as `UI_RANDOM_ALLOW` + blacklist. Host mode
 | Donate / external links | leave page |
 | Скачать / Download chat | usage only (not ui-random) |
 | Host Download / model dropdown | not CE |
+
+### Export fidelity (`usage/*/fidelity`)
+
+After bar PASS, before Download:
+
+- RPC `chats.get` via extension SW (content-script world)
+- DOM counts from `scripts/cdt-probes/export-fidelity.js`
+- **FAIL** if: empty export on long body (MiniMax), Z.ai `domUserN > exportUserN`, Janitor first/last order reversed vs page top/bottom
+- **SKIP** (not PASS) on landing / no chatId / content script not ready
 
 ### ExportBar
 
