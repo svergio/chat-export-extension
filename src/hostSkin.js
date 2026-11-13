@@ -28,6 +28,12 @@ export function toolbarKindFromUrl(url) {
     if (host === 'perplexity.ai' || host === 'www.perplexity.ai' || host.endsWith('.perplexity.ai')) {
       return 'perplexity';
     }
+    if (host === 'kimi.com' || host === 'www.kimi.com' || host.endsWith('.kimi.com')) return 'kimi';
+    if (host === 'chat.z.ai' || host.endsWith('.z.ai')) return 'zai';
+    if (host === 'agent.minimax.io') return 'minimax';
+    if (host === 'janitorai.com' || host === 'www.janitorai.com' || host.endsWith('.janitorai.com')) {
+      return 'janitorai';
+    }
   } catch (e) {}
   return 'idle';
 }

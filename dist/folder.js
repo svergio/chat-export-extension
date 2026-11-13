@@ -10,8 +10,13 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
+  var EXTENSION_ONLY_PLATFORMS = Object.freeze(["janitorai"]);
   var UI_SKINS = Object.freeze([
     "chatgpt",
     "grok",
@@ -20,7 +25,11 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
@@ -47,7 +56,11 @@
       claude: true,
       qwen: true,
       deepseek: true,
-      perplexity: true
+      perplexity: true,
+      kimi: true,
+      zai: true,
+      minimax: true,
+      janitorai: true
     }),
     allowCreate: true,
     allowDestructive: false,
@@ -197,6 +210,12 @@
       if (host === "perplexity.ai" || host === "www.perplexity.ai" || host.endsWith(".perplexity.ai")) {
         return "perplexity";
       }
+      if (host === "kimi.com" || host === "www.kimi.com" || host.endsWith(".kimi.com")) return "kimi";
+      if (host === "chat.z.ai" || host.endsWith(".z.ai")) return "zai";
+      if (host === "agent.minimax.io") return "minimax";
+      if (host === "janitorai.com" || host === "www.janitorai.com" || host.endsWith(".janitorai.com")) {
+        return "janitorai";
+      }
     } catch (e) {
     }
     return "idle";
@@ -224,7 +243,7 @@
   function tabUrl(tab) {
     return tab && typeof tab.url === "string" ? tab.url : "";
   }
-  function queryActiveTabUrlForFolder() {
+  function queryActiveTabUrlFromNormalWindow() {
     return new Promise(function(resolve) {
       chrome.windows.getLastFocused({ windowTypes: ["normal"] }, function(win) {
         void chrome.runtime.lastError;
@@ -235,6 +254,9 @@
         });
       });
     });
+  }
+  function queryActiveTabUrlForFolder() {
+    return queryActiveTabUrlFromNormalWindow();
   }
   async function resolveUiDataSkinForFolder(ui) {
     const setting = ui && ui.skin || "auto";
@@ -304,6 +326,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "System",
     "theme.light": "Light",
     "theme.dark": "Dark",
@@ -318,6 +344,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "Export settings",
     "bar.pack": "Pack",
     "bar.pack.folder": "Folder",
@@ -445,6 +475,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "\u0421\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0439",
     "theme.light": "\u0421\u0432\u0435\u0442\u043B\u0430\u044F",
     "theme.dark": "\u0422\u0451\u043C\u043D\u0430\u044F",
@@ -459,6 +493,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.pack": "\u0423\u043F\u0430\u043A\u043E\u0432\u043A\u0430",
     "bar.pack.folder": "\u041F\u0430\u043F\u043A\u0430",

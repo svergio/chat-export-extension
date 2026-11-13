@@ -788,6 +788,10 @@
       if (tag === "qwen") return "Qwen";
       if (tag === "deepseek") return "DeepSeek";
       if (tag === "perplexity") return "Perplexity";
+      if (tag === "kimi") return "Kimi";
+      if (tag === "zai") return "Z.ai";
+      if (tag === "minimax") return "MiniMax";
+      if (tag === "janitorai") return "JanitorAI";
       if (tag === "assistant") return "Assistant";
       if (tag === "user") return "User";
       return tag;
@@ -2660,6 +2664,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "System",
     "theme.light": "Light",
     "theme.dark": "Dark",
@@ -2674,6 +2682,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "Export settings",
     "bar.pack": "Pack",
     "bar.pack.folder": "Folder",
@@ -2801,6 +2813,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "\u0421\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0439",
     "theme.light": "\u0421\u0432\u0435\u0442\u043B\u0430\u044F",
     "theme.dark": "\u0422\u0451\u043C\u043D\u0430\u044F",
@@ -2815,6 +2831,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.pack": "\u0423\u043F\u0430\u043A\u043E\u0432\u043A\u0430",
     "bar.pack.folder": "\u041F\u0430\u043F\u043A\u0430",
@@ -2930,8 +2950,13 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
+  var EXTENSION_ONLY_PLATFORMS = Object.freeze(["janitorai"]);
   var UI_SKINS = Object.freeze([
     "chatgpt",
     "grok",
@@ -2940,7 +2965,11 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
@@ -2967,7 +2996,11 @@
       claude: true,
       qwen: true,
       deepseek: true,
-      perplexity: true
+      perplexity: true,
+      kimi: true,
+      zai: true,
+      minimax: true,
+      janitorai: true
     }),
     allowCreate: true,
     allowDestructive: false,
@@ -3921,6 +3954,7 @@
     fillEditable: () => fillEditable,
     fillRichComposer: () => fillRichComposer,
     findBusyBanners: () => findBusyBanners,
+    findCaptchaWidgets: () => findCaptchaWidgets,
     findStopControl: () => findStopControl,
     guardBusy: () => guardBusy,
     hostErr: () => hostErr,
@@ -4684,6 +4718,21 @@
   var PAYWALL_RE = /free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)/i;
   var AUTH_WALL_RE = /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
   var PLATFORM_BUSY_RE = /heavy (load|usage|traffic)|high demand|(at|over) capacity|overloaded|temporarily unavailable|service unavailable|something went wrong|try again (later|in|shortly|soon)|перегруж|высок\S* нагрузк|временно недоступ|попробуйте (\S+ )?(позже|снова|ещ[её] раз)|что-то пошло не так/i;
+  var CAPTCHA_RE = /captcha|hcaptcha|recaptcha|turnstile|arkose|verify you are (a )?human|i'?m not a robot|я не робот|cloudflare.*(checking|challenge)|checking (your )?browser|security (check|challenge)|complete the (security )?challenge/i;
+  var CAPTCHA_IFRAME_SELECTOR = [
+    'iframe[src*="recaptcha" i]',
+    'iframe[src*="hcaptcha" i]',
+    'iframe[src*="challenges.cloudflare.com" i]',
+    'iframe[src*="cf-turnstile" i]',
+    'iframe[src*="turnstile" i]',
+    'iframe[src*="arkoselabs" i]',
+    'iframe[src*="funcaptcha" i]',
+    'iframe[title*="captcha" i]',
+    "[data-sitekey]",
+    ".g-recaptcha",
+    ".h-captcha",
+    ".cf-turnstile"
+  ].join(",");
   var BANNER_SELECTOR = [
     '[role="alert"]',
     '[role="alertdialog"]',
@@ -4725,6 +4774,7 @@
   }
   function classifyGateKind(code, text) {
     if (code === "UNAUTHORIZED") return "auth_wall";
+    if (code === "CAPTCHA") return "captcha";
     if (code === "PLATFORM_BUSY") return "busy";
     if (PAYWALL_RE.test(String(text || ""))) return "paywall";
     return "quota";
@@ -4733,6 +4783,7 @@
     var t3 = String(text || "");
     if (!t3 || t3.length > BANNER_TEXT_MAX) return null;
     if (AUTH_WALL_RE.test(t3)) return "UNAUTHORIZED";
+    if (CAPTCHA_RE.test(t3)) return "CAPTCHA";
     if (RATE_LIMIT_RE.test(t3)) return "RATE_LIMIT";
     if (PLATFORM_BUSY_RE.test(t3)) return "PLATFORM_BUSY";
     return null;
@@ -4741,6 +4792,43 @@
     var code = classifyBusyText(text);
     if (!code) return;
     out.push({ el, code, text, kind: classifyGateKind(code, text) });
+  }
+  function captchaWidgetLabel(el) {
+    if (!el) return "captcha challenge";
+    var src = el.getAttribute && (el.getAttribute("src") || "");
+    var title = el.getAttribute && (el.getAttribute("title") || el.getAttribute("aria-label") || "");
+    var label = String(title || src || el.className || "captcha challenge").replace(/\s+/g, " ").trim();
+    if (label.length > BANNER_TEXT_MAX) label = label.slice(0, BANNER_TEXT_MAX);
+    return label || "captcha challenge";
+  }
+  function findCaptchaWidgets(root) {
+    root = root || document;
+    var out = [];
+    var nodes;
+    try {
+      nodes = Array.prototype.slice.call(root.querySelectorAll(CAPTCHA_IFRAME_SELECTOR));
+    } catch (e3) {
+      return out;
+    }
+    for (var i3 = 0; i3 < nodes.length; i3++) {
+      var el = nodes[i3];
+      if (!el || insideHit(out, el)) continue;
+      if (el.closest && el.closest(OWN_UI_SELECTOR)) continue;
+      if (!bannerVisible(el)) continue;
+      var text = captchaWidgetLabel(el);
+      out.push({
+        el,
+        code: "CAPTCHA",
+        text,
+        kind: "captcha",
+        challenge: {
+          tag: el.tagName ? String(el.tagName).toLowerCase() : null,
+          src: el.getAttribute ? el.getAttribute("src") || null : null,
+          title: el.getAttribute ? el.getAttribute("title") || null : null
+        }
+      });
+    }
+    return out;
   }
   function findBusyBanners(root, extra) {
     root = root || document;
@@ -4760,11 +4848,16 @@
       if (!text || text.length > BANNER_TEXT_MAX) continue;
       pushGateHit(out, el, text);
     }
+    var widgets = findCaptchaWidgets(root);
+    for (var w4 = 0; w4 < widgets.length; w4++) {
+      if (!insideHit(out, widgets[w4].el)) out.push(widgets[w4]);
+    }
     return out;
   }
   function preferGateHit(hits) {
     if (!hits || !hits.length) return null;
     for (var i3 = 0; i3 < hits.length; i3++) if (hits[i3].code === "UNAUTHORIZED") return hits[i3];
+    for (var c3 = 0; c3 < hits.length; c3++) if (hits[c3].code === "CAPTCHA") return hits[c3];
     for (var j3 = 0; j3 < hits.length; j3++) if (hits[j3].code === "RATE_LIMIT") return hits[j3];
     return hits[0] || null;
   }
@@ -4774,7 +4867,9 @@
   function throwBusy(hit) {
     var kind = hit.kind || classifyGateKind(hit.code, hit.text);
     var retryable = hit.code === "PLATFORM_BUSY" || hit.code === "RATE_LIMIT" && kind !== "paywall";
-    hostErr(hit.code, hit.text, { retryable, banner: hit.text, kind });
+    var details = { retryable, banner: hit.text, kind };
+    if (hit.challenge) details.challenge = hit.challenge;
+    hostErr(hit.code, hit.text, details);
   }
   async function guardBusy(run, candidates) {
     var collect = typeof candidates === "function" ? candidates : function() {
@@ -4833,11 +4928,12 @@
     var gateState = "ok";
     if (hit) {
       if (code === "UNAUTHORIZED") gateState = "auth_wall";
+      else if (code === "CAPTCHA") gateState = "captcha";
       else if (code === "RATE_LIMIT") gateState = "rate_limit";
       else gateState = "busy";
     } else if (generating) gateState = "generating";
     else if (!composerReady2) gateState = "composer_blocked";
-    return {
+    var out = {
       platform,
       generating,
       busy: !!hit,
@@ -4848,6 +4944,8 @@
       retryable,
       state: gateState
     };
+    if (hit && hit.challenge) out.challenge = hit.challenge;
+    return out;
   }
 
   // schemas/chat-export-1/manifest.json

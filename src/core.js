@@ -854,6 +854,10 @@
     if (tag === 'qwen') return 'Qwen';
     if (tag === 'deepseek') return 'DeepSeek';
     if (tag === 'perplexity') return 'Perplexity';
+    if (tag === 'kimi') return 'Kimi';
+    if (tag === 'zai') return 'Z.ai';
+    if (tag === 'minimax') return 'MiniMax';
+    if (tag === 'janitorai') return 'JanitorAI';
     if (tag === 'assistant') return 'Assistant';
     if (tag === 'user') return 'User';
     return tag;

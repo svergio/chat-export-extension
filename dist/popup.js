@@ -438,8 +438,13 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
+  var EXTENSION_ONLY_PLATFORMS = Object.freeze(["janitorai"]);
   var UI_SKINS = Object.freeze([
     "chatgpt",
     "grok",
@@ -448,7 +453,11 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
@@ -475,7 +484,11 @@
       claude: true,
       qwen: true,
       deepseek: true,
-      perplexity: true
+      perplexity: true,
+      kimi: true,
+      zai: true,
+      minimax: true,
+      janitorai: true
     }),
     allowCreate: true,
     allowDestructive: false,
@@ -645,6 +658,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "System",
     "theme.light": "Light",
     "theme.dark": "Dark",
@@ -659,6 +676,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "Export settings",
     "bar.pack": "Pack",
     "bar.pack.folder": "Folder",
@@ -786,6 +807,10 @@
     "skin.qwen": "Qwen",
     "skin.deepseek": "DeepSeek",
     "skin.perplexity": "Perplexity",
+    "skin.kimi": "Kimi",
+    "skin.zai": "Z.ai",
+    "skin.minimax": "MiniMax",
+    "skin.janitorai": "JanitorAI",
     "theme.auto": "\u0421\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0439",
     "theme.light": "\u0421\u0432\u0435\u0442\u043B\u0430\u044F",
     "theme.dark": "\u0422\u0451\u043C\u043D\u0430\u044F",
@@ -800,6 +825,10 @@
     "platform.qwen": "Qwen",
     "platform.deepseek": "DeepSeek",
     "platform.perplexity": "Perplexity",
+    "platform.kimi": "Kimi",
+    "platform.zai": "Z.ai",
+    "platform.minimax": "MiniMax",
+    "platform.janitorai": "JanitorAI",
     "section.exportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "bar.pack": "\u0423\u043F\u0430\u043A\u043E\u0432\u043A\u0430",
     "bar.pack.folder": "\u041F\u0430\u043F\u043A\u0430",
@@ -926,7 +955,7 @@
   var CLAUDE_SPARK_PATH = "M52.4285 162.873L98.7844 136.879L99.5485 134.602L98.7844 133.334H96.4921L88.7237 132.862L62.2346 132.153L39.3113 131.207L17.0249 130.026L11.4214 128.844L6.2 121.873L6.7094 118.447L11.4214 115.257L18.171 115.847L33.0711 116.911L55.485 118.447L71.6586 119.392L95.728 121.873H99.5485L100.058 120.337L98.7844 119.392L97.7656 118.447L74.5877 102.732L49.4995 86.1905L36.3823 76.62L29.3779 71.7757L25.8121 67.2858L24.2839 57.3608L30.6515 50.2716L39.3113 50.8623L41.4763 51.4531L50.2636 58.1879L68.9842 72.7209L93.4357 90.6804L97.0015 93.6343L98.4374 92.6652L98.6571 91.9801L97.0015 89.2625L83.757 65.2772L69.621 40.8192L63.2534 30.6579L61.5978 24.632C60.9565 22.1032 60.579 20.0111 60.579 17.4246L67.8381 7.49965L71.9133 6.19995L81.7193 7.49965L85.7946 11.0443L91.9074 24.9865L101.714 46.8451L116.996 76.62L121.453 85.4816L123.873 93.6343L124.764 96.1155H126.292V94.6976L127.566 77.9197L129.858 57.3608L132.15 30.8942L132.915 23.4505L136.608 14.4708L143.994 9.62643L149.725 12.344L154.437 19.0788L153.8 23.4505L150.998 41.6463L145.522 70.1215L141.957 89.2625H143.994L146.414 86.7813L156.093 74.0206L172.266 53.698L179.398 45.6635L187.803 36.802L193.152 32.5484H203.34L210.726 43.6549L207.415 55.1159L196.972 68.3492L188.312 79.5739L175.896 96.2095L168.191 109.585L168.882 110.689L170.738 110.53L198.755 104.504L213.91 101.787L231.994 98.7149L240.144 102.496L241.036 106.395L237.852 114.311L218.495 119.037L195.826 123.645L162.07 131.592L161.696 131.893L162.137 132.547L177.36 133.925L183.855 134.279H199.774L229.447 136.524L237.215 141.605L241.8 147.867L241.036 152.711L229.065 158.737L213.019 154.956L175.45 145.977L162.587 142.787H160.805V143.85L171.502 154.366L191.242 172.089L215.82 195.011L217.094 200.682L213.91 205.172L210.599 204.699L188.949 188.394L180.544 181.069L161.696 165.118H160.422V166.772L164.752 173.152L187.803 207.771L188.949 218.405L187.294 221.832L181.308 223.959L174.813 222.777L161.187 203.754L147.305 182.486L136.098 163.345L134.745 164.2L128.075 235.42L125.019 239.082L117.887 241.8L111.902 237.31L108.718 229.984L111.902 215.452L115.722 196.547L118.779 181.541L121.58 162.873L123.291 156.636L123.14 156.219L121.773 156.449L107.699 175.752L86.304 204.699L69.3663 222.777L65.291 224.431L58.2867 220.768L58.9235 214.27L62.8713 208.48L86.304 178.705L100.44 160.155L109.551 149.507L109.462 147.967L108.959 147.924L46.6977 188.512L35.6182 189.93L30.7788 185.44L31.4156 178.115L33.7079 175.752L52.4285 162.873Z";
   function IconClaude({ size }) {
     const s3 = size || 16;
-    return /* @__PURE__ */ k("svg", { viewBox: "0 0 248 248", width: s3, height: s3, fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { fill: "#D97757", d: CLAUDE_SPARK_PATH }));
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 248 248", width: s3, height: s3, fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { fill: "currentColor", d: CLAUDE_SPARK_PATH }));
   }
   function IconCopilot({ size }) {
     const s3 = size || 16;
@@ -943,6 +972,22 @@
   function IconPerplexity({ size }) {
     const s3 = size || 16;
     return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M22.3977 7.0896h-2.3106V.0676l-7.5094 6.3542V.1577h-1.1554v6.1966L4.4904 0v7.0896H1.6023v10.3976h2.8882V24l6.932-6.3591v6.2005h1.1554v-6.0469l6.9318 6.1807v-6.4879h2.8882V7.0896zm-3.4657-4.531v4.531h-5.355l5.355-4.531zm-13.2862.0676 4.8691 4.4634H5.6458V2.6262zM2.7576 16.332V8.245h7.8476l-6.1149 6.1147v1.9723H2.7576zm2.8882 5.0404v-3.8852h.0001v-2.6488l5.7763-5.7764v7.0111l-5.7764 5.2993zm12.7086.0248-5.7766-5.1509V9.0618l5.7766 5.7766v6.5588zm2.8882-5.0652h-1.733v-1.9723L13.3948 8.245h7.8478v8.087z" }));
+  }
+  function IconKimi({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M21.765.351C22.998.351 24 1.353 24 2.586S22.998 4.82 21.765 4.82h-1.974c-.15 0-.26-.12-.26-.26V2.586A2.237 2.237 0 0 1 21.765.35M9.41 13.388l8.447-8.377c.16-.16.07-.471-.14-.471h-4.55s-.1.02-.14.06l-9.099 9.029c-.14.14-.35.02-.35-.21V4.81c0-.15-.1-.27-.221-.27H.22c-.12 0-.22.12-.22.27v18.57c0 .15.1.27.22.27h3.137c.12 0 .22-.12.22-.27v-3.79c0-.08.03-.16.08-.21l2.826-2.796c.07-.07.16-.08.241-.03l7.546 5.551a8.9 8.9 0 0 0 4.018 1.493c.12.01.23-.11.23-.27V19.76c0-.14-.08-.25-.19-.26a5.8 5.8 0 0 1-2.355-.942l-6.533-4.73c-.14-.09-.15-.32-.03-.441" }));
+  }
+  function IconZai({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M12.606 1.806l-1.677 2.388c-0.258 0.374-0.697 0.606-1.161 0.606h-9.162V1.794C0.594 1.806 12.606 1.806 12.606 1.806zM24 1.806L9.6 22.206 0 22.206 14.4 1.806zM11.394 22.206l1.69-2.4c0.258-0.374 0.697-0.606 1.161-0.606h9.149v3.006H11.394z" }));
+  }
+  function IconMinimax({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { d: "M11.43 3.92a.86.86 0 1 0-1.718 0v14.236a1.999 1.999 0 0 1-3.997 0V9.022a.86.86 0 1 0-1.718 0v3.87a1.999 1.999 0 0 1-3.997 0V11.49a.57.57 0 0 1 1.139 0v1.404a.86.86 0 0 0 1.719 0V9.022a1.999 1.999 0 0 1 3.997 0v9.134a.86.86 0 0 0 1.719 0V3.92a1.998 1.998 0 1 1 3.996 0v11.788a.57.57 0 1 1-1.139 0zm10.572 3.105a2 2 0 0 0-1.999 1.997v7.63a.86.86 0 0 1-1.718 0V3.923a1.999 1.999 0 0 0-3.997 0v16.16a.86.86 0 0 1-1.719 0V18.08a.57.57 0 1 0-1.138 0v2a1.998 1.998 0 0 0 3.996 0V3.92a.86.86 0 0 1 1.719 0v12.73a1.999 1.999 0 0 0 3.996 0V9.023a.86.86 0 1 1 1.72 0v6.686a.57.57 0 0 0 1.138 0V9.022a2 2 0 0 0-1.998-1.997" }));
+  }
+  function IconJanitorai({ size }) {
+    const s3 = size || 16;
+    return /* @__PURE__ */ k("svg", { viewBox: "0 0 24 24", width: s3, height: s3, fill: "currentColor", "aria-hidden": "true" }, /* @__PURE__ */ k("path", { transform: "scale(0.2857142857142857) translate(-184.237383 1.329048)", d: "M255.699 38.8616C255.546 32.627 253.532 26.866 250.217 22.1046C250.166 22.0345 250.107 21.9556 250.039 21.8679C250.039 21.8679 250.047 21.8679 250.064 21.8679C249.826 21.4996 249.58 21.1313 249.325 20.763C248.279 19.3162 248.789 17.843 248.866 16.3436C249.095 12.2135 249.554 8.08338 248.228 4.03223C247.744 2.53277 246.673 2.42756 245.475 2.92738C241.829 4.47945 238.871 7.00482 236.628 10.2668C236.611 10.3019 236.594 10.3282 236.577 10.3457C236.22 10.8455 235.582 11.056 235.021 10.8718C232.242 10.0037 229.31 9.53025 226.251 9.53025C223.242 9.53025 220.361 9.97746 217.658 10.8193C217.098 11.0034 216.486 10.793 216.129 10.2931V10.2668C213.885 7.00482 210.927 4.47945 207.281 2.92738C206.083 2.42756 205.012 2.53277 204.528 4.03223C203.202 8.08338 203.635 12.2135 203.865 16.3436C203.941 17.6063 204.324 18.8689 203.814 20.1053C201.621 22.736 199.837 25.7612 198.638 29.0757C197.44 32.3639 196.777 35.889 196.777 39.5982C196.777 39.7034 196.777 39.8086 196.777 39.9138C196.777 39.9665 196.777 40.0104 196.777 40.0454C196.726 44.5964 197.72 48.8054 199.582 52.4093C203.355 59.8277 210.723 64.6417 220.004 64.7206C220.123 64.7206 220.242 64.7206 220.361 64.7206C220.693 64.6943 221.457 64.6417 222.248 64.5365C232.191 63.379 240.325 55.8291 242.211 45.5697C244.353 33.9423 236.653 23.7093 224.593 24.6037C215.823 25.2614 209.551 33.5214 211.029 42.4392C211.794 47.0165 214.24 48.9933 215.132 49.7466C216.495 50.8965 219.849 52.1344 223.291 51.588C224.949 51.325 230.024 50.5416 231.375 44.9646C231.962 42.8338 231.452 40.098 229.795 38.3881C228.163 36.6782 226.349 35.9037 223.801 36.3304C223.58 36.3657 223.419 36.4333 223.166 36.5203C220.259 37.52 220.718 41.7553 223.981 41.8605C224.05 41.8605 224.118 41.8605 224.185 41.8605C224.338 41.8605 224.517 41.8342 224.67 41.8079C225.715 41.6238 226.557 42.676 226.174 43.9124C226.106 44.1055 226.013 44.2807 225.894 44.4385C225.027 45.6486 223.038 45.8854 221.61 45.5434C218.423 44.7805 217.123 40.7293 218.78 36.9939C220.285 33.653 224.185 32.1009 227.704 32.7059C230.916 33.1005 234.205 36.6519 234.664 40.4926C235.965 51.436 225.664 58.6176 216.409 55.5661C208.531 52.9354 204.375 44.8857 206.083 36.4151C208.556 24.025 219.545 17.8167 230.508 20.1316C245.449 23.3147 250.217 39.0984 244.71 51.7254C241.88 58.223 236.73 62.3531 230.942 65.8518C228.953 67.0619 227.296 68.3509 225.996 69.6925C222.707 73.1387 222.459 75.7898 222.654 76.9736C222.821 77.9919 223.385 78.3586 223.837 78.5325C224.189 78.668 224.496 78.734 224.871 78.6382C225.608 78.503 226.362 78.0001 226.861 76.3159C227.488 74.1991 230.942 71.3177 236.908 68.4561C249.019 63.0897 255.775 51.8306 255.699 39.9402C255.699 39.8176 255.699 39.7034 255.699 39.5982C255.699 39.3527 255.699 39.1073 255.699 38.8616Z" }));
   }
   function IconSun({ size }) {
     const s3 = size || 14;
@@ -979,7 +1024,11 @@
     { id: "claude", Icon: IconClaude },
     { id: "qwen", Icon: IconQwen },
     { id: "deepseek", Icon: IconDeepSeek },
-    { id: "perplexity", Icon: IconPerplexity }
+    { id: "perplexity", Icon: IconPerplexity },
+    { id: "kimi", Icon: IconKimi },
+    { id: "zai", Icon: IconZai },
+    { id: "minimax", Icon: IconMinimax },
+    { id: "janitorai", Icon: IconJanitorai }
   ];
   var PLATFORM_ICONS = Object.fromEntries(SKIN_OPTIONS.map((o3) => [o3.id, o3.Icon]));
   var SCHEME_OPTIONS = [
@@ -1018,6 +1067,12 @@
       if (host === "perplexity.ai" || host === "www.perplexity.ai" || host.endsWith(".perplexity.ai")) {
         return "perplexity";
       }
+      if (host === "kimi.com" || host === "www.kimi.com" || host.endsWith(".kimi.com")) return "kimi";
+      if (host === "chat.z.ai" || host.endsWith(".z.ai")) return "zai";
+      if (host === "agent.minimax.io") return "minimax";
+      if (host === "janitorai.com" || host === "www.janitorai.com" || host.endsWith(".janitorai.com")) {
+        return "janitorai";
+      }
     } catch (e3) {
     }
     return "idle";
@@ -1045,13 +1100,20 @@
   function tabUrl(tab) {
     return tab && typeof tab.url === "string" ? tab.url : "";
   }
-  function queryActiveTabUrlForPopup() {
+  function queryActiveTabUrlFromNormalWindow() {
     return new Promise(function(resolve) {
-      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      chrome.windows.getLastFocused({ windowTypes: ["normal"] }, function(win) {
         void chrome.runtime.lastError;
-        resolve(tabUrl(tabs && tabs[0]));
+        const query = win && win.id != null ? { active: true, windowId: win.id } : { active: true, lastFocusedWindow: true };
+        chrome.tabs.query(query, function(tabs) {
+          void chrome.runtime.lastError;
+          resolve(tabUrl(tabs && tabs[0]));
+        });
       });
     });
+  }
+  function queryActiveTabUrlForPopup() {
+    return queryActiveTabUrlFromNormalWindow();
   }
   async function resolveUiDataSkinForPopup(ui) {
     const setting = ui && ui.skin || "auto";

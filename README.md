@@ -1,4 +1,4 @@
-[English](README.md) | [Русский](README.ru.md) · [![Support on DonationAlerts](https://img.shields.io/badge/Support-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server) · [![MCP Servers](https://img.shields.io/badge/MCP_Servers-listed-2563eb)](https://mcpservers.org/ru/)
+[English](README.md) | [Русский](README.ru.md) · [![Support on DonationAlerts](https://img.shields.io/badge/Support-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server) · [![MCP Servers](https://img.shields.io/badge/MCP_Servers-listed-2563eb)](https://mcpservers.org/ru/) · [![Chat Export MCP server](https://mcprush.com/badge/chat-export-mcp/card.svg)](https://mcprush.com/to/chat-export-mcp?ref=badge)
 
 # Chat Export — Chrome extension
 
@@ -6,9 +6,9 @@
   <img src="docs/media/demo-export.gif" alt="Export on ChatGPT, Grok, and Claude — pick a format and download" width="720" />
 </p>
 
-Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so agents in **Cursor**, **Claude Desktop**, and other MCP clients can list, export, create, and ask in those UIs **without vendor API keys**.
+Export and control your **web** chats on **twelve** providers (ChatGPT, Grok, X Grok, Claude, GitHub Copilot, Qwen, DeepSeek, Perplexity, Kimi, Z.ai, MiniMax, JanitorAI) — from your browser, under your rules. The extension adds an export bar on provider sites, downloads **Markdown, YAML, JSON, HTML, and PDF** locally, and connects to the optional [Chat Export MCP server](https://github.com/svergio/chat-export-server) so agents in **Cursor**, **Claude Desktop**, and other MCP clients can list, export, create, and ask on **eleven** of those UIs (**JanitorAI** is extension export-bar only) **without vendor API keys**.
 
-**Vs official ChatGPT export:** OpenAI’s data export is one zip of *all* chats as JSON after a request/wait cycle. This extension exports the *current* chat to Markdown or PDF (and YAML/JSON/HTML) in one click — no account dump, no waiting for a bulk archive. Same one-chat, local download pattern on the other seven providers.
+**Vs official ChatGPT export:** OpenAI’s data export is one zip of *all* chats as JSON after a request/wait cycle. This extension exports the *current* chat to Markdown or PDF (and YAML/JSON/HTML) in one click — no account dump, no waiting for a bulk archive. Same one-chat, local download pattern on the other eleven providers.
 
 **No network, no analytics, local-only.** Export and the optional MCP bridge stay on your machine (`chrome.downloads` + `127.0.0.1`). The extension does not phone home and does not include telemetry.
 
@@ -16,11 +16,11 @@ Export and control your **web** chats on eight providers (ChatGPT, Grok, X Grok,
 
 Chat Export is a **full product** in three public repos (extension, server, dashboard). Manual export works with the extension alone. MCP automation uses `chat-export-server` and the **MV3 extension bridge** in your Chrome tabs — **not** Chrome DevTools MCP. Deploy the server **natively**, via **Docker / Colima**, or **Kubernetes**. You supply the MCP client — common choices include **Cursor** (Chrome extension + MCP; Cursor marketplace listing pending approval), **Claude Desktop** and Claude MCP integrations (submission in progress), and **LangChain**-based local agents. None are bundled with the product.
 
-**Install zip:** [chat-export-extension-2.0.6.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.6/chat-export-extension-2.0.6.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.6](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.6).
+**Install zip:** [chat-export-extension-2.0.9.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.0.9/chat-export-extension-2.0.9.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.0.9](https://github.com/svergio/chat-export-extension/releases/tag/v2.0.9).
 
 ## The problem
 
-Official UIs are great for chatting but weak for **archiving**, **batch export**, and **agent orchestration**. Copy-paste does not scale across eight providers, and cloud APIs are a separate billing and compliance story.
+Official UIs are great for chatting but weak for **archiving**, **batch export**, and **agent orchestration**. Copy-paste does not scale across twelve providers, and cloud APIs are a separate billing and compliance story.
 
 ## What you get
 
@@ -34,12 +34,16 @@ Official UIs are great for chatting but weak for **archiving**, **batch export**
 | Qwen | `chat.qwen.ai` | Yes | Yes |
 | DeepSeek | `chat.deepseek.com` | Yes | Yes |
 | Perplexity | `perplexity.ai` | Yes | Yes |
+| Kimi | `kimi.com`, `www.kimi.com` | Yes | Yes |
+| Z.ai | `chat.z.ai` | Yes | Yes |
+| MiniMax | `agent.minimax.io` | Yes | Yes |
+| JanitorAI | `janitorai.com` | Yes | No (extension-only) |
 
 Dom parsing stays in the extension; automation and MCP live in the [local server](https://github.com/svergio/chat-export-server). Optional [dashboard](https://github.com/svergio/chat-export-dashboard) for operators.
 
 ## How it fits together
 
-Install the Chrome extension for one-click export from ChatGPT, Grok, Claude, and five other web UIs — files land in your Downloads folder with no network calls. Turn on the **browser bridge** in the popup when you want a local agent to list, export, create, or ask inside those same logged-in tabs: the extension opens a WebSocket to **chat-export-server** on `127.0.0.1` (token prefix `ceb_`). Point any MCP client at `http://127.0.0.1:8765/mcp` with a `cem_`/`cek_` key. Optionally open the operator **dashboard** on the same host for queues, browsers, and token management.
+Install the Chrome extension for one-click export from ChatGPT, Grok, Claude, and nine other web UIs — files land in your Downloads folder with no network calls. Turn on the **browser bridge** in the popup when you want a local agent to list, export, create, or ask inside those same logged-in tabs: the extension opens a WebSocket to **chat-export-server** on `127.0.0.1` (token prefix `ceb_`). Point any MCP client at `http://127.0.0.1:8765/mcp` with a `cem_`/`cek_` key. Optionally open the operator **dashboard** on the same host for queues, browsers, and token management.
 
 Deploy the server **natively**, with **Docker / Colima**, or on **Kubernetes** — see the server README and wiki. Stack diagrams (Mermaid), data flow, and deploy surfaces: **[Wiki — Architecture](https://github.com/svergio/chat-export-extension/wiki/Architecture)**. Walkthroughs: [Installation and quickstart](https://github.com/svergio/chat-export-extension/wiki/Installation-and-Quickstart) · [Use cases](https://github.com/svergio/chat-export-extension/wiki/Use-Cases) · [Native / Docker / K8s](https://github.com/svergio/chat-export-extension/wiki/Native-and-Kubernetes-Deployment) · two-tier ToS in [LEGAL.md](LEGAL.md).
 
@@ -66,7 +70,7 @@ Settings persist in `chrome.storage.local` under `ce.settings`.
 | `port` | `8765` | Server HTTP/WS port |
 | `apiKey` | empty | Browser gateway token `ceb_…` from server or dashboard |
 | `browserLabel` | `Chrome` | Label in dashboard / `browsers_list` |
-| `platforms.*` | all enabled | Per-site toggles: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude`, `qwen`, `deepseek`, `perplexity` |
+| `platforms.*` | all enabled | Per-site toggles: `chatgpt`, `grok`, `grok-x`, `copilot`, `claude`, `qwen`, `deepseek`, `perplexity`, `kimi`, `zai`, `minimax`, `janitorai` |
 | `allowCreate` | `true` | Allow MCP create/send |
 | `allowDestructive` | `false` | Allow MCP delete (server must agree) |
 | `allowProjects` | `true` | Project tools where supported |
@@ -89,7 +93,7 @@ Server MCP setup: [server README — Configuration](https://github.com/svergio/c
 
 ## Export bar (no server required)
 
-1. Open a supported host (e.g. [chatgpt.com](https://chatgpt.com), [grok.com](https://grok.com), [claude.ai](https://claude.ai), [chat.qwen.ai](https://chat.qwen.ai), [chat.deepseek.com](https://chat.deepseek.com), [perplexity.ai](https://perplexity.ai)) and refresh after extension updates.
+1. Open a supported host (e.g. [chatgpt.com](https://chatgpt.com), [grok.com](https://grok.com), [claude.ai](https://claude.ai), [chat.qwen.ai](https://chat.qwen.ai), [chat.deepseek.com](https://chat.deepseek.com), [perplexity.ai](https://perplexity.ai), [kimi.com](https://www.kimi.com), [chat.z.ai](https://chat.z.ai), [agent.minimax.io](https://agent.minimax.io), [janitorai.com](https://janitorai.com)) and refresh after extension updates.
 2. Choose formats (MD / YAML / JSON / HTML / PDF). **Folder** or **Zip** is always available (even for one format).
 3. Download — after you pick a default folder once, saves are **silent** into that folder. **Shift+click** changes default folder (`rebind`) or asks once (`saveAs`); configure in popup **Export settings** (above Advanced). Wiki: [Saving and Shift modes](https://github.com/svergio/chat-export-extension/wiki/Saving-and-Shift-Modes) · [per-provider UI galleries](https://github.com/svergio/chat-export-extension/wiki/Supported-Platforms#provider-ui-galleries-screenshots--gif).
 
@@ -119,7 +123,7 @@ Platform rollout notes: [docs/platforms.md](docs/platforms.md) in the maintainer
 | Repo | Role |
 |------|------|
 | [chat-export-extension](https://github.com/svergio/chat-export-extension) (this repo) | MV3 UI, content scripts, WS bridge |
-| [chat-export-server](https://github.com/svergio/chat-export-server) | MCP, jobs, SQLite cache, hub (listed on [MCP Servers](https://mcpservers.org/ru/) & [Glama](https://glama.ai/mcp/servers/svergio/chat-export-server)) |
+| [chat-export-server](https://github.com/svergio/chat-export-server) | MCP, jobs, SQLite cache, hub (listed on [MCP Servers](https://mcpservers.org/ru/), [Glama](https://glama.ai/mcp/servers/svergio/chat-export-server) & [Mcprush](https://mcprush.com/svergio/chat-export-mcp)) |
 | [chat-export-dashboard](https://github.com/svergio/chat-export-dashboard) | React operator UI (`/dashboard`) |
 | [Wiki](https://github.com/svergio/chat-export-extension/wiki) | Install, tools, FAQ |
 

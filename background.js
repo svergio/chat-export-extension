@@ -14,8 +14,13 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
+  var EXTENSION_ONLY_PLATFORMS = Object.freeze(["janitorai"]);
   var UI_SKINS = Object.freeze([
     "chatgpt",
     "grok",
@@ -24,7 +29,11 @@
     "claude",
     "qwen",
     "deepseek",
-    "perplexity"
+    "perplexity",
+    "kimi",
+    "zai",
+    "minimax",
+    "janitorai"
   ]);
   var UI_SCHEMES = Object.freeze(["auto", "light", "dark"]);
   var UI_LOCALES = Object.freeze(["auto", "en", "ru"]);
@@ -51,7 +60,11 @@
       claude: true,
       qwen: true,
       deepseek: true,
-      perplexity: true
+      perplexity: true,
+      kimi: true,
+      zai: true,
+      minimax: true,
+      janitorai: true
     }),
     allowCreate: true,
     allowDestructive: false,
@@ -152,6 +165,11 @@
       if (s.platforms[id] !== false) out.push(id);
     }
     return out;
+  }
+  function platformsEnabledForWire(settings) {
+    return platformsEnabledList(settings).filter(function(id) {
+      return EXTENSION_ONLY_PLATFORMS.indexOf(id) === -1;
+    });
   }
   function isPlatformEnabledIn(settings, platformId) {
     const s = normalizeSettings(settings);
@@ -318,7 +336,11 @@
     claude: "https://claude.ai/new",
     qwen: "https://chat.qwen.ai/",
     deepseek: "https://chat.deepseek.com/",
-    perplexity: "https://www.perplexity.ai/"
+    perplexity: "https://www.perplexity.ai/",
+    kimi: "https://www.kimi.com/",
+    zai: "https://chat.z.ai/",
+    minimax: "https://agent.minimax.io/",
+    janitorai: "https://janitorai.com/"
   };
   var PLATFORM_CONTENT = {
     chatgpt: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/chatgpt.js"],
@@ -328,7 +350,11 @@
     claude: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/claude.js"],
     qwen: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/qwen.js"],
     deepseek: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/deepseek.js"],
-    perplexity: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/perplexity.js"]
+    perplexity: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/perplexity.js"],
+    kimi: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/kimi.js"],
+    zai: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/zai.js"],
+    minimax: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/minimax.js"],
+    janitorai: ["vendor/fontkit.umd.min.js", "vendor/pdf-lib.min.js", "dist/shared.js", "content/janitorai.js"]
   };
   var socket = null;
   var reconnectTimer = null;
@@ -393,6 +419,18 @@
     }
     if (platform === "perplexity") {
       return host === "perplexity.ai" || host.endsWith(".perplexity.ai");
+    }
+    if (platform === "kimi") {
+      return host === "kimi.com" || host === "www.kimi.com" || host.endsWith(".kimi.com");
+    }
+    if (platform === "zai") {
+      return host === "chat.z.ai" || host.endsWith(".z.ai");
+    }
+    if (platform === "minimax") {
+      return host === "agent.minimax.io";
+    }
+    if (platform === "janitorai") {
+      return host === "janitorai.com" || host === "www.janitorai.com" || host.endsWith(".janitorai.com");
     }
     return false;
   }
@@ -467,6 +505,24 @@
       const m = path.match(/\/(?:search|session)\/([^/?#]+)/);
       return m ? m[1] : "";
     }
+    if (platform === "kimi") {
+      const m = path.match(/\/chat\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "zai") {
+      const m = path.match(/\/c\/([^/?#]+)/);
+      return m ? m[1] : "";
+    }
+    if (platform === "minimax") {
+      const fromQuery = u.searchParams.get("chatID") || u.searchParams.get("chatId");
+      if (fromQuery) return fromQuery;
+      const m = path.match(/\/(?:task|session|chat|c)\/([^/?#]+)/i);
+      return m ? m[1] : "";
+    }
+    if (platform === "janitorai") {
+      const m = path.match(/\/(?:[a-z]{2}\/)?chats\/(\d+)/i);
+      return m ? m[1] : "";
+    }
     return "";
   }
   async function collectTabsSnapshot() {
@@ -503,7 +559,7 @@
       browserId,
       browserLabel: currentSettings.browserLabel || "Chrome",
       extVersion: EXT_VERSION,
-      platformsEnabled: platformsEnabledList(currentSettings),
+      platformsEnabled: platformsEnabledForWire(currentSettings),
       allowCreate: currentSettings.allowCreate !== false,
       allowDestructive: !!currentSettings.allowDestructive,
       allowProjects: currentSettings.allowProjects !== false,
@@ -558,7 +614,7 @@
   function settingsPayload() {
     return {
       type: "settings",
-      platformsEnabled: platformsEnabledList(currentSettings),
+      platformsEnabled: platformsEnabledForWire(currentSettings),
       allowCreate: currentSettings.allowCreate !== false,
       allowDestructive: !!currentSettings.allowDestructive,
       allowProjects: currentSettings.allowProjects !== false,
@@ -1172,7 +1228,7 @@
                 browserId: ensured.browserId,
                 browserLabel: settings.browserLabel || "Chrome",
                 extVersion: EXT_VERSION,
-                platformsEnabled: platformsEnabledList(settings),
+                platformsEnabled: platformsEnabledForWire(settings),
                 allowCreate: settings.allowCreate !== false,
                 allowDestructive: !!settings.allowDestructive,
                 allowProjects: settings.allowProjects !== false,
@@ -1302,6 +1358,12 @@
       if (host === "chat.deepseek.com" || host.endsWith(".deepseek.com")) return "deepseek";
       if (host === "perplexity.ai" || host === "www.perplexity.ai" || host.endsWith(".perplexity.ai")) {
         return "perplexity";
+      }
+      if (host === "kimi.com" || host === "www.kimi.com" || host.endsWith(".kimi.com")) return "kimi";
+      if (host === "chat.z.ai" || host.endsWith(".z.ai")) return "zai";
+      if (host === "agent.minimax.io") return "minimax";
+      if (host === "janitorai.com" || host === "www.janitorai.com" || host.endsWith(".janitorai.com")) {
+        return "janitorai";
       }
     } catch (e) {
     }

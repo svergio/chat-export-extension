@@ -21,16 +21,7 @@ function tabUrl(tab) {
   return tab && typeof tab.url === 'string' ? tab.url : '';
 }
 
-export function queryActiveTabUrlForPopup() {
-  return new Promise(function (resolve) {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      void chrome.runtime.lastError;
-      resolve(tabUrl(tabs && tabs[0]));
-    });
-  });
-}
-
-export function queryActiveTabUrlForFolder() {
+function queryActiveTabUrlFromNormalWindow() {
   return new Promise(function (resolve) {
     chrome.windows.getLastFocused({ windowTypes: ['normal'] }, function (win) {
       void chrome.runtime.lastError;
@@ -44,6 +35,14 @@ export function queryActiveTabUrlForFolder() {
       });
     });
   });
+}
+
+export function queryActiveTabUrlForPopup() {
+  return queryActiveTabUrlFromNormalWindow();
+}
+
+export function queryActiveTabUrlForFolder() {
+  return queryActiveTabUrlFromNormalWindow();
 }
 
 export async function resolveUiDataSkinForPopup(ui) {

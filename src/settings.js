@@ -16,8 +16,15 @@ export const PLATFORMS = Object.freeze([
   'claude',
   'qwen',
   'deepseek',
-  'perplexity'
+  'perplexity',
+  'kimi',
+  'zai',
+  'minimax',
+  'janitorai'
 ]);
+
+/** Extension bar-only ids — not in protocol / MCP wire hello. */
+export const EXTENSION_ONLY_PLATFORMS = Object.freeze(['janitorai']);
 
 export const UI_SKINS = Object.freeze([
   'chatgpt',
@@ -27,7 +34,11 @@ export const UI_SKINS = Object.freeze([
   'claude',
   'qwen',
   'deepseek',
-  'perplexity'
+  'perplexity',
+  'kimi',
+  'zai',
+  'minimax',
+  'janitorai'
 ]);
 
 export const UI_SCHEMES = Object.freeze(['auto', 'light', 'dark']);
@@ -62,7 +73,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     claude: true,
     qwen: true,
     deepseek: true,
-    perplexity: true
+    perplexity: true,
+    kimi: true,
+    zai: true,
+    minimax: true,
+    janitorai: true
   }),
   allowCreate: true,
   allowDestructive: false,
@@ -191,6 +206,12 @@ export function platformsEnabledList(settings) {
     if (s.platforms[id] !== false) out.push(id);
   }
   return out;
+}
+
+export function platformsEnabledForWire(settings) {
+  return platformsEnabledList(settings).filter(function (id) {
+    return EXTENSION_ONLY_PLATFORMS.indexOf(id) === -1;
+  });
 }
 
 export function isPlatformEnabledIn(settings, platformId) {

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Chat Export",
-  "version": "2.0.8",
-  "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, and Perplexity chats to Markdown, YAML, JSON, HTML, and PDF.",
+  "version": "2.0.9",
+  "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, Perplexity, Kimi, Z.ai, MiniMax, and JanitorAI chats to Markdown, YAML, JSON, HTML, and PDF.",
   "permissions": [
     "downloads",
     "tabs",
@@ -45,7 +45,13 @@
     "https://chat.qwen.ai/*",
     "https://www.perplexity.ai/*",
     "https://perplexity.ai/*",
-    "https://chat.deepseek.com/*"
+    "https://chat.deepseek.com/*",
+    "https://www.kimi.com/*",
+    "https://kimi.com/*",
+    "https://chat.z.ai/*",
+    "https://agent.minimax.io/*",
+    "https://janitorai.com/*",
+    "https://www.janitorai.com/*"
   ],
   "web_accessible_resources": [
     {
@@ -63,7 +69,13 @@
         "https://chat.qwen.ai/*",
         "https://www.perplexity.ai/*",
         "https://perplexity.ai/*",
-        "https://chat.deepseek.com/*"
+        "https://chat.deepseek.com/*",
+        "https://www.kimi.com/*",
+        "https://kimi.com/*",
+        "https://chat.z.ai/*",
+        "https://agent.minimax.io/*",
+        "https://janitorai.com/*",
+        "https://www.janitorai.com/*"
       ]
     }
   ],
@@ -216,6 +228,72 @@
       "css": [
         "styles/base.css",
         "styles/deepseek.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.kimi.com/*",
+        "https://kimi.com/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/kimi.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/kimi.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://chat.z.ai/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/zai.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/zai.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://agent.minimax.io/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/minimax.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/minimax.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://janitorai.com/*",
+        "https://www.janitorai.com/*"
+      ],
+      "js": [
+        "vendor/fontkit.umd.min.js",
+        "vendor/pdf-lib.min.js",
+        "dist/shared.js",
+        "content/janitorai.js"
+      ],
+      "css": [
+        "styles/base.css",
+        "styles/janitorai.css"
       ],
       "run_at": "document_idle"
     }

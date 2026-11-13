@@ -1,0 +1,147 @@
+.chat-export-bar--kimi {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 4px 0 0 !important;
+  height: 36px !important;
+}
+
+.chat-export-bar--kimi > .chat-export-fmt,
+.chat-export-bar--kimi > .chat-export-dl {
+  box-sizing: border-box !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 8px 10px !important;
+  border-radius: 20px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--Labels-Secondary, rgba(255, 255, 255, 0.56)) !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  box-shadow: none !important;
+  outline: none !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.chat-export-bar--kimi > .chat-export-dl {
+  min-width: 36px !important;
+  width: 36px !important;
+  padding: 0 !important;
+  border: 0.5px solid transparent !important;
+  color: var(--Labels-Primary, rgba(255, 255, 255, 0.84)) !important;
+}
+
+.chat-export-bar--kimi > .chat-export-fmt:hover,
+.chat-export-bar--kimi > .chat-export-fmt.is-open,
+.chat-export-bar--kimi > .chat-export-dl:hover {
+  background: var(--Others-SubLayerBg-active, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--Labels-Primary, rgba(255, 255, 255, 0.84)) !important;
+}
+
+.chat-export-bar--kimi > .chat-export-fmt:focus-visible,
+.chat-export-bar--kimi > .chat-export-dl:focus-visible {
+  box-shadow: 0 0 0 2px var(--Colors-KMBlue, #1a88ff) !important;
+}
+
+.chat-export-bar--kimi > .chat-export-dl[aria-busy='true'] {
+  opacity: 0.55 !important;
+}
+
+.chat-export-bar--kimi .chat-export-format-text {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+}
+
+.chat-export-bar--kimi .chat-export-chevron {
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 0.7;
+}
+
+.chat-export-bar--kimi .chat-export-dl > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.chat-export-bar--kimi .chat-export-dl svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-fmt,
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-dl {
+  color: var(--Labels-Secondary, rgba(0, 0, 0, 0.56)) !important;
+}
+
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-dl {
+  color: var(--Labels-Primary, rgba(0, 0, 0, 0.84)) !important;
+}
+
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-fmt:hover,
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-fmt.is-open,
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-dl:hover {
+  background: var(--Others-SubLayerBg-active, rgba(0, 0, 0, 0.06)) !important;
+  color: var(--Labels-Primary, rgba(0, 0, 0, 0.84)) !important;
+}
+
+.chat-export-menu[data-chat-export-menu='kimi'] {
+  --ce-menu-bg: var(--Bg-Tertiary, #292929);
+  --ce-menu-fg: var(--Labels-Primary, rgba(255, 255, 255, 0.84));
+  --ce-menu-border: transparent;
+  --ce-menu-hover: var(--Others-SubLayerBg-active, rgba(255, 255, 255, 0.08));
+  --ce-menu-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --ce-menu-sep: rgba(255, 255, 255, 0.08);
+  --ce-menu-pack-bg: var(--Others-SubLayerBg-active, rgba(255, 255, 255, 0.08));
+  --ce-menu-pack-active: rgba(26, 136, 255, 0.22);
+  padding: 4px;
+  border-radius: 14px;
+  font-family: inherit;
+}
+
+.chat-export-menu[data-chat-export-menu='kimi'][data-ce-scheme='light'] {
+  --ce-menu-bg: var(--Bg-Tertiary, #ffffff);
+  --ce-menu-fg: var(--Labels-Primary, rgba(0, 0, 0, 0.84));
+  --ce-menu-border: rgba(0, 0, 0, 0.08);
+  --ce-menu-hover: rgba(0, 0, 0, 0.06);
+  --ce-menu-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  --ce-menu-sep: rgba(0, 0, 0, 0.08);
+  --ce-menu-pack-bg: rgba(26, 136, 255, 0.06);
+  --ce-menu-pack-active: rgba(26, 136, 255, 0.16);
+}
+
+.chat-export-menu[data-chat-export-menu='kimi'] .chat-export-menu-item {
+  min-height: 24px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.chat-export-menu[data-chat-export-menu='kimi'] .chat-export-menu-sep {
+  margin: 4px 8px;
+}
+
+.chat-export-menu[data-chat-export-menu='kimi'] .chat-export-pack {
+  border-radius: 10px;
+}
+
+.chat-export-menu[data-chat-export-menu='kimi'] .chat-export-pack-btn {
+  border-radius: 8px;
+  font-weight: 500;
+}

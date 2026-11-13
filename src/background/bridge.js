@@ -11,6 +11,7 @@ import {
   loadStored,
   normalizeSettings,
   platformsEnabledList,
+  platformsEnabledForWire,
   saveSettings,
   setBridgeStatus,
   getBridgeStatus,
@@ -52,7 +53,11 @@ const PLATFORM_START = {
   claude: 'https://claude.ai/new',
   qwen: 'https://chat.qwen.ai/',
   deepseek: 'https://chat.deepseek.com/',
-  perplexity: 'https://www.perplexity.ai/'
+  perplexity: 'https://www.perplexity.ai/',
+  kimi: 'https://www.kimi.com/',
+  zai: 'https://chat.z.ai/',
+  minimax: 'https://agent.minimax.io/',
+  janitorai: 'https://janitorai.com/'
 };
 
 const PLATFORM_CONTENT = {
@@ -63,7 +68,11 @@ const PLATFORM_CONTENT = {
   claude: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/claude.js'],
   qwen: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/qwen.js'],
   deepseek: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/deepseek.js'],
-  perplexity: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/perplexity.js']
+  perplexity: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/perplexity.js'],
+  kimi: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/kimi.js'],
+  zai: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/zai.js'],
+  minimax: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/minimax.js'],
+  janitorai: ['vendor/fontkit.umd.min.js', 'vendor/pdf-lib.min.js', 'dist/shared.js', 'content/janitorai.js']
 };
 
 let socket = null;
@@ -133,6 +142,18 @@ function matchPlatform(platform, url) {
   }
   if (platform === 'perplexity') {
     return host === 'perplexity.ai' || host.endsWith('.perplexity.ai');
+  }
+  if (platform === 'kimi') {
+    return host === 'kimi.com' || host === 'www.kimi.com' || host.endsWith('.kimi.com');
+  }
+  if (platform === 'zai') {
+    return host === 'chat.z.ai' || host.endsWith('.z.ai');
+  }
+  if (platform === 'minimax') {
+    return host === 'agent.minimax.io';
+  }
+  if (platform === 'janitorai') {
+    return host === 'janitorai.com' || host === 'www.janitorai.com' || host.endsWith('.janitorai.com');
   }
   return false;
 }
@@ -214,6 +235,24 @@ function extractChatId(platform, url) {
     const m = path.match(/\/(?:search|session)\/([^/?#]+)/);
     return m ? m[1] : '';
   }
+  if (platform === 'kimi') {
+    const m = path.match(/\/chat\/([^/?#]+)/);
+    return m ? m[1] : '';
+  }
+  if (platform === 'zai') {
+    const m = path.match(/\/c\/([^/?#]+)/);
+    return m ? m[1] : '';
+  }
+  if (platform === 'minimax') {
+    const fromQuery = u.searchParams.get('chatID') || u.searchParams.get('chatId');
+    if (fromQuery) return fromQuery;
+    const m = path.match(/\/(?:task|session|chat|c)\/([^/?#]+)/i);
+    return m ? m[1] : '';
+  }
+  if (platform === 'janitorai') {
+    const m = path.match(/\/(?:[a-z]{2}\/)?chats\/(\d+)/i);
+    return m ? m[1] : '';
+  }
   return '';
 }
 
@@ -254,7 +293,7 @@ async function helloPayload() {
     browserId: browserId,
     browserLabel: currentSettings.browserLabel || 'Chrome',
     extVersion: EXT_VERSION,
-    platformsEnabled: platformsEnabledList(currentSettings),
+    platformsEnabled: platformsEnabledForWire(currentSettings),
     allowCreate: currentSettings.allowCreate !== false,
     allowDestructive: !!currentSettings.allowDestructive,
     allowProjects: currentSettings.allowProjects !== false,
@@ -318,7 +357,7 @@ export async function enrollKeyToServer(settings, id) {
 function settingsPayload() {
   return {
     type: 'settings',
-    platformsEnabled: platformsEnabledList(currentSettings),
+    platformsEnabled: platformsEnabledForWire(currentSettings),
     allowCreate: currentSettings.allowCreate !== false,
     allowDestructive: !!currentSettings.allowDestructive,
     allowProjects: currentSettings.allowProjects !== false,
@@ -996,7 +1035,7 @@ export async function testConnection() {
                 browserId: ensured.browserId,
                 browserLabel: settings.browserLabel || 'Chrome',
                 extVersion: EXT_VERSION,
-                platformsEnabled: platformsEnabledList(settings),
+                platformsEnabled: platformsEnabledForWire(settings),
                 allowCreate: settings.allowCreate !== false,
                 allowDestructive: !!settings.allowDestructive,
                 allowProjects: settings.allowProjects !== false,

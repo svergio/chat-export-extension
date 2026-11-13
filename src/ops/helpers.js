@@ -351,6 +351,22 @@ var AUTH_WALL_RE =
   /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
 var PLATFORM_BUSY_RE =
   /heavy (load|usage|traffic)|high demand|(at|over) capacity|overloaded|temporarily unavailable|service unavailable|something went wrong|try again (later|in|shortly|soon)|перегруж|высок\S* нагрузк|временно недоступ|попробуйте (\S+ )?(позже|снова|ещ[её] раз)|что-то пошло не так/i;
+var CAPTCHA_RE =
+  /captcha|hcaptcha|recaptcha|turnstile|arkose|verify you are (a )?human|i'?m not a robot|я не робот|cloudflare.*(checking|challenge)|checking (your )?browser|security (check|challenge)|complete the (security )?challenge/i;
+var CAPTCHA_IFRAME_SELECTOR = [
+  'iframe[src*="recaptcha" i]',
+  'iframe[src*="hcaptcha" i]',
+  'iframe[src*="challenges.cloudflare.com" i]',
+  'iframe[src*="cf-turnstile" i]',
+  'iframe[src*="turnstile" i]',
+  'iframe[src*="arkoselabs" i]',
+  'iframe[src*="funcaptcha" i]',
+  'iframe[title*="captcha" i]',
+  '[data-sitekey]',
+  '.g-recaptcha',
+  '.h-captcha',
+  '.cf-turnstile'
+].join(',');
 var BANNER_SELECTOR = [
   '[role="alert"]',
   '[role="alertdialog"]',
@@ -397,6 +413,7 @@ function insideHit(hits, el) {
 
 export function classifyGateKind(code, text) {
   if (code === 'UNAUTHORIZED') return 'auth_wall';
+  if (code === 'CAPTCHA') return 'captcha';
   if (code === 'PLATFORM_BUSY') return 'busy';
   if (PAYWALL_RE.test(String(text || ''))) return 'paywall';
   return 'quota';
@@ -406,6 +423,7 @@ export function classifyBusyText(text) {
   var t = String(text || '');
   if (!t || t.length > BANNER_TEXT_MAX) return null;
   if (AUTH_WALL_RE.test(t)) return 'UNAUTHORIZED';
+  if (CAPTCHA_RE.test(t)) return 'CAPTCHA';
   if (RATE_LIMIT_RE.test(t)) return 'RATE_LIMIT';
   if (PLATFORM_BUSY_RE.test(t)) return 'PLATFORM_BUSY';
   return null;
@@ -415,6 +433,47 @@ function pushGateHit(out, el, text) {
   var code = classifyBusyText(text);
   if (!code) return;
   out.push({ el: el, code: code, text: text, kind: classifyGateKind(code, text) });
+}
+
+function captchaWidgetLabel(el) {
+  if (!el) return 'captcha challenge';
+  var src = el.getAttribute && (el.getAttribute('src') || '');
+  var title = el.getAttribute && (el.getAttribute('title') || el.getAttribute('aria-label') || '');
+  var label = String(title || src || el.className || 'captcha challenge')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (label.length > BANNER_TEXT_MAX) label = label.slice(0, BANNER_TEXT_MAX);
+  return label || 'captcha challenge';
+}
+
+export function findCaptchaWidgets(root) {
+  root = root || document;
+  var out = [];
+  var nodes;
+  try {
+    nodes = Array.prototype.slice.call(root.querySelectorAll(CAPTCHA_IFRAME_SELECTOR));
+  } catch (e) {
+    return out;
+  }
+  for (var i = 0; i < nodes.length; i++) {
+    var el = nodes[i];
+    if (!el || insideHit(out, el)) continue;
+    if (el.closest && el.closest(OWN_UI_SELECTOR)) continue;
+    if (!bannerVisible(el)) continue;
+    var text = captchaWidgetLabel(el);
+    out.push({
+      el: el,
+      code: 'CAPTCHA',
+      text: text,
+      kind: 'captcha',
+      challenge: {
+        tag: el.tagName ? String(el.tagName).toLowerCase() : null,
+        src: el.getAttribute ? el.getAttribute('src') || null : null,
+        title: el.getAttribute ? el.getAttribute('title') || null : null
+      }
+    });
+  }
+  return out;
 }
 
 export function findBusyBanners(root, extra) {
@@ -434,12 +493,17 @@ export function findBusyBanners(root, extra) {
     if (!text || text.length > BANNER_TEXT_MAX) continue;
     pushGateHit(out, el, text);
   }
+  var widgets = findCaptchaWidgets(root);
+  for (var w = 0; w < widgets.length; w++) {
+    if (!insideHit(out, widgets[w].el)) out.push(widgets[w]);
+  }
   return out;
 }
 
 export function preferGateHit(hits) {
   if (!hits || !hits.length) return null;
   for (var i = 0; i < hits.length; i++) if (hits[i].code === 'UNAUTHORIZED') return hits[i];
+  for (var c = 0; c < hits.length; c++) if (hits[c].code === 'CAPTCHA') return hits[c];
   for (var j = 0; j < hits.length; j++) if (hits[j].code === 'RATE_LIMIT') return hits[j];
   return hits[0] || null;
 }
@@ -450,8 +514,11 @@ export function detectBusyBanner(root, extra) {
 
 export function throwBusy(hit) {
   var kind = hit.kind || classifyGateKind(hit.code, hit.text);
-  var retryable = hit.code === 'PLATFORM_BUSY' || (hit.code === 'RATE_LIMIT' && kind !== 'paywall');
-  hostErr(hit.code, hit.text, { retryable: retryable, banner: hit.text, kind: kind });
+  var retryable =
+    hit.code === 'PLATFORM_BUSY' || (hit.code === 'RATE_LIMIT' && kind !== 'paywall');
+  var details = { retryable: retryable, banner: hit.text, kind: kind };
+  if (hit.challenge) details.challenge = hit.challenge;
+  hostErr(hit.code, hit.text, details);
 }
 
 // Banners that were already on screen before the op must not fail it: only nodes that appeared during the op count.
@@ -518,11 +585,12 @@ export function buildHostState(platform, state, candidates) {
   var gateState = 'ok';
   if (hit) {
     if (code === 'UNAUTHORIZED') gateState = 'auth_wall';
+    else if (code === 'CAPTCHA') gateState = 'captcha';
     else if (code === 'RATE_LIMIT') gateState = 'rate_limit';
     else gateState = 'busy';
   } else if (generating) gateState = 'generating';
   else if (!composerReady) gateState = 'composer_blocked';
-  return {
+  var out = {
     platform: platform,
     generating: generating,
     busy: !!hit,
@@ -533,6 +601,8 @@ export function buildHostState(platform, state, candidates) {
     retryable: retryable,
     state: gateState
   };
+  if (hit && hit.challenge) out.challenge = hit.challenge;
+  return out;
 }
 
 export * from './menu.js';
