@@ -192,3 +192,12 @@
   font-size: 14px;
   font-weight: 700;
 }
+
+.chat-export-menu[data-chat-export-menu='grok-x'] {
+  --ce-menu-motion-ms: 100ms;
+  --ce-menu-scale-x-from: 1;
+  --ce-menu-scale-y-from: 1;
+  --ce-menu-tx-from: 0px;
+  --ce-menu-ty-from: 0px;
+  --ce-menu-blur-from: 0px;
+}

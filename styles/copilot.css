@@ -112,3 +112,13 @@
   --ce-menu-pack-active: var(--control-transparent-bgColor-active, rgba(31, 35, 40, 0.1));
   border-radius: 12px;
 }
+
+.chat-export-menu[data-chat-export-menu='copilot'] {
+  --ce-menu-motion-ms: 200ms;
+  --ce-menu-ease-in: cubic-bezier(0.33, 1, 0.68, 1);
+  --ce-menu-ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --ce-menu-scale-x-from: 1;
+  --ce-menu-scale-y-from: 1;
+  --ce-menu-tx-from: -8px;
+  --ce-menu-ty-from: 0px;
+}

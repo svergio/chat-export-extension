@@ -108,21 +108,15 @@
   white-space: nowrap;
 }
 
-/* Native dropdown: bg-surface-elevated-secondary/90 + blur, 0.5px overlay ring, rounded-2xl */
+/* Colors/blur only — pad/radius/gap match popup .ce-select (styles/base.css). */
 .chat-export-menu[data-chat-export-menu='chatgpt'] {
   border: 0;
-  border-radius: 16px;
-  padding: 10px;
-  min-width: 196px;
   font-family: -apple-system-body, ui-sans-serif, -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
 .chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-menu-item {
-  min-height: 36px;
-  padding: 6px 10px;
-  border-radius: 12px;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -139,19 +133,13 @@
 }
 
 .chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-menu-sep {
-  margin: 6px 0;
-}
-
-.chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-pack {
-  border-radius: 12px;
+  margin: 4px 2px;
 }
 
 .chat-export-menu[data-chat-export-menu='chatgpt'] .chat-export-pack-btn {
-  border-radius: 9px;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
-  padding: 6px 10px;
 }
 
 .chat-export-menu[data-chat-export-menu='chatgpt'][data-ce-scheme='dark'] {
@@ -174,4 +162,13 @@
   --ce-menu-sep: var(--color-border, #0000001a);
   --ce-menu-pack-bg: var(--color-background-secondary-ghost-hover, #0000000d);
   --ce-menu-pack-active: var(--color-background-secondary-ghost-active, rgba(13, 13, 13, 0.12));
+}
+
+.chat-export-menu[data-chat-export-menu='chatgpt'] {
+  --ce-menu-motion-ms: 100ms;
+  --ce-menu-scale-x-from: 1;
+  --ce-menu-scale-y-from: 1;
+  --ce-menu-tx-from: 0px;
+  --ce-menu-ty-from: 0px;
+  --ce-menu-blur-from: 0px;
 }

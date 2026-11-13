@@ -103,3 +103,12 @@
   --ce-menu-pack-bg: #0000000a;
   --ce-menu-pack-active: #00000014;
 }
+
+.chat-export-menu[data-chat-export-menu='claude'] {
+  --ce-menu-motion-ms: 100ms;
+  --ce-menu-scale-x-from: 1;
+  --ce-menu-scale-y-from: 1;
+  --ce-menu-tx-from: 0px;
+  --ce-menu-ty-from: 0px;
+  --ce-menu-blur-from: 0px;
+}

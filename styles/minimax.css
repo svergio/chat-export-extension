@@ -124,3 +124,12 @@
   border-radius: 6px;
   font-weight: 400;
 }
+
+.chat-export-menu[data-chat-export-menu='minimax'] {
+  --ce-menu-motion-ms: 180ms;
+  --ce-menu-ease-in: cubic-bezier(0.08, 0.82, 0.17, 1);
+  --ce-menu-ease-out: cubic-bezier(0.08, 0.82, 0.17, 1);
+  --ce-menu-scale-x-from: 1;
+  --ce-menu-scale-y-from: 0.8;
+  transform-origin: left var(--ce-menu-origin-y, top);
+}

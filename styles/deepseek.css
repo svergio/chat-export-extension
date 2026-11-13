@@ -115,3 +115,11 @@
   border-radius: 6px;
   font-weight: 500;
 }
+
+.chat-export-menu[data-chat-export-menu='deepseek'] {
+  --ce-menu-motion-ms: 100ms;
+  --ce-menu-ease-in: cubic-bezier(0.4, 0, 0.2, 1);
+  --ce-menu-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ce-menu-scale-x-from: 0.8;
+  --ce-menu-scale-y-from: 0.8;
+}

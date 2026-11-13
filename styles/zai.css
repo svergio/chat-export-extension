@@ -131,3 +131,12 @@
   border-radius: 6px;
   font-weight: 500;
 }
+
+.chat-export-menu[data-chat-export-menu='zai'] {
+  --ce-menu-motion-ms: 150ms;
+  --ce-menu-ease-in: cubic-bezier(0, 0, 0.2, 1);
+  --ce-menu-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ce-menu-scale-x-from: 0.95;
+  --ce-menu-scale-y-from: 0.95;
+  --ce-menu-blur-from: 2px;
+}
