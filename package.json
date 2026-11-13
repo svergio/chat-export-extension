@@ -1,12 +1,12 @@
 {
   "name": "chat-export-extension",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, Perplexity, Kimi, Z.ai, MiniMax, and JanitorAI chats to MD/YAML/JSON/HTML/PDF.",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
     "pack": "node scripts/pack.mjs",
-    "test:unit": "node --test test/options.test.js test/files.test.js test/test-settings.js test/test-settings-persist.js test/test-bridge-gate.js test/test-skin-resolve.js test/test-save-folder-settings.js test/test-folder-store.js test/test-i18n.js test/test-i18n-new-keys.js test/test-toolbar-icons.js test/test-styles-selectors.js test/test-providers-contract.js test/test-export-schemas.js test/popup-no-select.test.js test/shift-only.test.js test/detect-host-scheme.test.js test/test-minimax-chat-id.js",
+    "test:unit": "node --test test/options.test.js test/files.test.js test/test-settings.js test/test-settings-persist.js test/test-bridge-gate.js test/test-skin-resolve.js test/test-save-folder-settings.js test/test-folder-store.js test/test-i18n.js test/test-i18n-new-keys.js test/test-toolbar-icons.js test/test-styles-selectors.js test/test-providers-contract.js test/test-export-schemas.js test/popup-no-select.test.js test/shift-only.test.js test/detect-host-scheme.test.js test/test-minimax-chat-id.js test/test-wire-platforms.js",
     "test:dom": "node --test test/menu.test.js test/busy.test.js test/test-html-to-markdown.js test/grok-x-dom.test.js test/helpers-submit.test.js test/pack-always.test.js test/mount-contents.test.js test/inject-before.test.js test/toast.test.js test/export-bar-run-download.test.js test/test-save-fallback-quiet.js test/test-janitorai-export-order.js test/test-zai-export-fidelity.js",
     "test:cdt": "node scripts/cdt-gate.mjs",
     "test:cdt:full": "node scripts/cdt-gate.mjs --full --open-missing --save=all",
