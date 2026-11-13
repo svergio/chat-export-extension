@@ -79,6 +79,7 @@
   transform: rotate(180deg);
 }
 
+/* Structural tokens match popup .ce-select-menu / .ce-select-item (popup.css). */
 .chat-export-menu {
   --ce-menu-bg: #2a2a2a;
   --ce-menu-fg: #f2f2f2;
@@ -88,9 +89,11 @@
   --ce-menu-sep: rgba(255, 255, 255, 0.1);
   --ce-menu-pack-bg: rgba(0, 0, 0, 0.25);
   --ce-menu-pack-active: rgba(255, 255, 255, 0.12);
-  min-width: 196px;
-  padding: 8px;
-  border-radius: 16px;
+  --ce-menu-radius: 10px;
+  --ce-menu-item-radius: 8px;
+  min-width: 168px;
+  padding: 4px;
+  border-radius: var(--ce-menu-radius);
   background: var(--ce-menu-bg);
   color: var(--ce-menu-fg);
   box-shadow: var(--ce-menu-shadow);
@@ -101,12 +104,11 @@
 .chat-export-menu-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 10px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--ce-menu-item-radius);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -122,13 +124,17 @@
 }
 
 .chat-export-check {
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 14px;
+  height: 14px;
   opacity: 0.85;
-  font-size: 13px;
+  color: inherit;
 }
 
 .chat-export-menu-sep {
   height: 1px;
-  margin: 8px 4px;
+  margin: 4px 2px;
   background: var(--ce-menu-sep);
 }
 
@@ -136,7 +142,7 @@
   display: flex;
   gap: 4px;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: var(--ce-menu-item-radius);
   background: var(--ce-menu-pack-bg);
 }
 

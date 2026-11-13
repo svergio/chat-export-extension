@@ -204,7 +204,20 @@ function FormatMenu({
             }}
           >
             <span>{labels[value]}</span>
-            {on ? <span class="chat-export-check" aria-hidden="true">✓</span> : null}
+            {on ? (
+              <svg
+                class="chat-export-check"
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
+                <path
+                  fill="currentColor"
+                  d="M6.4 11.6 3.2 8.4l1.1-1.1 2.1 2.1 5.1-5.1 1.1 1.1z"
+                />
+              </svg>
+            ) : null}
           </button>
         );
       })}

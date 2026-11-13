@@ -3323,7 +3323,23 @@
               }
             },
             /* @__PURE__ */ k("span", null, labels[value]),
-            on ? /* @__PURE__ */ k("span", { class: "chat-export-check", "aria-hidden": "true" }, "\u2713") : null
+            on ? /* @__PURE__ */ k(
+              "svg",
+              {
+                class: "chat-export-check",
+                width: "14",
+                height: "14",
+                viewBox: "0 0 16 16",
+                "aria-hidden": "true"
+              },
+              /* @__PURE__ */ k(
+                "path",
+                {
+                  fill: "currentColor",
+                  d: "M6.4 11.6 3.2 8.4l1.1-1.1 2.1 2.1 5.1-5.1 1.1 1.1z"
+                }
+              )
+            ) : null
           );
         }),
         /* @__PURE__ */ k("div", null, /* @__PURE__ */ k("div", { class: "chat-export-menu-sep" }), /* @__PURE__ */ k("div", { class: "chat-export-pack", role: "radiogroup", "aria-label": t3("bar.pack") }, [

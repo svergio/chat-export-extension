@@ -1,48 +1,93 @@
-# CDT release gate
+# CDT gate
 
-Live Chrome DevTools checks against the user's logged-in Chrome. Not unit/happy-dom. Run before Chrome Web Store / zip publish when ExportBar, folder pill, or silent save changed.
+Live Chrome DevTools. **Not** unit/happy-dom.
+
+## Sections vs `--full`
+
+`--full` only **orchestrates** modules (no popup exhaust / 108× options):
+
+| Section | What it does |
+| --- | --- |
+| `styles` | Skin×scheme×locale sample; drawers; `data-skin` / `data-scheme`; fmtParity hook (Agent B) |
+| `ui-random` | Seeded CE-popup allowlist clicks + ExportBar **fmt-menu only** (never Скачать / host Download) |
+| `usage` | All providers bar+ver; Folder\|Zip; Download toast; mode2/rebind; 1 platform toggle |
+| `console` | FAIL (or explicit SKIP) on `[chat-export] unauthorized` / Token expired / save failed |
+
+Debug only (not in `--full`): `--section=popup` exhaust.
+
+Legacy aliases still accepted: `buttons` → `ui-random`; `providers` / `save` / `scenarios` for staged debug.
+
+## Commands
+
+| Use | Command |
+| --- | --- |
+| Default (usage) | `npm run test:cdt` |
+| Usage | `npm run test:cdt -- --section=usage --open-missing --save=all` |
+| Styles | `npm run test:cdt -- --section=styles` |
+| UI random | `npm run test:cdt -- --section=ui-random --seed=42 --random-clicks=20` |
+| Console | `npm run test:cdt -- --section=console` |
+| Popup exhaust | `npm run test:cdt -- --section=popup` |
+| **Once before release** | `npm run test:cdt:full` |
+
+`test:cdt:full` = `--full --open-missing --save=all` → `styles` + `ui-random` + `usage` + `console`.
+
+### Flags
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--full` | off | Orchestrate styles + ui-random + usage + console |
+| `--section=` | `usage` | Comma list of sections |
+| `--open-missing` | off | `new_page` provider start URLs when tab missing |
+| `--save=` | usage/full → all; else zai,deepseek | Provider ids or `all` |
+| `--no-save` | off | Skip download/save asserts |
+| `--seed=` / `CE_CDT_SEED` | timestamp | Reproducible random (reported) |
+| `--random-clicks=` | `40` | Max remaining popup allowlist clicks after structured samples |
+| `--random-clicks-bar=` | `8` | Fmt-menu item/pack clicks per provider with bar |
+| `--styles-sample=` | `12` | UI combos for styles |
+| `--report=` | `docs/qa/<ver>-cdt-gate.md` | Report path |
+
+## ui-random allowlist (CE popup only)
+
+Hard-coded in `scripts/cdt-gate.mjs` as `UI_RANDOM_ALLOW` + blacklist. Host model menus / site Download — **never**.
+
+### May random (sample)
+
+| UI | Random? |
+| --- | --- |
+| Style (`ce-select`, ChatGPT…) | yes — open + 1 option |
+| Theme (Dark/Light/Auto) | yes |
+| Language (EN/RU/Auto) | yes |
+| Platform toggles | yes — **1 seed-picked** off→on (not all 12) |
+| Shift + click select | yes — option sample |
+| Default schema select | yes |
+| Per format Markdown/YAML/JSON/HTML/PDF schema | yes — sample 1–2 |
+| Automation permission toggles | yes — sample 1 + restore |
+| Advanced / Export settings drawers | yes — open-close |
+| FAQ DisclosureTriangles | yes |
+
+### Must not random (blacklist)
+
+| UI | Why |
+| --- | --- |
+| Choose folder / Change folder | native picker |
+| Forget folder | destructive |
+| Rotate / Сменить token | destructive |
+| Donate / external links | leave page |
+| Скачать / Download chat | usage only (not ui-random) |
+| Host Download / model dropdown | not CE |
+
+### ExportBar
+
+Fmt menu (MD…PDF) and Folder\|Zip are **mandatory in usage**, not replaced by random. Extra random **only** inside an already open CE fmt-menu (item/pack) — no Скачать, no folder-pill native.
 
 ## Prerequisites
 
-1. Chrome with remote debugging enabled (`chrome://inspect/#remote-debugging`).
-2. Unpacked Chat Export loaded (id default `hhfiadhandpdamghcphoffmnldokgmec`).
-3. Folder granted (ExportBar shows folder name, not regrant warn).
-4. CDT CLI on user Chrome (not headless). Stop any leftover headless daemon first:
-
 ```bash
-chrome-devtools stop
 chrome-devtools start --autoConnect --categoryExtensions --no-usage-statistics
 ```
 
-5. Provider tabs open (or pass `--open-missing`). For silent-save rows, open a chat that has messages (defaults: `zai`, `deepseek`).
-6. If saves toast `Скачано` / `Downloaded` while the pill still shows a folder name, reload the extension once (`chrome-devtools reload_extension <id>`), reload provider tabs, re-grant folder if prompted, then re-run. Stale content-script ↔ SW after long CDT sessions causes quiet Downloads fallback.
+Folder granted; chats with messages for save.
 
-## Run
+## Exit
 
-```bash
-cd chat-export-extension
-npm run test:cdt
-npm run test:cdt -- --open-missing
-npm run test:cdt -- --save=zai,deepseek
-npm run test:cdt -- --no-save
-```
-
-Env:
-
-- `CE_EXT_ID` — extension id if not the default unpacked id
-- `CE_FOLDER_DIR` — directory used to verify new files (default `~/Downloads/Тестовая/Гитахаб`)
-- `CHROME_DEVTOOLS_BIN` — path to `chrome-devtools` if not on `PATH`
-
-Exit codes: `0` all PASS/SKIP, `1` any FAIL, `2` tooling/setup error.
-
-Report: `docs/qa/<version>-cdt-gate.md`.
-
-## What it asserts
-
-| Check | Pass means |
-| --- | --- |
-| `extension/sw` | Service worker manifest version matches `manifest.json` |
-| `<provider>/bar` | ExportBar present, `data-chat-export-v` == version, fmt+dl+folder pill, folder not warn, format menu opens |
-| `<provider>/save` | Plain download click → toast «Сохранено в …», no `folder.html` tab, new file under `CE_FOLDER_DIR` |
-
-Native pickers (first grant / Shift rebind / saveAs) stay manual — CDT cannot complete `showDirectoryPicker`.
+`0` PASS/SKIP · `1` FAIL · `2` tooling
