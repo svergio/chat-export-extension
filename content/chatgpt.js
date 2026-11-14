@@ -24,10 +24,14 @@
     return /размышл|thinking/i.test(String(s || ''));
   }
 
-  function findModel() {
-    var btn = document.querySelector(
+  function findModelButton() {
+    return document.querySelector(
       'button[aria-haspopup="menu"][data-testid*="model" i], button[aria-label*="model" i], [data-testid="model-switcher-dropdown-button"]'
     );
+  }
+
+  function findModel() {
+    var btn = findModelButton();
     if (btn) {
       var t = (btn.textContent || '').replace(/\s+/g, ' ').trim();
       if (t && !isThinkingLabel(t) && t.length < 48) return t;
@@ -991,6 +995,78 @@
     return !!(Ops.findStopControl && Ops.findStopControl(document));
   }
 
+  // Mirror of the zai platform helper: honor operator timeout_s / timeoutMs inside
+  // the product ceiling, so tests and MCP callers can bound waits.
+  function waitTimeoutMs(args, fallbackMs) {
+    var n = args && args.timeoutMs != null ? Number(args.timeoutMs) : NaN;
+    if (!Number.isFinite(n) && args && args.timeout_s != null) n = Number(args.timeout_s) * 1000;
+    if (!Number.isFinite(n)) return fallbackMs;
+    return Math.min(Math.max(Math.trunc(n), 1000), fallbackMs);
+  }
+
+  function modelIdsMatch(a, b) {
+    var idA = Ops.normalizeId ? Ops.normalizeId(a || '') : String(a || '').toLowerCase();
+    var idB = Ops.normalizeId ? Ops.normalizeId(b || '') : String(b || '').toLowerCase();
+    if (!idA || !idB) return false;
+    if (idA === idB) return true;
+    var short = idA.length < idB.length ? idA : idB;
+    var long = idA.length < idB.length ? idB : idA;
+    return short.length >= 4 && long.indexOf(short) === 0;
+  }
+
+  async function applyModelChoice(wanted) {
+    var want = String(wanted || '').trim();
+    if (!want) return '';
+    if (modelIdsMatch(findModel(), want)) return findModel();
+    var btn = findModelButton();
+    if (!btn) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (!Ops.openMenu || !Ops.pickMenuItem) rpcErr('OPTION_NOT_FOUND', 'model menu helpers unavailable');
+    var menu;
+    try {
+      menu = await Ops.openMenu(btn, { timeoutMs: 6000, retries: 1, message: 'ChatGPT model menu did not open' });
+    } catch (e) {
+      rpcErr('OPTION_NOT_FOUND', 'model menu did not open: ' + want);
+    }
+    var picked = Ops.pickMenuItem(menu, function (it) {
+      return modelIdsMatch(it.label, want) || String(it.label || '').toLowerCase().indexOf(want.toLowerCase()) >= 0;
+    });
+    Ops.closeMenu(document);
+    if (!picked) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (picked.disabled || picked.locked) rpcErr('OPTION_LOCKED', 'model: ' + want);
+    try {
+      await Ops.waitFor(
+        function () {
+          return modelIdsMatch(findModel(), want) ? true : null;
+        },
+        { timeoutMs: 4000, message: 'ChatGPT model apply timeout' }
+      );
+    } catch (eVerify) {}
+    return picked.label || want;
+  }
+
+  // Gate-aware error enrichment: on HOST_ERROR/TIMEOUT-class failures, surface a
+  // visible captcha (CAPTCHA + widget detail) or a classified busy banner before
+  // returning the raw error. Captcha is never auto-solved or dismissed here.
+  function gateAwareTimeout(err) {
+    try {
+      if (err && err.code && err.code !== 'HOST_ERROR' && err.code !== 'TIMEOUT') return err;
+      if (Ops.findCaptchaWidgets) {
+        var widgets = Ops.findCaptchaWidgets(document);
+        if (widgets && widgets.length) {
+          var w = widgets[0] && widgets[0].captchaWidget ? widgets[0].captchaWidget : widgets[0];
+          rpcErr('CAPTCHA', 'ChatGPT captcha challenge is on screen — resolve it manually; it is never auto-solved or dismissed', { captchaWidget: w });
+        }
+      }
+      if (Ops.detectBusyBanner) {
+        var hit = Ops.detectBusyBanner(document);
+        if (hit && Ops.throwBusy) Ops.throwBusy(hit);
+      }
+    } catch (eGate) {
+      if (eGate && eGate.code) throw eGate;
+    }
+    return err;
+  }
+
   async function ensureNewChat() {
     if (!currentChatId() && findComposerInput()) return;
     if (Ops.softNavigate) Ops.softNavigate('/');
@@ -1091,7 +1167,10 @@
     });
     var turnsBefore = turnNodes().length;
     var fill = Ops.fillRichComposer || Ops.fillEditable;
-    fill(input, body);
+    var fillHow = fill(input, body);
+    if (fillHow === 'failed') {
+      rpcErr('HOST_ERROR', 'ChatGPT composer fill failed (composer did not hold the text)');
+    }
     await Ops.sleep(200);
     if (stopButtonVisible() || turnNodes().length > turnsBefore) {
       return turnsBefore;
@@ -1297,9 +1376,10 @@
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
+          await applyModelChoice(args && args.model);
           if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(args.text);
-          await waitAssistantTurn(turnsBefore, { timeoutMs: 180000 });
+          await waitAssistantTurn(turnsBefore, { timeoutMs: waitTimeoutMs(args, 180000) });
           return {
             platform: 'chatgpt',
             chatId: chatId,
@@ -1308,7 +1388,7 @@
             updatedAt: new Date().toISOString()
           };
         } catch (err) {
-          hostErr(err);
+          hostErr(gateAwareTimeout(err));
         }
       },
       create: async function (args) {
@@ -1317,13 +1397,14 @@
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           var title = Ops.testTitle ? Ops.testTitle(args && args.title) : '[ce-test] chat';
           await ensureNewChat();
+          await applyModelChoice(args && args.model);
           if (args.files && args.files.length) await applyWireFiles(args.files);
           await submitComposerText(text);
           var chatId = await Ops.waitFor(
             function () {
               return currentChatId() || null;
             },
-            { timeoutMs: 90000, message: 'ChatGPT chatId timeout' }
+            { timeoutMs: waitTimeoutMs(args, 90000), message: 'ChatGPT chatId timeout' }
           );
           await patchTitle(chatId, title);
           return {
@@ -1334,7 +1415,7 @@
             updatedAt: new Date().toISOString()
           };
         } catch (err) {
-          hostErr(err);
+          hostErr(gateAwareTimeout(err));
         }
       },
       delete: async function (args) {

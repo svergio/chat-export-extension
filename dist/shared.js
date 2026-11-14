@@ -322,7 +322,19 @@
       }
       return map;
     }
+    function captchaOnScreen() {
+      try {
+        var Ops = global.ChatExport && global.ChatExport.Ops;
+        if (Ops && typeof Ops.findCaptchaWidgets === "function") {
+          var hits = Ops.findCaptchaWidgets(global.document);
+          return !!(hits && hits.length);
+        }
+      } catch (e3) {
+      }
+      return false;
+    }
     function closeOverlays() {
+      if (captchaOnScreen()) return;
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true, cancelable: true }));
     }
     function waitMs(ms) {
@@ -3979,6 +3991,29 @@
         };
       }
     }
+    const SOFT_PAYWALL_PLATFORMS = { zai: true, minimax: true, perplexity: true };
+    if (SOFT_PAYWALL_PLATFORMS[id] && typeof Ops.isSoftPaywallOnly === "function") {
+      for (const name of SUBMIT_HOOKS) {
+        const wrapped = ops[name];
+        if (!wrapped) continue;
+        ops[name] = function(args, ctx) {
+          return Promise.resolve(wrapped(args, ctx)).catch(function(err) {
+            if (err && err.code === "RATE_LIMIT" && Ops.isSoftPaywallOnly(err.details && err.details.banner)) {
+              throw new CE2.RpcError(
+                "HOST_ERROR",
+                id + " upgrade banner is not exhausted quota (send may still work)",
+                Object.assign({}, err.details || {}, {
+                  banner: err.details && err.details.banner || "",
+                  softPaywall: true,
+                  note: "Free/Upgrade marketing banner downgraded: Free badge is not RATE_LIMIT."
+                })
+              );
+            }
+            throw err;
+          });
+        };
+      }
+    }
     if (ops.hostState && typeof Ops.buildHostState === "function") {
       const probe = ops.hostState;
       ops.hostState = async function(args, ctx) {
@@ -4244,6 +4279,7 @@
     findStopControl: () => findStopControl,
     guardBusy: () => guardBusy,
     hostErr: () => hostErr,
+    isSoftPaywallOnly: () => isSoftPaywallOnly,
     locateMenuRoot: () => locateMenuRoot,
     matchOption: () => matchOption,
     matchQuery: () => matchQuery,
@@ -4476,6 +4512,11 @@
   function closeMenu(doc) {
     doc = doc || (typeof document !== "undefined" ? document : null);
     if (!doc) return;
+    try {
+      var hits = findCaptchaWidgets(doc);
+      if (hits && hits.length) return;
+    } catch (eGuard) {
+    }
     var view = pageView(doc);
     var keyInit = { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true, cancelable: true };
     var target = doc.body || doc.documentElement;
@@ -5003,6 +5044,11 @@
   }
   var RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota exceeded|you('ve| have) reached (your |the )?(quota|message limit|limit)|free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит|请求过于频繁|请求频率/i;
   var PAYWALL_RE = /free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)/i;
+  var HARD_RATE_LIMIT_RE = /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota exceeded|you('ve| have) reached (your |the )?(quota|message limit|limit)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит|请求过于频繁|请求频率/i;
+  function isSoftPaywallOnly(text) {
+    var t3 = String(text || "");
+    return PAYWALL_RE.test(t3) && !HARD_RATE_LIMIT_RE.test(t3);
+  }
   var AUTH_WALL_RE = /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
   var PLATFORM_BUSY_RE = /heavy (load|usage|traffic)|high demand|(at|over) capacity|overloaded|temporarily unavailable|service unavailable|something went wrong|try again (later|in|shortly|soon)|перегруж|высок\S* нагрузк|временно недоступ|попробуйте (\S+ )?(позже|снова|ещ[её] раз)|что-то пошло не так/i;
   var CAPTCHA_RE = /\b(h?captcha|recaptcha|turnstile|arkose|funcaptcha)\b|verify you are (a )?human|are you a robot|prove you are human|i'?m not a robot|я не робот|пройдите проверку|cloudflare.*(checking|challenge)|checking your browser|please complete the captcha|complete the (security )?challenge|请完成验证|完成验证|安全验证|验证码|进行人机验证|滑块验证/i;
@@ -5303,6 +5349,9 @@
     var thinking = !!(state && state.thinking);
     var streaming = !!(state && state.streaming);
     var composerReady2 = !!(state && state.composerReady);
+    if (hit && hit.code === "RATE_LIMIT" && isSoftPaywallOnly(hit.text)) {
+      hit = null;
+    }
     var usage = state && state.usage && typeof state.usage === "object" ? state.usage : hit && hit.code === "RATE_LIMIT" ? parseUsageFromText(hit.text) : null;
     var captchaWidget = hit && (hit.captchaWidget || hit.challenge) || state && (state.captchaWidget || state.challenge) || null;
     if (generating && hit && hit.code !== "UNAUTHORIZED") {

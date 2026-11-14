@@ -341,7 +341,21 @@
     return map;
   }
 
+  function captchaOnScreen() {
+    // Policy guard: Escape closes full-screen challenges — never dismiss a visible
+    // captcha on the operator's behalf.
+    try {
+      var Ops = global.ChatExport && global.ChatExport.Ops;
+      if (Ops && typeof Ops.findCaptchaWidgets === 'function') {
+        var hits = Ops.findCaptchaWidgets(global.document);
+        return !!(hits && hits.length);
+      }
+    } catch (e) {}
+    return false;
+  }
+
   function closeOverlays() {
+    if (captchaOnScreen()) return;
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
   }
 
