@@ -385,11 +385,20 @@
     for (i = 0; i < entries.length; i++) {
       var entry = entries[i];
       if (entry && entry.read_write_token) {
-        var cacheKey = (data.thread_metadata && data.thread_metadata.context_uuid) || currentChatId();
+        var cacheKey = (data.thread_metadata && data.thread_metadata.context_uuid) ||
+          entry.context_uuid ||
+          currentChatId();
+        var entryUuid = entry.backend_uuid || entry.uuid || entry.entry_uuid;
         threadTokenCache[String(cacheKey)] = {
           read_write_token: entry.read_write_token,
-          entry_uuid: entry.uuid || entry.entry_uuid
+          entry_uuid: entryUuid
         };
+        if (entry.backend_uuid && entry.uuid && entry.backend_uuid !== entry.uuid) {
+          threadTokenCache[String(entry.uuid)] = threadTokenCache[String(cacheKey)];
+        }
+        if (entry.backend_uuid) {
+          threadTokenCache[String(entry.backend_uuid)] = threadTokenCache[String(cacheKey)];
+        }
       }
       var q = String(entry.query_str || '').trim();
       if (q) messages.push({ role: 'user', roleTag: 'user', text: q, links: [] });
@@ -416,6 +425,61 @@
     return ids.filter(function (id, idx, arr) {
       return id && arr.indexOf(id) === idx;
     });
+  }
+
+  function rowMatchesDeleteId(row, chatId, contextUuid) {
+    if (!row) return false;
+    var ids = [chatId, contextUuid].filter(Boolean).map(String);
+    var fields = [
+      row.context_uuid,
+      row.uuid,
+      row.slug,
+      row.frontend_uuid,
+      row.frontend_context_uuid,
+      row.matched_entry_uuid,
+      row.thread_url_slug
+    ];
+    var i;
+    var j;
+    for (i = 0; i < ids.length; i++) {
+      for (j = 0; j < fields.length; j++) {
+        if (fields[j] && String(fields[j]) === ids[i]) return true;
+      }
+    }
+    return false;
+  }
+
+  async function lookupDeleteCredsFromList(chatId, contextUuid) {
+    var body = {
+      limit: 40,
+      ascending: false,
+      offset: 0,
+      search_term: '',
+      exclude_asi: false
+    };
+    var res = await apiFetch('/rest/thread/list_ask_threads' + API_QS, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) return null;
+    var data = await res.json();
+    var raw = Array.isArray(data) ? data : (data && (data.threads || data.items)) || [];
+    var i;
+    for (i = 0; i < raw.length; i++) {
+      if (!rowMatchesDeleteId(raw[i], chatId, contextUuid)) continue;
+      if (!raw[i].uuid || !raw[i].read_write_token) continue;
+      return {
+        entry_uuid: String(raw[i].uuid),
+        read_write_token: String(raw[i].read_write_token)
+      };
+    }
+    return null;
+  }
+
+  function resolveDeleteEntryUuid(entry, cached) {
+    if (entry && entry.backend_uuid) return String(entry.backend_uuid);
+    if (cached && cached.entry_uuid) return String(cached.entry_uuid);
+    return null;
   }
 
   async function loadThreadApi(chatId) {
@@ -795,19 +859,25 @@
           var loaded = await loadThreadApi(chatId);
           if (!loaded && currentChatId()) loaded = await loadThreadApi(currentChatId());
           if (!loaded) rpcErr('NOT_FOUND', 'thread not found: ' + chatId);
+          messagesFromApiData(loaded.data, 'perplexity');
           var entry = (loaded.data.entries && loaded.data.entries[0]) || {};
-          var token = entry.read_write_token;
-          var entryUuid = entry.uuid || entry.entry_uuid;
+          // delete_thread_by_entry_uuid wants backend entry uuid, not frontend uuid
+          // (schematized get: entry.uuid === frontend_uuid; entry.backend_uuid === list.uuid).
           var cached =
             threadTokenCache[chatId] ||
             threadTokenCache[loaded.chatId] ||
-            (entry.context_uuid && threadTokenCache[entry.context_uuid]);
-          if (!token && cached) {
-            token = cached.read_write_token;
-            entryUuid = entryUuid || cached.entry_uuid;
+            (entry.context_uuid && threadTokenCache[entry.context_uuid]) ||
+            (entry.backend_uuid && threadTokenCache[entry.backend_uuid]);
+          var token = entry.read_write_token || (cached && cached.read_write_token) || null;
+          var entryUuid = resolveDeleteEntryUuid(entry, cached);
+          if (!entryUuid || !token) {
+            var fromList = await lookupDeleteCredsFromList(chatId, entry.context_uuid || loaded.chatId);
+            if (fromList) {
+              entryUuid = entryUuid || fromList.entry_uuid;
+              token = token || fromList.read_write_token;
+            }
           }
           if (!token || !entryUuid) rpcErr('HOST_ERROR', 'delete tokens missing');
-          messagesFromApiData(loaded.data, 'perplexity');
           var res = await apiFetch('/rest/thread/delete_thread_by_entry_uuid' + API_QS, {
             method: 'DELETE',
             body: JSON.stringify({ entry_uuid: entryUuid, read_write_token: token })

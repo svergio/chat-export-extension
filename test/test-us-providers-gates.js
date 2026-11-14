@@ -273,6 +273,59 @@ test('perplexity create reports OPTION_NOT_FOUND when model arg has no selector'
   );
 });
 
+test('perplexity delete sends backend_uuid not frontend uuid', async () => {
+  const contextUuid = '11111111-1111-4111-8111-111111111111';
+  const frontendUuid = '22222222-2222-4222-8222-222222222222';
+  const backendUuid = '33333333-3333-4333-8333-333333333333';
+  const token = 'tok-delete-probe';
+  const win = new Window({ url: 'https://www.perplexity.ai/session/' + contextUuid });
+  win.document.write(`<div role="textbox" contenteditable="true" aria-label="Ask anything"></div>`);
+  const calls = [];
+  win.fetch = async (url, opts) => {
+    const u = String(url);
+    const method = (opts && opts.method) || 'GET';
+    let body = null;
+    try {
+      body = opts && opts.body ? JSON.parse(String(opts.body)) : null;
+    } catch {
+      body = opts && opts.body;
+    }
+    calls.push({ method, u, body });
+    if (method === 'GET' && /\/rest\/thread\//.test(u) && !/delete_thread/.test(u)) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          entries: [
+            {
+              uuid: frontendUuid,
+              frontend_uuid: frontendUuid,
+              backend_uuid: backendUuid,
+              context_uuid: contextUuid,
+              read_write_token: token,
+              query_str: '[ce-test]',
+              blocks: []
+            }
+          ],
+          thread_metadata: { context_uuid: contextUuid, title: '[ce-test]' }
+        })
+      };
+    }
+    if (method === 'DELETE' && /delete_thread_by_entry_uuid/.test(u)) {
+      return { ok: true, status: 200, json: async () => ({ status: 'success' }), text: async () => '' };
+    }
+    return { ok: false, status: 500, text: async () => 'unexpected', json: async () => ({}) };
+  };
+  const spec = loadPerplexity(win);
+  const out = await spec.ops.delete({ chatId: contextUuid });
+  assert.equal(out.deleted, true);
+  const del = calls.find((c) => c.method === 'DELETE');
+  assert.ok(del, 'delete_thread_by_entry_uuid must be called');
+  assert.equal(del.body.entry_uuid, backendUuid, 'must use backend_uuid, not frontend uuid');
+  assert.equal(del.body.read_write_token, token);
+  assert.notEqual(del.body.entry_uuid, frontendUuid);
+});
+
 // ── perplexity soft-paywall downgrade via definePlatform ──
 
 test('definePlatform downgrades soft paywall for perplexity submit hooks', async () => {
