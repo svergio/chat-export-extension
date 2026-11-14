@@ -3991,7 +3991,7 @@
         };
       }
     }
-    const SOFT_PAYWALL_PLATFORMS = { zai: true, minimax: true };
+    const SOFT_PAYWALL_PLATFORMS = { zai: true, minimax: true, perplexity: true };
     if (SOFT_PAYWALL_PLATFORMS[id] && typeof Ops.isSoftPaywallOnly === "function") {
       for (const name of SUBMIT_HOOKS) {
         const wrapped = ops[name];

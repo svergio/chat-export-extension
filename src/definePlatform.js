@@ -175,7 +175,7 @@ export function definePlatform(spec) {
   // upgrade/free marketing banner would surface as RATE_LIMIT even while the host
   // still accepts sends. Downgrade soft-paywall-only banners to HOST_ERROR here;
   // hard-limit text ("usage limit reached", "quota exceeded") still maps to RATE_LIMIT.
-  const SOFT_PAYWALL_PLATFORMS = { zai: true, minimax: true };
+  const SOFT_PAYWALL_PLATFORMS = { zai: true, minimax: true, perplexity: true };
   if (SOFT_PAYWALL_PLATFORMS[id] && typeof Ops.isSoftPaywallOnly === 'function') {
     for (const name of SUBMIT_HOOKS) {
       const wrapped = ops[name];

@@ -750,13 +750,22 @@
     return form.querySelector('button[type="submit"]');
   }
 
+  function composerHasText(input) {
+    if (!input) return false;
+    if (input.tagName === 'TEXTAREA') return String(input.value || '').trim().length > 0;
+    return String(input.textContent || '').trim().length > 0;
+  }
+
   function isGenerating() {
     if (Ops.findStopControl && Ops.findStopControl(document)) return true;
     var input = findComposerInput();
     if (!input) return false;
+    // grok.com disables Send whenever the composer is empty (also right after a
+    // reply lands) — that is idle, not generating. Only a disabled Send with
+    // pending text means a submit is queued/running.
+    if (!composerHasText(input)) return false;
     var send = findSendButton();
-    if (send && (send.disabled || send.getAttribute('aria-disabled') === 'true')) return true;
-    return false;
+    return !!(send && (send.disabled || send.getAttribute('aria-disabled') === 'true'));
   }
 
   async function ensureNewChat() {

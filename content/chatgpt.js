@@ -991,6 +991,38 @@
     return !!(Ops.findStopControl && Ops.findStopControl(document));
   }
 
+  // Mirror of the zai platform helper: honor operator timeout_s / timeoutMs inside
+  // the product ceiling, so tests and MCP callers can bound waits.
+  function waitTimeoutMs(args, fallbackMs) {
+    var n = args && args.timeoutMs != null ? Number(args.timeoutMs) : NaN;
+    if (!Number.isFinite(n) && args && args.timeout_s != null) n = Number(args.timeout_s) * 1000;
+    if (!Number.isFinite(n)) return fallbackMs;
+    return Math.min(Math.max(Math.trunc(n), 1000), fallbackMs);
+  }
+
+  // Gate-aware error enrichment: on HOST_ERROR/TIMEOUT-class failures, surface a
+  // visible captcha (CAPTCHA + widget detail) or a classified busy banner before
+  // returning the raw error. Captcha is never auto-solved or dismissed here.
+  function gateAwareTimeout(err) {
+    try {
+      if (err && err.code && err.code !== 'HOST_ERROR' && err.code !== 'TIMEOUT') return err;
+      if (Ops.findCaptchaWidgets) {
+        var widgets = Ops.findCaptchaWidgets(document);
+        if (widgets && widgets.length) {
+          var w = widgets[0] && widgets[0].captchaWidget ? widgets[0].captchaWidget : widgets[0];
+          rpcErr('CAPTCHA', 'ChatGPT captcha challenge is on screen — resolve it manually; it is never auto-solved or dismissed', { captchaWidget: w });
+        }
+      }
+      if (Ops.detectBusyBanner) {
+        var hit = Ops.detectBusyBanner(document);
+        if (hit && Ops.throwBusy) Ops.throwBusy(hit);
+      }
+    } catch (eGate) {
+      if (eGate && eGate.code) throw eGate;
+    }
+    return err;
+  }
+
   async function ensureNewChat() {
     if (!currentChatId() && findComposerInput()) return;
     if (Ops.softNavigate) Ops.softNavigate('/');
@@ -1091,7 +1123,10 @@
     });
     var turnsBefore = turnNodes().length;
     var fill = Ops.fillRichComposer || Ops.fillEditable;
-    fill(input, body);
+    var fillHow = fill(input, body);
+    if (fillHow === 'failed') {
+      rpcErr('HOST_ERROR', 'ChatGPT composer fill failed (composer did not hold the text)');
+    }
     await Ops.sleep(200);
     if (stopButtonVisible() || turnNodes().length > turnsBefore) {
       return turnsBefore;
@@ -1299,7 +1334,7 @@
           await navigateToChat(chatId);
           if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(args.text);
-          await waitAssistantTurn(turnsBefore, { timeoutMs: 180000 });
+          await waitAssistantTurn(turnsBefore, { timeoutMs: waitTimeoutMs(args, 180000) });
           return {
             platform: 'chatgpt',
             chatId: chatId,
@@ -1308,7 +1343,7 @@
             updatedAt: new Date().toISOString()
           };
         } catch (err) {
-          hostErr(err);
+          hostErr(gateAwareTimeout(err));
         }
       },
       create: async function (args) {
@@ -1323,7 +1358,7 @@
             function () {
               return currentChatId() || null;
             },
-            { timeoutMs: 90000, message: 'ChatGPT chatId timeout' }
+            { timeoutMs: waitTimeoutMs(args, 90000), message: 'ChatGPT chatId timeout' }
           );
           await patchTitle(chatId, title);
           return {
@@ -1334,7 +1369,7 @@
             updatedAt: new Date().toISOString()
           };
         } catch (err) {
-          hostErr(err);
+          hostErr(gateAwareTimeout(err));
         }
       },
       delete: async function (args) {
