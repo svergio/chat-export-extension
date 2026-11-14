@@ -2,10 +2,23 @@
   'use strict';
 
   var BAR_ATTR = 'data-chat-export-bar';
-  var EXT_VERSION =
-    global.chrome && chrome.runtime && chrome.runtime.getManifest
-      ? chrome.runtime.getManifest().version
-      : 'dev';
+
+  function runtimeAlive() {
+    try {
+      return !!(global.chrome && chrome.runtime && chrome.runtime.id);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var EXT_VERSION = (function () {
+    try {
+      if (runtimeAlive() && chrome.runtime.getManifest) return chrome.runtime.getManifest().version;
+    } catch (e2) {
+      /* invalidated */
+    }
+    return 'dev';
+  })();
   var HTTP_RE = /^https?:\/\//i;
   var URL_KEYS = /^(url|uri|href|link|sourceUrl|canonicalUrl|webUrl|targetUrl)$/i;
   var TITLE_KEYS = /^(title|name|label|text|snippet|domain|publisher|siteName)$/i;
@@ -328,7 +341,21 @@
     return map;
   }
 
+  function captchaOnScreen() {
+    // Policy guard: Escape closes full-screen challenges — never dismiss a visible
+    // captcha on the operator's behalf.
+    try {
+      var Ops = global.ChatExport && global.ChatExport.Ops;
+      if (Ops && typeof Ops.findCaptchaWidgets === 'function') {
+        var hits = Ops.findCaptchaWidgets(global.document);
+        return !!(hits && hits.length);
+      }
+    } catch (e) {}
+    return false;
+  }
+
   function closeOverlays() {
+    if (captchaOnScreen()) return;
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
   }
 
@@ -1242,7 +1269,7 @@
         toastDownloaded();
         return;
       }
-      if (!global.chrome || !chrome.runtime || !chrome.runtime.id || !chrome.runtime.sendMessage) {
+      if (!runtimeAlive() || !chrome.runtime.sendMessage) {
         fallbackAnchorDownload(filename, u8, mime);
         toastDownloaded();
         return;
@@ -1286,9 +1313,12 @@
   }
 
   function saveViaExtension(job) {
-    var runtime = global.chrome && chrome.runtime;
     // After extension reload, old content scripts lose runtime.id — not FS "unsupported".
-    if (!runtime || !runtime.id || typeof runtime.sendMessage !== 'function') {
+    if (!runtimeAlive()) {
+      return Promise.resolve({ ok: false, reason: 'no-runtime' });
+    }
+    var runtime = chrome.runtime;
+    if (!runtime || typeof runtime.sendMessage !== 'function') {
       return Promise.resolve({ ok: false, reason: 'no-runtime' });
     }
     return Promise.all(job.files.map(function (f) {
@@ -2281,6 +2311,7 @@
     nativeButtonClass: nativeButtonClass,
     detectHostScheme: detectHostScheme,
     watchHostScheme: watchHostScheme,
+    runtimeAlive: runtimeAlive,
     firstChildClass: firstChildClass,
     loadFormats: loadFormats,
     saveFormats: saveFormats,

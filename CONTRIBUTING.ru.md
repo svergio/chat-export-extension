@@ -2,6 +2,8 @@
 
 [English](CONTRIBUTING.md) | [Русский](CONTRIBUTING.ru.md)
 
+Вход для агента: [AGENTS.md](./AGENTS.md) (ветки, adversarial-тесты, как делать фичи).
+
 Структура в дереве сопровождения `projects/Chat Export/`:
 
 | Репозиторий | Путь |
@@ -12,7 +14,9 @@
 | Общие доки | `docs/` (platforms, site-maps, acceptance) |
 | Wiki (GitHub) | клон `chat-export-extension.wiki/` |
 
-В коммитах **без** `Co-authored-by`. Продуктовые PR — в `main`; тесты/hardening — сначала в `test` (см. **Тесты** и **CI и промоут** ниже).
+**Ветки:** `feature/<name>` или `fix/<name>` от long-lived `test`; чтобы протестить — **ветка с тестами от этой фичи/фикса** (`test/<name>` или `<feature>-tests`), затем tests → feature → long-lived `test`. **`main` только на релизе** (`test` → `main` + тег). См. [AGENTS.md](./AGENTS.md), **Тесты**, **CI и промоут**.
+
+**Co-authored-by:** можно для AI-агента, который делал работу (только репы Chat Export). Фейковых человеческих соавторов не писать.
 
 После смены зависимостей в `package.json` или файлов в `vendor/` запустите `npm run licenses` и закоммитьте [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md), если таблица изменилась. Используется one-shot `npx license-checker` (не зависимость репозитория).
 
@@ -123,7 +127,7 @@ UX: выбор схемы только в **попапе**; бар на стра
 
 ## Тесты (ветка `test`)
 
-Новые и усиленные тесты сначала на **`test`**. Фичи — в `main`; после мержа синхронизируйте `main` → `test` и наращивайте покрытие. Промоут `test` → `main` только при зелёном CI на `test`.
+Feature-ветки мержатся в **`test`** вместе с тестами. Нельзя заливать продукт в `main` «а тесты потом». Промоут **`test` → `main` только на релизе** (зелёный CI на `test`).
 
 ### Adversarial (extension)
 
@@ -164,7 +168,7 @@ Workflow: `.github/workflows/build-extension.yml` на push/PR в `main` и `tes
 | Build | `npm run build` | бандлы |
 | Pack | `npm run pack` | zip + verify + artifact; на `v*` — GitHub Release |
 
-`dist-pack/` в gitignore; CI всё равно пакует. Зелёный `test` → merge в `main` для релиза.
+`dist-pack/` в gitignore; CI всё равно пакует. Релиз: merge `test` → `main`, bump версии, тег `vX.Y.Z`. После релиза при необходимости sync `main` → `test`.
 
 ## Чеклист двух уровневого ToS
 

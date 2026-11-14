@@ -171,6 +171,36 @@ export function definePlatform(spec) {
       };
     }
   }
+  // Policy (Z.ai/MiniMax family): guardBusy runs outside platform code, so a soft
+  // upgrade/free marketing banner would surface as RATE_LIMIT even while the host
+  // still accepts sends. Downgrade soft-paywall-only banners to HOST_ERROR here;
+  // hard-limit text ("usage limit reached", "quota exceeded") still maps to RATE_LIMIT.
+  const SOFT_PAYWALL_PLATFORMS = { zai: true, minimax: true, perplexity: true };
+  if (SOFT_PAYWALL_PLATFORMS[id] && typeof Ops.isSoftPaywallOnly === 'function') {
+    for (const name of SUBMIT_HOOKS) {
+      const wrapped = ops[name];
+      if (!wrapped) continue;
+      ops[name] = function (args, ctx) {
+        return Promise.resolve(wrapped(args, ctx)).catch(function (err) {
+          if (
+            err && err.code === 'RATE_LIMIT' &&
+            Ops.isSoftPaywallOnly(err.details && err.details.banner)
+          ) {
+            throw new CE.RpcError(
+              'HOST_ERROR',
+              id + ' upgrade banner is not exhausted quota (send may still work)',
+              Object.assign({}, err.details || {}, {
+                banner: (err.details && err.details.banner) || '',
+                softPaywall: true,
+                note: 'Free/Upgrade marketing banner downgraded: Free badge is not RATE_LIMIT.'
+              })
+            );
+          }
+          throw err;
+        });
+      };
+    }
+  }
   if (ops.hostState && typeof Ops.buildHostState === 'function') {
     const probe = ops.hostState;
     ops.hostState = async function (args, ctx) {

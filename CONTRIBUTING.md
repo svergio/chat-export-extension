@@ -2,6 +2,8 @@
 
 [English](CONTRIBUTING.md) | [Русский](CONTRIBUTING.ru.md)
 
+Agent entrypoint: [AGENTS.md](./AGENTS.md) (branch policy, adversarial tests, feature workflow).
+
 Stack layout under the maintainer tree `projects/Chat Export/`:
 
 | Repo | Path |
@@ -12,7 +14,9 @@ Stack layout under the maintainer tree `projects/Chat Export/`:
 | Shared docs | `docs/` (platforms, site-maps, acceptance) |
 | Wiki (GitHub) | `chat-export-extension.wiki/` clone |
 
-No `Co-authored-by` trailers in commits. Open PRs against `main` for product changes; open test-hardening PRs against `test` (see **Tests** and **CI and promotion** below).
+**Branching:** `feature/<name>` or `fix/<name>` from long-lived `test`; to validate, open a **tests** branch **from that feature/fix** (`test/<name>` or `<feature>-tests`), then merge tests → feature → long-lived `test`. **`main` is release-only** (`test` → `main` + version tag). See [AGENTS.md](./AGENTS.md), **Tests**, and **CI and promotion**.
+
+**Co-authored-by:** allowed for the AI agent that did the work (Chat Export repos only). No fake human co-authors.
 
 After changing `package.json` dependencies or vendored files under `vendor/`, run `npm run licenses` and commit [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) if the table changed. Uses one-shot `npx license-checker` (not a repo dependency).
 
@@ -138,7 +142,7 @@ UX: schema picks live in the **popup** (default + per-format). The export bar st
 
 ## Tests (`test` branch)
 
-New or strengthened tests land on branch **`test`** first. Feature PRs target `main`; after merge, sync `main` → `test` and extend coverage there. Promote `test` → `main` only when CI is green on `test` (see **CI and promotion**).
+Feature branches merge into **`test`** together with their tests. Do not land product code on `main` and “add tests later”. Promote **`test` → `main` only when cutting a release** (CI green on `test`; see **CI and promotion**).
 
 ### Adversarial testing (extension)
 
@@ -192,7 +196,7 @@ GitHub Actions: `.github/workflows/build-extension.yml` on **push** and **pull_r
 | Build | `npm run build` | `dist/shared.js`, `dist/popup.js`, `background.js` |
 | Pack & Verify | `npm run pack` | `dist-pack/chat-export-extension-<version>.zip` verified (`manifest.json`, `background.js`, `dist/*`, `locales/*`), uploaded as workflow artifact, and attached to GitHub Releases on `v*` tags |
 
-`dist-pack/` is gitignored locally; CI still runs `pack` so missing manifest paths or bundles fail the job. After a green `test` branch, merge `test` into `main` for release-aligned promotion.
+`dist-pack/` is gitignored locally; CI still runs `pack` so missing manifest paths or bundles fail the job. When releasing: merge `test` → `main`, bump version, tag `vX.Y.Z`. Sync `main` back into `test` after the release if needed.
 
 ## Two-tier ToS checklist (contributors)
 

@@ -1,4 +1,4 @@
-import { clickEl, waitFor } from './helpers.js';
+import { clickEl, findCaptchaWidgets, waitFor } from './helpers.js';
 
 const ITEM_ROLES = ['menuitem', 'menuitemcheckbox', 'menuitemradio', 'option'];
 
@@ -227,6 +227,12 @@ export function pickMenuItem(root, matcher, opts) {
 export function closeMenu(doc) {
   doc = doc || (typeof document !== 'undefined' ? document : null);
   if (!doc) return;
+  // Policy: Escape closes full-screen challenges. Never dismiss a visible captcha
+  // on the operator's behalf — skip the synthetic Escape while a challenge is up.
+  try {
+    var hits = findCaptchaWidgets(doc);
+    if (hits && hits.length) return;
+  } catch (eGuard) {}
   var view = pageView(doc);
   var keyInit = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
   var target = doc.body || doc.documentElement;

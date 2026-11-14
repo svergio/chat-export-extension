@@ -8,12 +8,13 @@
  *   --section=ui-random   seeded CE-popup allowlist clicks (+ fmt-menu only on bar)
  *   --section=usage       mandatory: bar+ver, Folder|Zip, dl toast, mode2/rebind, platform toggle
  *   --section=console     FAIL/SKIP on unauthorized / Token expired / save failed (never silent)
+ *   --section=gateway     popup gateway lock/mask/Ping/Update config (cdt-probes/gateway-ui.js)
  *   --section=popup       exhaust debug only (not in --full)
  *
  * Pre-release (--full = orchestrator only, not 108× exhaust):
  *   npm run test:cdt:full
  *   = --full --open-missing --save=all
- *   → styles + ui-random + usage + console
+ *   → styles + ui-random + usage + console + gateway
  */
 import { spawnSync } from 'node:child_process';
 import {
@@ -64,7 +65,7 @@ const BLACKLIST_RE =
  * Host-page Download and provider model dropdowns are out of scope entirely.
  */
 const RANDOM_SKIP_RE =
-  /скачать|download|выбрать папку|choose folder|change folder|сменить папку|поддержать|donate|проверить соединение|test connection|check connection|получите доступ|gpt-6|claude opus|model/i;
+  /скачать|download|выбрать папку|choose folder|change folder|сменить папку|поддержать|donate|проверить соединение|test connection|check connection|^ping$|обновить конфигурацию|update configuration|получите доступ|gpt-6|claude opus|model/i;
 
 /** CE-only allowlist categories for --section=ui-random (plan screenshots). */
 const UI_RANDOM_ALLOW = {
@@ -159,7 +160,7 @@ function parseArgs(argv) {
 
 function resolveSections(a) {
   // --full only orchestrates modules (no popup exhaust / 108× options)
-  if (a.full) return new Set(['styles', 'ui-random', 'usage', 'console']);
+  if (a.full) return new Set(['styles', 'ui-random', 'usage', 'console', 'gateway']);
   if (a.sections.size) {
     const out = new Set();
     for (const s of a.sections) {
@@ -1962,6 +1963,47 @@ function runUiRandomSection() {
 }
 
 /**
+ * Gateway card: lock when serverOn, masked token, Ping + Update configuration.
+ * Probe: scripts/cdt-probes/gateway-ui.js
+ */
+function runGatewaySection() {
+  const popup = ensurePopup();
+  if (!popup) {
+    record({ id: 'gateway', status: 'FAIL', detail: 'no popup.html' });
+    return;
+  }
+  const id = 'gateway/ui';
+  try {
+    setPopupUi(popup.id, { skin: 'chatgpt', scheme: 'dark', locale: 'en' });
+    sleep(120);
+    ensureDrawersOpen(popup.id);
+    sleep(80);
+    const res = evalPage(popup.id, 'gateway-ui.js');
+    if (!res || res.ok !== true) {
+      record({
+        id,
+        status: 'FAIL',
+        detail:
+          (res && res.fails && res.fails.join('; ')) ||
+          (res && res.error) ||
+          'gateway-ui probe fail'
+      });
+    } else {
+      record({
+        id,
+        status: 'PASS',
+        detail: `ping=${res.hasPing} update=${res.hasUpdate} masked=${res.tokenMasked} hostLockedOn=${res.hostDisabledOn} hostOpacity=${res.hostOpacity} copyOn=${res.copyEnabledOn}`
+      });
+    }
+  } catch (e) {
+    record({ id, status: 'FAIL', detail: String(e.message || e) });
+  }
+  try {
+    setPopupUi(popup.id, { skin: 'auto', scheme: 'auto', locale: 'auto' });
+  } catch (_) {}
+}
+
+/**
  * Exhaust popup (debug): deep options per locale + sample combos.
  * Only for --section=popup, not default --full.
  */
@@ -2477,6 +2519,7 @@ function writeReport() {
   for (const r of results) {
     lines.push(
       `| \`${r.id}\` | ${r.status} | ${String(r.detail || '')
+        .replace(/\\/g, '\\\\')
         .replace(/\|/g, '\\|')
         .replace(/\n/g, ' ')} |`
     );
@@ -2500,6 +2543,7 @@ function main() {
 
   if (sections.has('styles')) runStylesSample();
   if (sections.has('ui-random') || sections.has('buttons')) runUiRandomSection();
+  if (sections.has('gateway')) runGatewaySection();
   if (sections.has('popup')) runPopupSection();
   if (sections.has('usage')) runUsageSection();
   if (sections.has('providers') || sections.has('providers-clicks')) runProvidersSection();

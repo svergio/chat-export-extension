@@ -35,13 +35,18 @@ if (CE) {
     CE.onPlatformSettings(syncToastLocale);
   }
 
-  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-    chrome.runtime.onMessage.addListener(function (msg) {
-      if (!msg || msg.type !== 'ce-saved') return;
-      var name = msg.name != null ? String(msg.name) : '';
-      if (!name) return;
-      var folder = msg.folder != null ? String(msg.folder) : '';
-      CE.showToast(CE.toastText('toast.saved', { folder: folder, name: name }));
-    });
+  try {
+    if (typeof CE.runtimeAlive === 'function' ? CE.runtimeAlive() : typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+      chrome.runtime.onMessage.addListener(function (msg) {
+        if (!msg || msg.type !== 'ce-saved') return;
+        if (typeof CE.runtimeAlive === 'function' && !CE.runtimeAlive()) return;
+        var name = msg.name != null ? String(msg.name) : '';
+        if (!name) return;
+        var folder = msg.folder != null ? String(msg.folder) : '';
+        CE.showToast(CE.toastText('toast.saved', { folder: folder, name: name }));
+      });
+    }
+  } catch (eBoot) {
+    /* Extension context invalidated — tab needs reload */
   }
 }

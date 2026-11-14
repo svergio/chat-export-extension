@@ -17,12 +17,17 @@
     return t || 'chat';
   }
 
-  function findModel() {
-    var btn =
+  function findModelButton() {
+    return (
       document.querySelector('form[data-composer="true"] button[aria-label^="Модель"]') ||
       document.querySelector('form[data-composer="true"] button[aria-label*="Model" i]') ||
       document.querySelector('button[aria-label^="Модель"]') ||
-      document.querySelector('button[aria-label*="Model" i]');
+      document.querySelector('button[aria-label*="Model" i]')
+    );
+  }
+
+  function findModel() {
+    var btn = findModelButton();
     if (!btn) return '';
     var aria = (btn.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
     var labeled = aria.match(/^(?:Модель|Model)\s*[:：]\s*(.+)$/i);
@@ -270,6 +275,46 @@
   function hostErr(err) {
     if (err && err.code && CE.RpcError && err instanceof CE.RpcError) throw err;
     rpcErr('HOST_ERROR', (err && err.message) || String(err || 'host error'));
+  }
+
+  function modelIdsMatch(a, b) {
+    var idA = Ops.normalizeId ? Ops.normalizeId(a || '') : String(a || '').toLowerCase();
+    var idB = Ops.normalizeId ? Ops.normalizeId(b || '') : String(b || '').toLowerCase();
+    if (!idA || !idB) return false;
+    if (idA === idB) return true;
+    var short = idA.length < idB.length ? idA : idB;
+    var long = idA.length < idB.length ? idB : idA;
+    return short.length >= 4 && long.indexOf(short) === 0;
+  }
+
+  async function applyModelChoice(wanted) {
+    var want = String(wanted || '').trim();
+    if (!want) return '';
+    if (modelIdsMatch(findModel(), want)) return findModel();
+    var btn = findModelButton();
+    if (!btn) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (!Ops.openMenu || !Ops.pickMenuItem) rpcErr('OPTION_NOT_FOUND', 'model menu helpers unavailable');
+    var menu;
+    try {
+      menu = await Ops.openMenu(btn, { timeoutMs: 6000, retries: 1, message: 'Grok model menu did not open' });
+    } catch (e) {
+      rpcErr('OPTION_NOT_FOUND', 'model menu did not open: ' + want);
+    }
+    var picked = Ops.pickMenuItem(menu, function (it) {
+      return modelIdsMatch(it.label, want) || String(it.label || '').toLowerCase().indexOf(want.toLowerCase()) >= 0;
+    });
+    Ops.closeMenu(document);
+    if (!picked) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (picked.disabled || picked.locked) rpcErr('OPTION_LOCKED', 'model: ' + want);
+    try {
+      await Ops.waitFor(
+        function () {
+          return modelIdsMatch(findModel(), want) ? true : null;
+        },
+        { timeoutMs: 4000, message: 'Grok model apply timeout' }
+      );
+    } catch (eVerify) {}
+    return picked.label || want;
   }
 
   function labelOf(el) {
@@ -750,13 +795,22 @@
     return form.querySelector('button[type="submit"]');
   }
 
+  function composerHasText(input) {
+    if (!input) return false;
+    if (input.tagName === 'TEXTAREA') return String(input.value || '').trim().length > 0;
+    return String(input.textContent || '').trim().length > 0;
+  }
+
   function isGenerating() {
     if (Ops.findStopControl && Ops.findStopControl(document)) return true;
     var input = findComposerInput();
     if (!input) return false;
+    // grok.com disables Send whenever the composer is empty (also right after a
+    // reply lands) — that is idle, not generating. Only a disabled Send with
+    // pending text means a submit is queued/running.
+    if (!composerHasText(input)) return false;
     var send = findSendButton();
-    if (send && (send.disabled || send.getAttribute('aria-disabled') === 'true')) return true;
-    return false;
+    return !!(send && (send.disabled || send.getAttribute('aria-disabled') === 'true'));
   }
 
   async function ensureNewChat() {
@@ -1109,6 +1163,7 @@
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
+          await applyModelChoice(args && args.model);
           if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(args.text);
           await waitAssistantReply(turnsBefore, 180000);
@@ -1128,6 +1183,7 @@
           var text = String((args && args.text) || '').trim();
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await ensureNewChat();
+          await applyModelChoice(args && args.model);
           var knownIds = await snapshotConversationIds();
           if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(text);

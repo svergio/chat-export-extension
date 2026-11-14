@@ -588,22 +588,26 @@
     await saveSettings(currentSettings);
     return { settings: currentSettings, browserId, created: true, key };
   }
-  async function enrollKeyToServer(settings, id) {
+  async function enrollKeyToServer(settings, id, opts = {}) {
     const s = normalizeSettings(settings || currentSettings);
     const bid = id || browserId;
     if (!s.apiKey.trim()) throw new Error("api key required");
-    if (!bid) throw new Error("browserId required");
+    const payload = {
+      key: s.apiKey.trim(),
+      // Hint only — server owns browserId (returns canonical id in body.browser).
+      browserId: bid || void 0,
+      browserLabel: s.browserLabel || "Chrome",
+      allowCreate: s.allowCreate !== false,
+      allowDestructive: !!s.allowDestructive,
+      allowProjects: s.allowProjects !== false
+    };
+    if (opts && typeof opts.previousKey === "string" && opts.previousKey.trim()) {
+      payload.previousKey = opts.previousKey.trim();
+    }
     const res = await fetch(enrollUrl(s.host, s.port), {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        key: s.apiKey.trim(),
-        browserId: bid,
-        browserLabel: s.browserLabel || "Chrome",
-        allowCreate: s.allowCreate !== false,
-        allowDestructive: !!s.allowDestructive,
-        allowProjects: s.allowProjects !== false
-      })
+      body: JSON.stringify(payload)
     });
     let body = null;
     try {
@@ -613,6 +617,14 @@
     if (!res.ok) {
       const msg = body && body.error && body.error.message || "enroll HTTP " + res.status + " (is the server running?)";
       throw new Error(msg);
+    }
+    const assigned = body && body.browser && typeof body.browser.browserId === "string" && body.browser.browserId.trim() ? body.browser.browserId.trim() : "";
+    if (assigned && assigned !== browserId) {
+      browserId = assigned;
+      try {
+        chrome.storage.local.set({ [STORAGE_KEYS.browserId]: assigned });
+      } catch (e) {
+      }
     }
     return body;
   }
@@ -1008,6 +1020,14 @@
         disconnect(bridgeDeniedDetail(currentSettings));
         return;
       }
+      if (typeof frame.browserId === "string" && frame.browserId.trim() && frame.browserId.trim() !== browserId) {
+        const remapped = frame.browserId.trim();
+        browserId = remapped;
+        try {
+          chrome.storage.local.set({ [STORAGE_KEYS.browserId]: remapped });
+        } catch (e) {
+        }
+      }
       reconnectAttempt = 0;
       startKeepalive();
       publishStatus("connected", frame.serverVersion ? "server " + frame.serverVersion : "");
@@ -1257,7 +1277,13 @@
             return;
           }
           if (frame && frame.type === "welcome") {
-            finish({ ok: true, state: "connected", detail: frame.serverVersion || "" });
+            const confirmedId = typeof frame.browserId === "string" && frame.browserId.trim() ? frame.browserId.trim() : ensured.browserId;
+            finish({
+              ok: true,
+              state: "connected",
+              detail: frame.serverVersion || "",
+              browserId: confirmedId
+            });
             return;
           }
           if (frame && frame.type === "error") {
@@ -1282,11 +1308,12 @@
   async function rotateLocalKey() {
     const stored = await loadStored();
     browserId = stored.browserId;
+    const previousKey = typeof stored.settings?.apiKey === "string" ? stored.settings.apiKey.trim() : "";
     const key = generateApiKey();
     currentSettings = normalizeSettings(Object.assign({}, stored.settings, { apiKey: key }));
     await saveSettings(currentSettings);
     try {
-      await enrollKeyToServer(currentSettings, browserId);
+      await enrollKeyToServer(currentSettings, browserId, { previousKey });
     } catch (e) {
     }
     return { ok: true, apiKey: key, browserId, settings: currentSettings };

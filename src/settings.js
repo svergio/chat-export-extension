@@ -320,6 +320,21 @@ export function reconcileSavedSettings(sent, saved) {
   return got;
 }
 
+/**
+ * When the popup is mid-edit on a draft field, ignore storage echoes that would
+ * overwrite the typed value (bridge/status writes to ce.settings while typing).
+ * @param {object} local current React/Preact settings state
+ * @param {object} incoming raw settings from chrome.storage.onChanged
+ * @param {string|null|undefined} editingField e.g. 'browserLabel' | 'host' | 'port'
+ */
+export function applyStorageSettingsWhileEditing(local, incoming, editingField) {
+  const next = normalizeSettings(incoming);
+  if (!editingField || !local || typeof local !== 'object') return next;
+  if (!Object.prototype.hasOwnProperty.call(local, editingField)) return next;
+  next[editingField] = local[editingField];
+  return next;
+}
+
 export function persistSaveFailed(res) {
   return !res || res.ok !== true || !res.settings;
 }

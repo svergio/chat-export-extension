@@ -9,6 +9,7 @@ import {
   settingsNeedRewrite,
   reconcileSavedSettings,
   persistSaveFailed,
+  applyStorageSettingsWhileEditing,
   hasTosConsent,
   saveSettings,
   loadStored
@@ -85,6 +86,25 @@ test('stale normalize output without tosVersion cannot demote storage consent', 
   assert.equal(merged.ui.scheme, 'dark');
   assert.equal(merged.saveFolder.shiftMode, 'saveAs');
   assert.equal(merged.exportSchemas.default, 'sharegpt/1');
+});
+
+test('storage echo while editing browserLabel keeps typed draft', () => {
+  const local = normalizeSettings({
+    browserLabel: 'My Lab',
+    host: '127.0.0.1',
+    port: 8765
+  });
+  const incoming = normalizeSettings({
+    browserLabel: 'Chrome 2',
+    host: '127.0.0.1',
+    port: 8765,
+    apiKey: 'ceb_new'
+  });
+  const merged = applyStorageSettingsWhileEditing(local, incoming, 'browserLabel');
+  assert.equal(merged.browserLabel, 'My Lab');
+  assert.equal(merged.apiKey, 'ceb_new');
+  const idle = applyStorageSettingsWhileEditing(local, incoming, null);
+  assert.equal(idle.browserLabel, 'Chrome 2');
 });
 
 test('saveSettings storage round-trip preserves tosVersion and platforms on ui change', async () => {

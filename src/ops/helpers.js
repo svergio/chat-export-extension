@@ -347,6 +347,16 @@ var RATE_LIMIT_RE =
   /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota exceeded|you('ve| have) reached (your |the )?(quota|message limit|limit)|free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит|请求过于频繁|请求频率/i;
 var PAYWALL_RE =
   /free (plan|preview|tier)|upgrade to (pro|plus|max)|try a more powerful model|more powerful model|перейти на (pro|плюс|макс)|бесплатн\S* (предпросмотр|план|тариф)/i;
+// Hard limit signals only (RATE_LIMIT_RE without the soft marketing phrases):
+// these mean exhausted quota, not an always-visible upgrade pitch.
+var HARD_RATE_LIMIT_RE =
+  /rate.?limit|too many (requests|messages)|usage limit|message limit|daily limit|limit reached|reached (your|the) (\w+ )?(limit|cap)|quota exceeded|you('ve| have) reached (your |the )?(quota|message limit|limit)|слишком много (запросов|сообщений)|лимит (запросов|сообщений)|достигнут\S* (\S+ )?лимит|превышен\S* (\S+ )?лимит|请求过于频繁|请求频率/i;
+// Policy helper (Z.ai/MiniMax family): a soft upgrade/free marketing banner is not
+// exhausted quota — callers downgrade it instead of reporting RATE_LIMIT.
+export function isSoftPaywallOnly(text) {
+  var t = String(text || '');
+  return PAYWALL_RE.test(t) && !HARD_RATE_LIMIT_RE.test(t);
+}
 var AUTH_WALL_RE =
   /sign up and (repeat|continue|sign in)|sign in to continue|log in to continue|please (sign|log) in|зарегистрируйтесь|войдите,? чтобы|войти,? чтобы продолж/i;
 var PLATFORM_BUSY_RE =
@@ -679,6 +689,11 @@ export function buildHostState(platform, state, candidates) {
   var thinking = !!(state && state.thinking);
   var streaming = !!(state && state.streaming);
   var composerReady = !!(state && state.composerReady);
+  // Free/Upgrade marketing is not a gate: list/export/delete must stay usable, and
+  // platforms_status must not report rate_limit for a persistent Pro CTA.
+  if (hit && hit.code === 'RATE_LIMIT' && isSoftPaywallOnly(hit.text)) {
+    hit = null;
+  }
   var usage =
     state && state.usage && typeof state.usage === 'object'
       ? state.usage
