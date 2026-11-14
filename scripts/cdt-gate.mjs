@@ -2477,6 +2477,7 @@ function writeReport() {
   for (const r of results) {
     lines.push(
       `| \`${r.id}\` | ${r.status} | ${String(r.detail || '')
+        .replace(/\\/g, '\\\\')
         .replace(/\|/g, '\\|')
         .replace(/\n/g, ' ')} |`
     );
