@@ -9,6 +9,7 @@ import * as realOps from '../src/ops/helpers.js';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const grokSource = readFileSync(join(repoRoot, 'content/grok.js'), 'utf8');
 const chatgptSource = readFileSync(join(repoRoot, 'content/chatgpt.js'), 'utf8');
+const perplexitySource = readFileSync(join(repoRoot, 'content/perplexity.js'), 'utf8');
 
 class RpcError extends Error {
   constructor(code, message, details) {
@@ -193,6 +194,82 @@ test('chatgpt create surfaces CAPTCHA when a challenge is on screen at failure',
       assert.equal(err.details && err.details.captchaWidget && err.details.captchaWidget.sitekey, '0xus-captcha');
       return true;
     }
+  );
+});
+
+test('chatgpt create reports OPTION_NOT_FOUND when model arg has no selector', async () => {
+  const win = newGptWin();
+  const spec = loadGpt(win);
+  await assert.rejects(
+    spec.ops.create({ text: 'hello', model: 'gpt-5' }),
+    (err) => err.code === 'OPTION_NOT_FOUND' && /model: gpt-5/.test(err.message)
+  );
+});
+
+test('chatgpt create applies model arg through the native selector', async () => {
+  const win = newGptWin();
+  win.document.body.insertAdjacentHTML(
+    'beforeend',
+    `
+    <button data-testid="model-switcher-dropdown-button" aria-haspopup="menu" aria-label="Model: GPT-4o">GPT-4o</button>
+    <div id="gpt-model-menu" role="menu" hidden>
+      <div role="menuitem">GPT-4o</div>
+      <div role="menuitem">GPT-5</div>
+    </div>
+    `
+  );
+  const chip = win.document.querySelector('[data-testid="model-switcher-dropdown-button"]');
+  const menuEl = win.document.getElementById('gpt-model-menu');
+  menuEl.remove();
+  chip.setAttribute('aria-controls', 'gpt-model-menu');
+  chip.addEventListener('click', () => {
+    chip.setAttribute('aria-expanded', 'true');
+    win.document.body.appendChild(menuEl);
+    menuEl.hidden = false;
+  });
+  menuEl.querySelectorAll('[role="menuitem"]')[1].addEventListener('click', () => {
+    chip.textContent = 'GPT-5';
+    chip.setAttribute('aria-label', 'Model: GPT-5');
+    menuEl.remove();
+    chip.setAttribute('aria-expanded', 'false');
+  });
+  wireSendAccept(win, '/c/abc12345-6789-4abc-8def-111111111111');
+  const spec = loadGpt(win);
+  const res = await spec.ops.create({ text: 'hello', model: 'gpt-5' });
+  assert.equal(res.chatId, 'abc12345-6789-4abc-8def-111111111111');
+  assert.equal(chip.textContent, 'GPT-5', 'UI selector must land on the requested model');
+});
+
+test('grok create reports OPTION_NOT_FOUND when model arg has no selector', async () => {
+  const win = newGrokWin();
+  const spec = loadGrok(win);
+  await assert.rejects(
+    spec.ops.create({ text: 'hello', model: 'grok-4' }),
+    (err) => err.code === 'OPTION_NOT_FOUND' && /model: grok-4/.test(err.message)
+  );
+});
+
+function loadPerplexity(win) {
+  rectPatch(win);
+  let spec = null;
+  win.ChatExport = baseChatExport(win);
+  win.ChatExport.definePlatform = (s) => {
+    spec = s;
+  };
+  if (typeof win.Response !== 'function') win.Response = function Res() {};
+  win.eval(perplexitySource);
+  return spec;
+}
+
+test('perplexity create reports OPTION_NOT_FOUND when model arg has no selector', async () => {
+  const win = new Window({ url: 'https://www.perplexity.ai/' });
+  win.document.write(
+    `<div role="textbox" contenteditable="true" aria-label="Ask anything"></div><button>Send</button>`
+  );
+  const spec = loadPerplexity(win);
+  await assert.rejects(
+    spec.ops.create({ text: 'hello', model: 'sonar-pro' }),
+    (err) => err.code === 'OPTION_NOT_FOUND' && /model: sonar-pro/.test(err.message)
   );
 });
 

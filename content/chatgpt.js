@@ -24,10 +24,14 @@
     return /размышл|thinking/i.test(String(s || ''));
   }
 
-  function findModel() {
-    var btn = document.querySelector(
+  function findModelButton() {
+    return document.querySelector(
       'button[aria-haspopup="menu"][data-testid*="model" i], button[aria-label*="model" i], [data-testid="model-switcher-dropdown-button"]'
     );
+  }
+
+  function findModel() {
+    var btn = findModelButton();
     if (btn) {
       var t = (btn.textContent || '').replace(/\s+/g, ' ').trim();
       if (t && !isThinkingLabel(t) && t.length < 48) return t;
@@ -1000,6 +1004,46 @@
     return Math.min(Math.max(Math.trunc(n), 1000), fallbackMs);
   }
 
+  function modelIdsMatch(a, b) {
+    var idA = Ops.normalizeId ? Ops.normalizeId(a || '') : String(a || '').toLowerCase();
+    var idB = Ops.normalizeId ? Ops.normalizeId(b || '') : String(b || '').toLowerCase();
+    if (!idA || !idB) return false;
+    if (idA === idB) return true;
+    var short = idA.length < idB.length ? idA : idB;
+    var long = idA.length < idB.length ? idB : idA;
+    return short.length >= 4 && long.indexOf(short) === 0;
+  }
+
+  async function applyModelChoice(wanted) {
+    var want = String(wanted || '').trim();
+    if (!want) return '';
+    if (modelIdsMatch(findModel(), want)) return findModel();
+    var btn = findModelButton();
+    if (!btn) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (!Ops.openMenu || !Ops.pickMenuItem) rpcErr('OPTION_NOT_FOUND', 'model menu helpers unavailable');
+    var menu;
+    try {
+      menu = await Ops.openMenu(btn, { timeoutMs: 6000, retries: 1, message: 'ChatGPT model menu did not open' });
+    } catch (e) {
+      rpcErr('OPTION_NOT_FOUND', 'model menu did not open: ' + want);
+    }
+    var picked = Ops.pickMenuItem(menu, function (it) {
+      return modelIdsMatch(it.label, want) || String(it.label || '').toLowerCase().indexOf(want.toLowerCase()) >= 0;
+    });
+    Ops.closeMenu(document);
+    if (!picked) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (picked.disabled || picked.locked) rpcErr('OPTION_LOCKED', 'model: ' + want);
+    try {
+      await Ops.waitFor(
+        function () {
+          return modelIdsMatch(findModel(), want) ? true : null;
+        },
+        { timeoutMs: 4000, message: 'ChatGPT model apply timeout' }
+      );
+    } catch (eVerify) {}
+    return picked.label || want;
+  }
+
   // Gate-aware error enrichment: on HOST_ERROR/TIMEOUT-class failures, surface a
   // visible captcha (CAPTCHA + widget detail) or a classified busy banner before
   // returning the raw error. Captcha is never auto-solved or dismissed here.
@@ -1332,6 +1376,7 @@
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           if (!String((args && args.text) || '').trim()) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
+          await applyModelChoice(args && args.model);
           if (args.files && args.files.length) await applyWireFiles(args.files);
           var turnsBefore = await submitComposerText(args.text);
           await waitAssistantTurn(turnsBefore, { timeoutMs: waitTimeoutMs(args, 180000) });
@@ -1352,6 +1397,7 @@
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           var title = Ops.testTitle ? Ops.testTitle(args && args.title) : '[ce-test] chat';
           await ensureNewChat();
+          await applyModelChoice(args && args.model);
           if (args.files && args.files.length) await applyWireFiles(args.files);
           await submitComposerText(text);
           var chatId = await Ops.waitFor(

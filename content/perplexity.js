@@ -141,6 +141,46 @@
     return '';
   }
 
+  function modelIdsMatch(a, b) {
+    var idA = Ops.normalizeId ? Ops.normalizeId(a || '') : String(a || '').toLowerCase();
+    var idB = Ops.normalizeId ? Ops.normalizeId(b || '') : String(b || '').toLowerCase();
+    if (!idA || !idB) return false;
+    if (idA === idB) return true;
+    var short = idA.length < idB.length ? idA : idB;
+    var long = idA.length < idB.length ? idB : idA;
+    return short.length >= 4 && long.indexOf(short) === 0;
+  }
+
+  async function applyModelChoice(wanted) {
+    var want = String(wanted || '').trim();
+    if (!want) return '';
+    if (modelIdsMatch(findModel(), want)) return findModel();
+    var btn = findModelButton();
+    if (!btn) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (!Ops.openMenu || !Ops.pickMenuItem) rpcErr('OPTION_NOT_FOUND', 'model menu helpers unavailable');
+    var menu;
+    try {
+      menu = await Ops.openMenu(btn, { timeoutMs: 6000, retries: 1, message: 'Perplexity model menu did not open' });
+    } catch (e) {
+      rpcErr('OPTION_NOT_FOUND', 'model menu did not open: ' + want);
+    }
+    var picked = Ops.pickMenuItem(menu, function (it) {
+      return modelIdsMatch(it.label, want) || String(it.label || '').toLowerCase().indexOf(want.toLowerCase()) >= 0;
+    });
+    Ops.closeMenu(document);
+    if (!picked) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (picked.disabled || picked.locked) rpcErr('OPTION_LOCKED', 'model: ' + want);
+    try {
+      await Ops.waitFor(
+        function () {
+          return modelIdsMatch(findModel(), want) ? true : null;
+        },
+        { timeoutMs: 4000, message: 'Perplexity model apply timeout' }
+      );
+    } catch (eVerify) {}
+    return picked.label || want;
+  }
+
   function findUserMeta() {
     return { userName: '', userHandle: '', userEmail: '' };
   }
@@ -706,6 +746,7 @@
           var text = String((args && args.text) || '').trim();
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await ensureNewChat();
+          await applyModelChoice(args && args.model);
           await submitComposer(text);
           var chatId = await Ops.waitFor(function () {
             return currentChatId() || null;
@@ -730,6 +771,7 @@
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
           await waitForIdle();
+          await applyModelChoice(args && args.model);
           var turnsBefore = await submitComposer(text);
           await waitForReply(turnsBefore);
           return {
