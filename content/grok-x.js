@@ -505,7 +505,7 @@
   }
 
   function projectsGuard() {
-    rpcErr('OPTION_NOT_FOUND', 'Projects are not supported on ' + PLATFORM, { supported: false });
+    rpcErr('PROJECTS_DISABLED', 'Projects are not supported on ' + PLATFORM, { supported: false });
   }
 
   function cookieValue(name) {
@@ -678,12 +678,19 @@
   }
 
   async function fetchConversationMessages(chatId) {
-    var data = await gqlGet(GQL.items, { restId: String(chatId) });
-    var block = data.grok_conversation_items_by_rest_id;
-    if (!block || !block.items || !block.items.length) {
-      rpcErr('NOT_FOUND', 'conversation not found or empty: ' + chatId);
+    var last = null;
+    for (var attempt = 0; attempt < 6; attempt++) {
+      var data = await gqlGet(GQL.items, { restId: String(chatId) });
+      var block = data.grok_conversation_items_by_rest_id;
+      if (block && block.items && block.items.length) return block.items;
+      last = block;
+      if (attempt < 5) await Ops.sleep(500 * (attempt + 1));
     }
-    return block.items;
+    rpcErr(
+      'NOT_FOUND',
+      'conversation not found or empty: ' + chatId,
+      last ? { empty: true } : { missing: true }
+    );
   }
 
   async function getChatPayloadFromApi(chatId) {

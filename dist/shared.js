@@ -9,7 +9,20 @@
   (function(global) {
     "use strict";
     var BAR_ATTR = "data-chat-export-bar";
-    var EXT_VERSION = global.chrome && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : "dev";
+    function runtimeAlive2() {
+      try {
+        return !!(global.chrome && chrome.runtime && chrome.runtime.id);
+      } catch (e3) {
+        return false;
+      }
+    }
+    var EXT_VERSION = (function() {
+      try {
+        if (runtimeAlive2() && chrome.runtime.getManifest) return chrome.runtime.getManifest().version;
+      } catch (e22) {
+      }
+      return "dev";
+    })();
     var HTTP_RE = /^https?:\/\//i;
     var URL_KEYS = /^(url|uri|href|link|sourceUrl|canonicalUrl|webUrl|targetUrl)$/i;
     var TITLE_KEYS = /^(title|name|label|text|snippet|domain|publisher|siteName)$/i;
@@ -1137,7 +1150,7 @@
           toastDownloaded();
           return;
         }
-        if (!global.chrome || !chrome.runtime || !chrome.runtime.id || !chrome.runtime.sendMessage) {
+        if (!runtimeAlive2() || !chrome.runtime.sendMessage) {
           fallbackAnchorDownload(filename, u8, mime);
           toastDownloaded();
           return;
@@ -1181,8 +1194,11 @@
       return Promise.resolve(toUint8(data));
     }
     function saveViaExtension(job) {
-      var runtime = global.chrome && chrome.runtime;
-      if (!runtime || !runtime.id || typeof runtime.sendMessage !== "function") {
+      if (!runtimeAlive2()) {
+        return Promise.resolve({ ok: false, reason: "no-runtime" });
+      }
+      var runtime = chrome.runtime;
+      if (!runtime || typeof runtime.sendMessage !== "function") {
         return Promise.resolve({ ok: false, reason: "no-runtime" });
       }
       return Promise.all(job.files.map(function(f3) {
@@ -2076,6 +2092,7 @@
       nativeButtonClass,
       detectHostScheme,
       watchHostScheme,
+      runtimeAlive: runtimeAlive2,
       firstChildClass,
       loadFormats,
       saveFormats,
@@ -2709,6 +2726,8 @@
     "btn.generate": "Generate",
     "btn.rotate": "Rotate",
     "btn.copy": "Copy",
+    "btn.updateLabel": "Update",
+    "btn.updateConfig": "Update configuration",
     "btn.continue": "Continue",
     "btn.acceptTos": "Accept & Continue",
     "btn.showExportSettings": "Export settings",
@@ -2719,9 +2738,11 @@
     "btn.showAdvanced": "Advanced",
     "btn.hideAdvanced": "Hide advanced",
     "test.connection": "Test connection",
+    "test.ping": "Ping",
     "test.ok": "OK \xB7 passed",
     "test.fail": "Failed",
     "test.testing": "Testing\u2026",
+    "test.pinging": "Pinging\u2026",
     "key.generated": "Key generated",
     "key.generateFailed": "Key generate failed",
     "key.copied": "Key copied",
@@ -2730,6 +2751,10 @@
     "key.hint": "See README: ceb_ per browser; rotate invalidates old keys.",
     "key.hintId": "Id:",
     "browser.hint": "Per Chrome profile \u2014 see dashboard Browsers.",
+    "browser.labelUpdated": "Label saved and sent to the server",
+    "browser.labelUpdateFailed": "Could not update label",
+    "browser.configUpdated": "Configuration saved and sent to the server",
+    "browser.configUpdateFailed": "Could not update configuration",
     "tos.title": "Terms of Use & Risk Disclaimer",
     "tos.lead": "Please read and accept before using Chat Export:",
     "tos.1": 'Open-source software provided "AS IS" under the MIT License, without warranty of any kind.',
@@ -2864,6 +2889,8 @@
     "btn.generate": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C",
     "btn.rotate": "\u0421\u043C\u0435\u043D\u0438\u0442\u044C",
     "btn.copy": "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+    "btn.updateLabel": "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C",
+    "btn.updateConfig": "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u043A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044E",
     "btn.continue": "\u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
     "btn.acceptTos": "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0438 \u043F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
     "btn.showExportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
@@ -2874,9 +2901,11 @@
     "btn.showAdvanced": "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "btn.hideAdvanced": "\u0421\u043A\u0440\u044B\u0442\u044C \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "test.connection": "\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435",
+    "test.ping": "Ping",
     "test.ok": "OK \xB7 \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
     "test.fail": "\u041E\u0448\u0438\u0431\u043A\u0430",
     "test.testing": "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430\u2026",
+    "test.pinging": "Ping\u2026",
     "key.generated": "\u041A\u043B\u044E\u0447 \u0441\u043E\u0437\u0434\u0430\u043D",
     "key.generateFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043E\u0437\u0434\u0430\u0442\u044C \u043A\u043B\u044E\u0447",
     "key.copied": "\u041A\u043B\u044E\u0447 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D",
@@ -2885,6 +2914,10 @@
     "key.hint": "\u0421\u043C. README: ceb_ \u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440; \u0440\u043E\u0442\u0430\u0446\u0438\u044F \u0441\u0431\u0440\u0430\u0441\u044B\u0432\u0430\u0435\u0442 \u0441\u0442\u0430\u0440\u044B\u0435 \u043A\u043B\u044E\u0447\u0438.",
     "key.hintId": "Id:",
     "browser.hint": "\u041D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome \u2014 \u0441\u043C. \u0434\u0430\u0448\u0431\u043E\u0440\u0434 Browsers.",
+    "browser.labelUpdated": "\u041C\u0435\u0442\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0430 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430 \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440",
+    "browser.labelUpdateFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u043C\u0435\u0442\u043A\u0443",
+    "browser.configUpdated": "\u041A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044F \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0430 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430 \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440",
+    "browser.configUpdateFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u043A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044E",
     "tos.title": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F \u0438 \u043F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435 \u043E \u0440\u0438\u0441\u043A\u0430\u0445",
     "tos.lead": "\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043E\u0437\u043D\u0430\u043A\u043E\u043C\u044C\u0442\u0435\u0441\u044C \u0438 \u043F\u0440\u0438\u043C\u0438\u0442\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u043F\u0435\u0440\u0435\u0434 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u0435\u043C Chat Export:",
     "tos.1": "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u043D\u043E\u0435 \u043E\u0431\u0435\u0441\u043F\u0435\u0447\u0435\u043D\u0438\u0435 \u0441 \u043E\u0442\u043A\u0440\u044B\u0442\u044B\u043C \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u043C \u043A\u043E\u0434\u043E\u043C \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \xAB\u041A\u0410\u041A \u0415\u0421\u0422\u042C\xBB (AS IS) \u043F\u043E \u043B\u0438\u0446\u0435\u043D\u0437\u0438\u0438 MIT \u0431\u0435\u0437 \u043A\u0430\u043A\u0438\u0445-\u043B\u0438\u0431\u043E \u0433\u0430\u0440\u0430\u043D\u0442\u0438\u0439.",
@@ -3122,19 +3155,32 @@
     cache = normalizeSettings(raw || DEFAULT_SETTINGS);
     emit();
   }
+  function storageAlive() {
+    try {
+      return !!(typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local);
+    } catch (e3) {
+      return false;
+    }
+  }
   function installPlatformGate() {
-    if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+    if (!storageAlive()) {
       applyRaw(DEFAULT_SETTINGS);
       return;
     }
-    chrome.storage.local.get([STORAGE_KEYS.settings], function(got) {
-      applyRaw(got && got[STORAGE_KEYS.settings]);
-    });
-    chrome.storage.onChanged.addListener(function(changes, area) {
-      if (area !== "local") return;
-      if (!changes[STORAGE_KEYS.settings]) return;
-      applyRaw(changes[STORAGE_KEYS.settings].newValue);
-    });
+    try {
+      chrome.storage.local.get([STORAGE_KEYS.settings], function(got) {
+        if (!storageAlive()) return;
+        applyRaw(got && got[STORAGE_KEYS.settings]);
+      });
+      chrome.storage.onChanged.addListener(function(changes, area) {
+        if (!storageAlive()) return;
+        if (area !== "local") return;
+        if (!changes[STORAGE_KEYS.settings]) return;
+        applyRaw(changes[STORAGE_KEYS.settings].newValue);
+      });
+    } catch (e3) {
+      applyRaw(DEFAULT_SETTINGS);
+    }
   }
 
   // src/ui/ExportBar.jsx
@@ -3990,6 +4036,8 @@
     "NOT_BOUND",
     "CONFIRM_REQUIRED",
     "DESTRUCTIVE_DISABLED",
+    "CREATE_DISABLED",
+    "PROJECTS_DISABLED",
     "UNAUTHORIZED",
     "TIMEOUT",
     "HOST_ERROR",
@@ -4003,7 +4051,8 @@
     "ATTACH_TIMEOUT",
     "INVALID_ARGS",
     "PLATFORM_BUSY",
-    "RATE_LIMIT"
+    "RATE_LIMIT",
+    "CAPTCHA"
   ];
   var RETRYABLE_CODES = ["PLATFORM_BUSY", "RATE_LIMIT"];
   var OP_HOOK = {
@@ -4146,21 +4195,32 @@
       }
     );
   }
+  function runtimeAlive() {
+    try {
+      return !!(typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id);
+    } catch (e3) {
+      return false;
+    }
+  }
   function installRpcListener() {
-    if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.onMessage) return;
+    if (!runtimeAlive() || !chrome.runtime.onMessage) return;
     const gen = (Number(window.__chatExportRpcGen) || 0) + 1;
     window.__chatExportRpcGen = gen;
-    chrome.runtime.onMessage.addListener(function(msg, _sender, sendResponse) {
-      if (!msg || window.__chatExportRpcGen !== gen) return false;
-      if (msg.type === PING_TYPE) {
-        const CE2 = window.ChatExport;
-        sendResponse({ ok: true, platforms: CE2 && CE2.platforms ? Object.keys(CE2.platforms) : [] });
-        return false;
-      }
-      if (msg.type !== RPC_TYPE) return false;
-      dispatchRpc(msg).then(sendResponse);
-      return true;
-    });
+    try {
+      chrome.runtime.onMessage.addListener(function(msg, _sender, sendResponse) {
+        if (!msg || window.__chatExportRpcGen !== gen) return false;
+        if (!runtimeAlive()) return false;
+        if (msg.type === PING_TYPE) {
+          const CE2 = window.ChatExport;
+          sendResponse({ ok: true, platforms: CE2 && CE2.platforms ? Object.keys(CE2.platforms) : [] });
+          return false;
+        }
+        if (msg.type !== RPC_TYPE) return false;
+        dispatchRpc(msg).then(sendResponse);
+        return true;
+      });
+    } catch (e3) {
+    }
   }
 
   // src/ops/helpers.js
@@ -5506,14 +5566,18 @@
     if (typeof CE.onPlatformSettings === "function") {
       CE.onPlatformSettings(syncToastLocale);
     }
-    if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener(function(msg) {
-        if (!msg || msg.type !== "ce-saved") return;
-        var name = msg.name != null ? String(msg.name) : "";
-        if (!name) return;
-        var folder = msg.folder != null ? String(msg.folder) : "";
-        CE.showToast(CE.toastText("toast.saved", { folder, name }));
-      });
+    try {
+      if (typeof CE.runtimeAlive === "function" ? CE.runtimeAlive() : typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id) {
+        chrome.runtime.onMessage.addListener(function(msg) {
+          if (!msg || msg.type !== "ce-saved") return;
+          if (typeof CE.runtimeAlive === "function" && !CE.runtimeAlive()) return;
+          var name = msg.name != null ? String(msg.name) : "";
+          if (!name) return;
+          var folder = msg.folder != null ? String(msg.folder) : "";
+          CE.showToast(CE.toastText("toast.saved", { folder, name }));
+        });
+      }
+    } catch (eBoot) {
     }
   }
 })();

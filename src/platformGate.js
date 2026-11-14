@@ -29,17 +29,31 @@ function applyRaw(raw) {
   emit();
 }
 
+function storageAlive() {
+  try {
+    return !!(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local);
+  } catch (e) {
+    return false;
+  }
+}
+
 export function installPlatformGate() {
-  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+  if (!storageAlive()) {
     applyRaw(DEFAULT_SETTINGS);
     return;
   }
-  chrome.storage.local.get([STORAGE_KEYS.settings], function (got) {
-    applyRaw(got && got[STORAGE_KEYS.settings]);
-  });
-  chrome.storage.onChanged.addListener(function (changes, area) {
-    if (area !== 'local') return;
-    if (!changes[STORAGE_KEYS.settings]) return;
-    applyRaw(changes[STORAGE_KEYS.settings].newValue);
-  });
+  try {
+    chrome.storage.local.get([STORAGE_KEYS.settings], function (got) {
+      if (!storageAlive()) return;
+      applyRaw(got && got[STORAGE_KEYS.settings]);
+    });
+    chrome.storage.onChanged.addListener(function (changes, area) {
+      if (!storageAlive()) return;
+      if (area !== 'local') return;
+      if (!changes[STORAGE_KEYS.settings]) return;
+      applyRaw(changes[STORAGE_KEYS.settings].newValue);
+    });
+  } catch (e) {
+    applyRaw(DEFAULT_SETTINGS);
+  }
 }

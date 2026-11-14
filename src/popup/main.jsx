@@ -15,6 +15,7 @@ import {
   persistSaveFailed,
   reconcileSavedSettings,
   resolveUiScheme,
+  applyStorageSettingsWhileEditing,
   STORAGE_KEYS
 } from '../settings.js';
 import { createTranslator, faqKeys, tosKeys, resolveLocale } from '../i18n/index.js';
@@ -26,6 +27,7 @@ import {
   IconChevron
 } from './skin-icons.jsx';
 import { resolveUiDataSkinForPopup, SKIN_AUTO_FALLBACK } from '../skinResolve.js';
+import { gatewayFieldsDisabled, maskToken, pingOkDetail } from './gateway-ui.js';
 
 const ISSUES_URL = 'https://github.com/svergio/chat-export-extension/issues';
 const DONATE_URL = 'https://www.donationalerts.com/r/svwergio_mel';
@@ -189,6 +191,100 @@ function IconFolder({ size = 14 }) {
   );
 }
 
+function IconRotate({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M13.5 8A5.5 5.5 0 1 1 11 3.6"
+        stroke="currentColor"
+        stroke-width="1.35"
+        stroke-linecap="round"
+      />
+      <path
+        d="M11 1.75v3h3"
+        stroke="currentColor"
+        stroke-width="1.35"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconCopy({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect
+        x="5.5"
+        y="5.5"
+        width="7"
+        height="8"
+        rx="1.25"
+        stroke="currentColor"
+        stroke-width="1.25"
+      />
+      <path
+        d="M10.5 5.5V4.25A1.25 1.25 0 0 0 9.25 3H4.25A1.25 1.25 0 0 0 3 4.25v7A1.25 1.25 0 0 0 4.25 12.5H5.5"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconUpdateConfig({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M8 9.75V3.25"
+        stroke="currentColor"
+        stroke-width="1.3"
+        stroke-linecap="round"
+      />
+      <path
+        d="M5.4 5.5 8 2.9l2.6 2.6"
+        stroke="currentColor"
+        stroke-width="1.3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M3.25 9.25v2.5A1.5 1.5 0 0 0 4.75 13.25h6.5a1.5 1.5 0 0 0 1.5-1.5v-2.5"
+        stroke="currentColor"
+        stroke-width="1.3"
+        stroke-linecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconPing({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="1.35" fill="currentColor" />
+      <path
+        d="M4.6 4.6a4.8 4.8 0 0 1 6.8 0"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linecap="round"
+      />
+      <path
+        d="M2.8 2.8a7.35 7.35 0 0 1 10.4 0"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linecap="round"
+      />
+      <path
+        d="M4.6 11.4a4.8 4.8 0 0 0 6.8 0"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linecap="round"
+      />
+    </svg>
+  );
+}
+
 function PrimaryTosConsent({ onAccept, busy, t, localeSetting, onSetLocale }) {
   const [checked, setChecked] = useState(false);
   const currentLoc = localeSetting || 'auto';
@@ -307,6 +403,9 @@ function App() {
   const [folderStatus, setFolderStatus] = useState({ state: 'none', name: null });
   const [resolvedDataSkin, setResolvedDataSkin] = useState(SKIN_AUTO_FALLBACK);
   const prefersDark = usePrefersDark();
+  const settingsRef = useRef(settings);
+  const editingFieldRef = useRef(null);
+  settingsRef.current = settings;
 
   const ui = settings.ui || { skin: 'auto', scheme: 'auto', locale: 'auto' };
   const localeCode = resolveLocale(ui.locale);
@@ -315,7 +414,9 @@ function App() {
   const refresh = useCallback(async () => {
     const res = await sendBridge('getState');
     if (res && res.ok) {
-      setSettings(normalizeSettings(res.settings));
+      if (!editingFieldRef.current) {
+        setSettings(normalizeSettings(res.settings));
+      }
       setStatus(res.status || { state: 'offline' });
       setBrowserId(res.browserId || '');
     }
@@ -330,12 +431,35 @@ function App() {
         setStatus(changes['ce.bridgeStatus'].newValue);
       }
       if (changes['ce.settings'] && changes['ce.settings'].newValue) {
-        setSettings(normalizeSettings(changes['ce.settings'].newValue));
+        const editing = editingFieldRef.current;
+        setSettings(function (prev) {
+          return applyStorageSettingsWhileEditing(prev, changes['ce.settings'].newValue, editing);
+        });
       }
     };
     chrome.storage.onChanged.addListener(onChanged);
     return () => chrome.storage.onChanged.removeListener(onChanged);
   }, [refresh]);
+
+  function beginEdit(field) {
+    editingFieldRef.current = field;
+  }
+
+  function commitDraftField(field, rawValue) {
+    editingFieldRef.current = null;
+    const base = settingsRef.current;
+    const patch = {};
+    if (field === 'port' || field === 'rpcTimeoutS') {
+      patch[field] = Number(rawValue);
+    } else {
+      patch[field] = rawValue;
+    }
+    return persist(Object.assign({}, base, patch));
+  }
+
+  function endEditOnly() {
+    editingFieldRef.current = null;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -460,6 +584,30 @@ function App() {
     }
   }
 
+  async function onUpdateConfig() {
+    editingFieldRef.current = null;
+    const draft = settingsRef.current;
+    const label =
+      typeof draft.browserLabel === 'string' && draft.browserLabel.trim()
+        ? draft.browserLabel.trim()
+        : 'Chrome';
+    setBusy(true);
+    setTone({ kind: 'muted', text: '' });
+    const saved = await persist(
+      Object.assign({}, draft, {
+        browserLabel: label,
+        host: typeof draft.host === 'string' ? draft.host.trim() : draft.host,
+        port: draft.port
+      })
+    );
+    setBusy(false);
+    if (saved) {
+      setTone({ kind: 'ok', text: t('browser.configUpdated') });
+    } else {
+      setTone({ kind: 'danger', text: t('browser.configUpdateFailed') });
+    }
+  }
+
   async function onCopyKey() {
     const key = (settings.apiKey || '').trim();
     if (!key) return;
@@ -471,14 +619,18 @@ function App() {
     }
   }
 
-  async function onTest() {
-    setTone({ kind: 'muted', text: t('test.testing') });
+  async function onPing() {
+    setTone({ kind: 'muted', text: t('test.pinging') });
     setBusy(true);
     await sendBridge('ensureKey');
     const res = await sendBridge('testConnection');
     setBusy(false);
-    if (res && res.ok) setTone({ kind: 'ok', text: t('test.ok') });
-    else setTone({ kind: 'danger', text: (res && res.detail) || t('test.fail') });
+    if (res && res.ok) {
+      if (res.browserId) setBrowserId(res.browserId);
+      setTone({ kind: 'ok', text: pingOkDetail(res.browserId, res.detail) });
+    } else {
+      setTone({ kind: 'danger', text: (res && res.detail) || t('test.fail') });
+    }
     await refresh();
   }
 
@@ -548,6 +700,7 @@ function App() {
   }
 
   const consented = hasFaqConsent(settings);
+  const gatewayLocked = gatewayFieldsDisabled(settings.serverOn);
   const statusLabel = t('status.' + statusState(status));
   const skinOpt = SKIN_OPTIONS.find((o) => o.id === ui.skin) || SKIN_OPTIONS[0];
   const SkinIcon = skinOpt.Icon;
@@ -926,28 +1079,50 @@ function App() {
           <div class="ce-advanced-panel">
             <AdvancedFaqConsent consented={consented} onConsent={onConsent} busy={busy} t={t} />
 
-            <label class="ce-row">
+            <div class="ce-row ce-gateway-row">
               <span>{t('label.gateway')}</span>
-              <Switch
-                on={settings.serverOn}
-                disabled={busy || !consented}
-                label={t('label.gateway')}
-                onLabel={t('label.on')}
-                offLabel={t('label.off')}
-                onClick={async () => {
-                  if (!consented) return;
-                  const turningOn = !settings.serverOn;
-                  let next = Object.assign({}, settings, { serverOn: turningOn });
-                  if (turningOn) {
-                    const ensured = await sendBridge('ensureKey');
-                    if (ensured && ensured.settings) {
-                      next = Object.assign({}, next, ensured.settings, { serverOn: true });
+              <div class="ce-gateway-controls">
+                <button
+                  type="button"
+                  class="ce-icon-btn"
+                  disabled={gatewayLocked || busy || !consented}
+                  onClick={onUpdateConfig}
+                  aria-label={t('btn.updateConfig')}
+                  title={t('btn.updateConfig')}
+                >
+                  <IconUpdateConfig size={14} />
+                </button>
+                <button
+                  type="button"
+                  class="ce-icon-btn"
+                  disabled={gatewayLocked || busy || !consented}
+                  onClick={onPing}
+                  aria-label={t('test.ping')}
+                  title={t('test.ping')}
+                >
+                  <IconPing size={14} />
+                </button>
+                <Switch
+                  on={settings.serverOn}
+                  disabled={busy || !consented}
+                  label={t('label.gateway')}
+                  onLabel={t('label.on')}
+                  offLabel={t('label.off')}
+                  onClick={async () => {
+                    if (!consented) return;
+                    const turningOn = !settings.serverOn;
+                    let next = Object.assign({}, settings, { serverOn: turningOn });
+                    if (turningOn) {
+                      const ensured = await sendBridge('ensureKey');
+                      if (ensured && ensured.settings) {
+                        next = Object.assign({}, next, ensured.settings, { serverOn: true });
+                      }
                     }
-                  }
-                  await persist(next);
-                }}
-              />
-            </label>
+                    await persist(next);
+                  }}
+                />
+              </div>
+            </div>
 
             <div class="ce-host-port">
               <label class="ce-field" htmlFor="ce-host">
@@ -957,12 +1132,17 @@ function App() {
                   name="ce-host"
                   type="text"
                   spellcheck={false}
+                  disabled={gatewayLocked || busy || !consented}
                   value={settings.host}
                   placeholder="127.0.0.1"
-                  onChange={(e) =>
-                    setSettings(Object.assign({}, settings, { host: e.currentTarget.value }))
-                  }
-                  onBlur={() => persist(settings)}
+                  onFocus={() => beginEdit('host')}
+                  onChange={(e) => {
+                    const v = e.currentTarget.value;
+                    setSettings(function (prev) {
+                      return Object.assign({}, prev, { host: v });
+                    });
+                  }}
+                  onBlur={endEditOnly}
                 />
               </label>
               <label class="ce-field" htmlFor="ce-port">
@@ -973,16 +1153,17 @@ function App() {
                   type="number"
                   min="1"
                   max="65535"
+                  disabled={gatewayLocked || busy || !consented}
                   value={settings.port}
                   placeholder="8765"
-                  onChange={(e) =>
-                    setSettings(
-                      normalizeSettings(
-                        Object.assign({}, settings, { port: Number(e.currentTarget.value) })
-                      )
-                    )
-                  }
-                  onBlur={() => persist(settings)}
+                  onFocus={() => beginEdit('port')}
+                  onChange={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    setSettings(function (prev) {
+                      return normalizeSettings(Object.assign({}, prev, { port: v }));
+                    });
+                  }}
+                  onBlur={endEditOnly}
                 />
               </label>
             </div>
@@ -993,65 +1174,71 @@ function App() {
                 id="ce-browser-label"
                 name="ce-browser-label"
                 type="text"
+                disabled={gatewayLocked || busy || !consented}
                 value={settings.browserLabel}
-                onChange={(e) =>
-                  setSettings(Object.assign({}, settings, { browserLabel: e.currentTarget.value }))
-                }
-                onBlur={() => persist(settings)}
+                onFocus={() => beginEdit('browserLabel')}
+                onChange={(e) => {
+                  const v = e.currentTarget.value;
+                  setSettings(function (prev) {
+                    return Object.assign({}, prev, { browserLabel: v });
+                  });
+                }}
+                onBlur={endEditOnly}
               />
-            </label>
-
-            <label class="ce-field" htmlFor="ce-browser-id">
-              <span>{t('label.browserId')}</span>
-              <input
-                id="ce-browser-id"
-                name="ce-browser-id"
-                type="text"
-                readOnly
-                spellcheck={false}
-                value={browserId || '—'}
-              />
-              <p class="ce-hint">{t('browser.hint')}</p>
             </label>
 
             <div class="ce-field">
-              <label htmlFor="ce-gateway-token">{t('label.gatewayToken')}</label>
-              <input
-                id="ce-gateway-token"
-                name="ce-gateway-token"
-                type="text"
-                autocomplete="off"
-                spellcheck={false}
-                readOnly
-                value={settings.apiKey}
-                placeholder={t('key.placeholder')}
-              />
-              <div class="ce-actions ce-actions--tight">
-                <button type="button" class="ce-btn" disabled={busy || !consented} onClick={onGenerateKey}>
-                  {settings.apiKey ? t('btn.rotate') : t('btn.generate')}
-                </button>
-                <button
-                  type="button"
-                  class="ce-btn"
-                  disabled={busy || !settings.apiKey.trim()}
-                  onClick={onCopyKey}
-                >
-                  {t('btn.copy')}
-                </button>
+              <span id="ce-browser-id-label">{t('label.browserId')}</span>
+              <div
+                id="ce-browser-id"
+                class="ce-readonly-value"
+                role="text"
+                aria-labelledby="ce-browser-id-label"
+                aria-readonly="true"
+              >
+                {browserId || '—'}
               </div>
+              <p class="ce-hint">{t('browser.hint')}</p>
             </div>
 
-            <div class="ce-test-row">
-              <button
-                type="button"
-                class="ce-btn ce-btn--solid"
-                disabled={busy || !consented}
-                onClick={onTest}
+            <div class="ce-field">
+              <span id="ce-gateway-token-label">{t('label.gatewayToken')}</span>
+              <div
+                class={'ce-token-box' + (gatewayLocked ? ' is-locked' : '')}
+                aria-labelledby="ce-gateway-token-label"
               >
-                {t('test.connection')}
-              </button>
-              <ToneLine tone={tone.kind} text={tone.text} />
+                <span
+                  id="ce-gateway-token"
+                  class="ce-token-mask"
+                  aria-label={t('label.gatewayToken')}
+                >
+                  {settings.apiKey.trim() ? maskToken(settings.apiKey) : t('key.placeholder')}
+                </span>
+                <div class="ce-token-actions">
+                  <button
+                    type="button"
+                    class="ce-icon-btn"
+                    disabled={gatewayLocked || busy || !consented}
+                    onClick={onGenerateKey}
+                    aria-label={settings.apiKey ? t('btn.rotate') : t('btn.generate')}
+                    title={settings.apiKey ? t('btn.rotate') : t('btn.generate')}
+                  >
+                    <IconRotate size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    class="ce-icon-btn"
+                    disabled={busy || !settings.apiKey.trim()}
+                    onClick={onCopyKey}
+                    aria-label={t('btn.copy')}
+                    title={t('btn.copy')}
+                  >
+                    <IconCopy size={13} />
+                  </button>
+                </div>
+              </div>
             </div>
+            <ToneLine tone={tone.kind} text={tone.text} />
 
             <h2>{t('label.permissions')}</h2>
 
@@ -1106,14 +1293,14 @@ function App() {
                 min="5"
                 max="600"
                 value={settings.rpcTimeoutS}
-                onChange={(e) =>
-                  setSettings(
-                    normalizeSettings(
-                      Object.assign({}, settings, { rpcTimeoutS: Number(e.currentTarget.value) })
-                    )
-                  )
-                }
-                onBlur={() => persist(settings)}
+                onFocus={() => beginEdit('rpcTimeoutS')}
+                onChange={(e) => {
+                  const v = Number(e.currentTarget.value);
+                  setSettings(function (prev) {
+                    return normalizeSettings(Object.assign({}, prev, { rpcTimeoutS: v }));
+                  });
+                }}
+                onBlur={(e) => commitDraftField('rpcTimeoutS', e.currentTarget.value)}
               />
             </label>
 
