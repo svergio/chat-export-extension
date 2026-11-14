@@ -329,22 +329,26 @@ export async function ensureLocalKey() {
  * Push this browser's key into the server pack (POST /enroll).
  * Many browsers → many keys on the server.
  */
-export async function enrollKeyToServer(settings, id) {
+export async function enrollKeyToServer(settings, id, opts = {}) {
   const s = normalizeSettings(settings || currentSettings);
   const bid = id || browserId;
   if (!s.apiKey.trim()) throw new Error('api key required');
-  if (!bid) throw new Error('browserId required');
+  const payload = {
+    key: s.apiKey.trim(),
+    // Hint only — server owns browserId (returns canonical id in body.browser).
+    browserId: bid || undefined,
+    browserLabel: s.browserLabel || 'Chrome',
+    allowCreate: s.allowCreate !== false,
+    allowDestructive: !!s.allowDestructive,
+    allowProjects: s.allowProjects !== false
+  };
+  if (opts && typeof opts.previousKey === 'string' && opts.previousKey.trim()) {
+    payload.previousKey = opts.previousKey.trim();
+  }
   const res = await fetch(enrollUrl(s.host, s.port), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({
-      key: s.apiKey.trim(),
-      browserId: bid,
-      browserLabel: s.browserLabel || 'Chrome',
-      allowCreate: s.allowCreate !== false,
-      allowDestructive: !!s.allowDestructive,
-      allowProjects: s.allowProjects !== false
-    })
+    body: JSON.stringify(payload)
   });
   let body = null;
   try {
@@ -355,6 +359,19 @@ export async function enrollKeyToServer(settings, id) {
       (body && body.error && body.error.message) ||
       'enroll HTTP ' + res.status + ' (is the server running?)';
     throw new Error(msg);
+  }
+  const assigned =
+    body &&
+    body.browser &&
+    typeof body.browser.browserId === 'string' &&
+    body.browser.browserId.trim()
+      ? body.browser.browserId.trim()
+      : '';
+  if (assigned && assigned !== browserId) {
+    browserId = assigned;
+    try {
+      chrome.storage.local.set({ [STORAGE_KEYS.browserId]: assigned });
+    } catch (e) {}
   }
   return body;
 }
@@ -790,6 +807,14 @@ function handleServerMessage(raw) {
       disconnect(bridgeDeniedDetail(currentSettings));
       return;
     }
+    // Server may remap session when two profiles cloned the same ce.browserId but hold different ceb_ keys.
+    if (typeof frame.browserId === 'string' && frame.browserId.trim() && frame.browserId.trim() !== browserId) {
+      const remapped = frame.browserId.trim();
+      browserId = remapped;
+      try {
+        chrome.storage.local.set({ [STORAGE_KEYS.browserId]: remapped });
+      } catch (e) {}
+    }
     reconnectAttempt = 0;
     startKeepalive();
     publishStatus('connected', frame.serverVersion ? 'server ' + frame.serverVersion : '');
@@ -1065,7 +1090,16 @@ export async function testConnection() {
           return;
         }
         if (frame && frame.type === 'welcome') {
-          finish({ ok: true, state: 'connected', detail: frame.serverVersion || '' });
+          const confirmedId =
+            typeof frame.browserId === 'string' && frame.browserId.trim()
+              ? frame.browserId.trim()
+              : ensured.browserId;
+          finish({
+            ok: true,
+            state: 'connected',
+            detail: frame.serverVersion || '',
+            browserId: confirmedId
+          });
           return;
         }
         if (frame && frame.type === 'error') {
@@ -1091,11 +1125,13 @@ export async function testConnection() {
 export async function rotateLocalKey() {
   const stored = await loadStored();
   browserId = stored.browserId;
+  const previousKey =
+    typeof stored.settings?.apiKey === 'string' ? stored.settings.apiKey.trim() : '';
   const key = generateApiKey();
   currentSettings = normalizeSettings(Object.assign({}, stored.settings, { apiKey: key }));
   await saveSettings(currentSettings);
   try {
-    await enrollKeyToServer(currentSettings, browserId);
+    await enrollKeyToServer(currentSettings, browserId, { previousKey: previousKey });
   } catch (e) {
     /* server may be offline — key still saved locally */
   }

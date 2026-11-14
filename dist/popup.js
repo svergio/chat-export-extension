@@ -593,6 +593,13 @@
     }
     return got;
   }
+  function applyStorageSettingsWhileEditing(local, incoming, editingField) {
+    const next = normalizeSettings(incoming);
+    if (!editingField || !local || typeof local !== "object") return next;
+    if (!Object.prototype.hasOwnProperty.call(local, editingField)) return next;
+    next[editingField] = local[editingField];
+    return next;
+  }
   function persistSaveFailed(res) {
     return !res || res.ok !== true || !res.settings;
   }
@@ -703,6 +710,8 @@
     "btn.generate": "Generate",
     "btn.rotate": "Rotate",
     "btn.copy": "Copy",
+    "btn.updateLabel": "Update",
+    "btn.updateConfig": "Update configuration",
     "btn.continue": "Continue",
     "btn.acceptTos": "Accept & Continue",
     "btn.showExportSettings": "Export settings",
@@ -713,9 +722,11 @@
     "btn.showAdvanced": "Advanced",
     "btn.hideAdvanced": "Hide advanced",
     "test.connection": "Test connection",
+    "test.ping": "Ping",
     "test.ok": "OK \xB7 passed",
     "test.fail": "Failed",
     "test.testing": "Testing\u2026",
+    "test.pinging": "Pinging\u2026",
     "key.generated": "Key generated",
     "key.generateFailed": "Key generate failed",
     "key.copied": "Key copied",
@@ -724,6 +735,10 @@
     "key.hint": "See README: ceb_ per browser; rotate invalidates old keys.",
     "key.hintId": "Id:",
     "browser.hint": "Per Chrome profile \u2014 see dashboard Browsers.",
+    "browser.labelUpdated": "Label saved and sent to the server",
+    "browser.labelUpdateFailed": "Could not update label",
+    "browser.configUpdated": "Configuration saved and sent to the server",
+    "browser.configUpdateFailed": "Could not update configuration",
     "tos.title": "Terms of Use & Risk Disclaimer",
     "tos.lead": "Please read and accept before using Chat Export:",
     "tos.1": 'Open-source software provided "AS IS" under the MIT License, without warranty of any kind.',
@@ -858,6 +873,8 @@
     "btn.generate": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C",
     "btn.rotate": "\u0421\u043C\u0435\u043D\u0438\u0442\u044C",
     "btn.copy": "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+    "btn.updateLabel": "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C",
+    "btn.updateConfig": "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u043A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044E",
     "btn.continue": "\u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
     "btn.acceptTos": "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0438 \u043F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C",
     "btn.showExportSettings": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
@@ -868,9 +885,11 @@
     "btn.showAdvanced": "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "btn.hideAdvanced": "\u0421\u043A\u0440\u044B\u0442\u044C \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u044B\u0435",
     "test.connection": "\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435",
+    "test.ping": "Ping",
     "test.ok": "OK \xB7 \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
     "test.fail": "\u041E\u0448\u0438\u0431\u043A\u0430",
     "test.testing": "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430\u2026",
+    "test.pinging": "Ping\u2026",
     "key.generated": "\u041A\u043B\u044E\u0447 \u0441\u043E\u0437\u0434\u0430\u043D",
     "key.generateFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043E\u0437\u0434\u0430\u0442\u044C \u043A\u043B\u044E\u0447",
     "key.copied": "\u041A\u043B\u044E\u0447 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D",
@@ -879,6 +898,10 @@
     "key.hint": "\u0421\u043C. README: ceb_ \u043D\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440; \u0440\u043E\u0442\u0430\u0446\u0438\u044F \u0441\u0431\u0440\u0430\u0441\u044B\u0432\u0430\u0435\u0442 \u0441\u0442\u0430\u0440\u044B\u0435 \u043A\u043B\u044E\u0447\u0438.",
     "key.hintId": "Id:",
     "browser.hint": "\u041D\u0430 \u043F\u0440\u043E\u0444\u0438\u043B\u044C Chrome \u2014 \u0441\u043C. \u0434\u0430\u0448\u0431\u043E\u0440\u0434 Browsers.",
+    "browser.labelUpdated": "\u041C\u0435\u0442\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0430 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430 \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440",
+    "browser.labelUpdateFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u043C\u0435\u0442\u043A\u0443",
+    "browser.configUpdated": "\u041A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044F \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0430 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430 \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440",
+    "browser.configUpdateFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u043A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044E",
     "tos.title": "\u0423\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u044F \u0438 \u043F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435 \u043E \u0440\u0438\u0441\u043A\u0430\u0445",
     "tos.lead": "\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043E\u0437\u043D\u0430\u043A\u043E\u043C\u044C\u0442\u0435\u0441\u044C \u0438 \u043F\u0440\u0438\u043C\u0438\u0442\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u043F\u0435\u0440\u0435\u0434 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u0438\u0435\u043C Chat Export:",
     "tos.1": "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u043D\u043E\u0435 \u043E\u0431\u0435\u0441\u043F\u0435\u0447\u0435\u043D\u0438\u0435 \u0441 \u043E\u0442\u043A\u0440\u044B\u0442\u044B\u043C \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u043C \u043A\u043E\u0434\u043E\u043C \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \xAB\u041A\u0410\u041A \u0415\u0421\u0422\u042C\xBB (AS IS) \u043F\u043E \u043B\u0438\u0446\u0435\u043D\u0437\u0438\u0438 MIT \u0431\u0435\u0437 \u043A\u0430\u043A\u0438\u0445-\u043B\u0438\u0431\u043E \u0433\u0430\u0440\u0430\u043D\u0442\u0438\u0439.",
@@ -1134,6 +1157,23 @@
     return resolvedSkinFromUrl(url);
   }
 
+  // src/popup/gateway-ui.js
+  function gatewayFieldsDisabled(serverOn) {
+    return !!serverOn;
+  }
+  function maskToken(key) {
+    const s3 = typeof key === "string" ? key.trim() : "";
+    if (!s3) return "";
+    if (s3.length <= 16) return s3.slice(0, 6) + "\u2026" + s3.slice(-3);
+    return s3.slice(0, 12) + "\u2026" + s3.slice(-6);
+  }
+  function pingOkDetail(browserId, serverVersion) {
+    const id = typeof browserId === "string" && browserId.trim() ? browserId.trim() : "";
+    if (id) return "OK \xB7 " + id;
+    const ver = typeof serverVersion === "string" && serverVersion.trim() ? serverVersion.trim() : "";
+    return ver ? "OK \xB7 " + ver : "OK";
+  }
+
   // src/popup/main.jsx
   var ISSUES_URL = "https://github.com/svergio/chat-export-extension/issues";
   var DONATE_URL = "https://www.donationalerts.com/r/svwergio_mel";
@@ -1270,6 +1310,103 @@
       }
     ));
   }
+  function IconRotate({ size = 14 }) {
+    return /* @__PURE__ */ k("svg", { width: size, height: size, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M13.5 8A5.5 5.5 0 1 1 11 3.6",
+        stroke: "currentColor",
+        "stroke-width": "1.35",
+        "stroke-linecap": "round"
+      }
+    ), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M11 1.75v3h3",
+        stroke: "currentColor",
+        "stroke-width": "1.35",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round"
+      }
+    ));
+  }
+  function IconCopy({ size = 14 }) {
+    return /* @__PURE__ */ k("svg", { width: size, height: size, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k(
+      "rect",
+      {
+        x: "5.5",
+        y: "5.5",
+        width: "7",
+        height: "8",
+        rx: "1.25",
+        stroke: "currentColor",
+        "stroke-width": "1.25"
+      }
+    ), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M10.5 5.5V4.25A1.25 1.25 0 0 0 9.25 3H4.25A1.25 1.25 0 0 0 3 4.25v7A1.25 1.25 0 0 0 4.25 12.5H5.5",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+        "stroke-linecap": "round"
+      }
+    ));
+  }
+  function IconUpdateConfig({ size = 14 }) {
+    return /* @__PURE__ */ k("svg", { width: size, height: size, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M8 9.75V3.25",
+        stroke: "currentColor",
+        "stroke-width": "1.3",
+        "stroke-linecap": "round"
+      }
+    ), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M5.4 5.5 8 2.9l2.6 2.6",
+        stroke: "currentColor",
+        "stroke-width": "1.3",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round"
+      }
+    ), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M3.25 9.25v2.5A1.5 1.5 0 0 0 4.75 13.25h6.5a1.5 1.5 0 0 0 1.5-1.5v-2.5",
+        stroke: "currentColor",
+        "stroke-width": "1.3",
+        "stroke-linecap": "round"
+      }
+    ));
+  }
+  function IconPing({ size = 14 }) {
+    return /* @__PURE__ */ k("svg", { width: size, height: size, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" }, /* @__PURE__ */ k("circle", { cx: "8", cy: "8", r: "1.35", fill: "currentColor" }), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M4.6 4.6a4.8 4.8 0 0 1 6.8 0",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+        "stroke-linecap": "round"
+      }
+    ), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M2.8 2.8a7.35 7.35 0 0 1 10.4 0",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+        "stroke-linecap": "round"
+      }
+    ), /* @__PURE__ */ k(
+      "path",
+      {
+        d: "M4.6 11.4a4.8 4.8 0 0 0 6.8 0",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+        "stroke-linecap": "round"
+      }
+    ));
+  }
   function PrimaryTosConsent({ onAccept, busy, t: t3, localeSetting, onSetLocale }) {
     const [checked, setChecked] = d2(false);
     const currentLoc = localeSetting || "auto";
@@ -1365,13 +1502,18 @@
     const [folderStatus, setFolderStatus] = d2({ state: "none", name: null });
     const [resolvedDataSkin, setResolvedDataSkin] = d2(SKIN_AUTO_FALLBACK);
     const prefersDark = usePrefersDark();
+    const settingsRef = T2(settings);
+    const editingFieldRef = T2(null);
+    settingsRef.current = settings;
     const ui = settings.ui || { skin: "auto", scheme: "auto", locale: "auto" };
     const localeCode = resolveLocale(ui.locale);
     const t3 = w2(() => createTranslator(localeCode), [localeCode]);
     const refresh = b(async () => {
       const res = await sendBridge("getState");
       if (res && res.ok) {
-        setSettings(normalizeSettings(res.settings));
+        if (!editingFieldRef.current) {
+          setSettings(normalizeSettings(res.settings));
+        }
         setStatus(res.status || { state: "offline" });
         setBrowserId(res.browserId || "");
       }
@@ -1385,12 +1527,32 @@
           setStatus(changes["ce.bridgeStatus"].newValue);
         }
         if (changes["ce.settings"] && changes["ce.settings"].newValue) {
-          setSettings(normalizeSettings(changes["ce.settings"].newValue));
+          const editing = editingFieldRef.current;
+          setSettings(function(prev) {
+            return applyStorageSettingsWhileEditing(prev, changes["ce.settings"].newValue, editing);
+          });
         }
       };
       chrome.storage.onChanged.addListener(onChanged);
       return () => chrome.storage.onChanged.removeListener(onChanged);
     }, [refresh]);
+    function beginEdit(field) {
+      editingFieldRef.current = field;
+    }
+    function commitDraftField(field, rawValue) {
+      editingFieldRef.current = null;
+      const base = settingsRef.current;
+      const patch = {};
+      if (field === "port" || field === "rpcTimeoutS") {
+        patch[field] = Number(rawValue);
+      } else {
+        patch[field] = rawValue;
+      }
+      return persist(Object.assign({}, base, patch));
+    }
+    function endEditOnly() {
+      editingFieldRef.current = null;
+    }
     A2(() => {
       let cancelled = false;
       resolveUiDataSkinForPopup(ui).then(function(dataSkin) {
@@ -1503,6 +1665,26 @@
         setTone({ kind: "danger", text: res && res.detail || t3("key.generateFailed") });
       }
     }
+    async function onUpdateConfig() {
+      editingFieldRef.current = null;
+      const draft = settingsRef.current;
+      const label = typeof draft.browserLabel === "string" && draft.browserLabel.trim() ? draft.browserLabel.trim() : "Chrome";
+      setBusy(true);
+      setTone({ kind: "muted", text: "" });
+      const saved = await persist(
+        Object.assign({}, draft, {
+          browserLabel: label,
+          host: typeof draft.host === "string" ? draft.host.trim() : draft.host,
+          port: draft.port
+        })
+      );
+      setBusy(false);
+      if (saved) {
+        setTone({ kind: "ok", text: t3("browser.configUpdated") });
+      } else {
+        setTone({ kind: "danger", text: t3("browser.configUpdateFailed") });
+      }
+    }
     async function onCopyKey() {
       const key = (settings.apiKey || "").trim();
       if (!key) return;
@@ -1513,14 +1695,18 @@
         setTone({ kind: "danger", text: t3("key.copyFailed") });
       }
     }
-    async function onTest() {
-      setTone({ kind: "muted", text: t3("test.testing") });
+    async function onPing() {
+      setTone({ kind: "muted", text: t3("test.pinging") });
       setBusy(true);
       await sendBridge("ensureKey");
       const res = await sendBridge("testConnection");
       setBusy(false);
-      if (res && res.ok) setTone({ kind: "ok", text: t3("test.ok") });
-      else setTone({ kind: "danger", text: res && res.detail || t3("test.fail") });
+      if (res && res.ok) {
+        if (res.browserId) setBrowserId(res.browserId);
+        setTone({ kind: "ok", text: pingOkDetail(res.browserId, res.detail) });
+      } else {
+        setTone({ kind: "danger", text: res && res.detail || t3("test.fail") });
+      }
       await refresh();
     }
     function setUi(patch) {
@@ -1581,6 +1767,7 @@
       );
     }
     const consented = hasFaqConsent(settings);
+    const gatewayLocked = gatewayFieldsDisabled(settings.serverOn);
     const statusLabel = t3("status." + statusState(status));
     const skinOpt = SKIN_OPTIONS.find((o3) => o3.id === ui.skin) || SKIN_OPTIONS[0];
     const SkinIcon = skinOpt.Icon;
@@ -1897,7 +2084,29 @@
       },
       /* @__PURE__ */ k(IconChevron, { size: 12 }),
       /* @__PURE__ */ k("span", null, advancedOpen ? t3("btn.hideAdvanced") : t3("btn.showAdvanced"))
-    ), advancedOpen ? /* @__PURE__ */ k("div", { class: "ce-advanced-panel" }, /* @__PURE__ */ k(AdvancedFaqConsent, { consented, onConsent, busy, t: t3 }), /* @__PURE__ */ k("label", { class: "ce-row" }, /* @__PURE__ */ k("span", null, t3("label.gateway")), /* @__PURE__ */ k(
+    ), advancedOpen ? /* @__PURE__ */ k("div", { class: "ce-advanced-panel" }, /* @__PURE__ */ k(AdvancedFaqConsent, { consented, onConsent, busy, t: t3 }), /* @__PURE__ */ k("div", { class: "ce-row ce-gateway-row" }, /* @__PURE__ */ k("span", null, t3("label.gateway")), /* @__PURE__ */ k("div", { class: "ce-gateway-controls" }, /* @__PURE__ */ k(
+      "button",
+      {
+        type: "button",
+        class: "ce-icon-btn",
+        disabled: gatewayLocked || busy || !consented,
+        onClick: onUpdateConfig,
+        "aria-label": t3("btn.updateConfig"),
+        title: t3("btn.updateConfig")
+      },
+      /* @__PURE__ */ k(IconUpdateConfig, { size: 14 })
+    ), /* @__PURE__ */ k(
+      "button",
+      {
+        type: "button",
+        class: "ce-icon-btn",
+        disabled: gatewayLocked || busy || !consented,
+        onClick: onPing,
+        "aria-label": t3("test.ping"),
+        title: t3("test.ping")
+      },
+      /* @__PURE__ */ k(IconPing, { size: 14 })
+    ), /* @__PURE__ */ k(
       Switch,
       {
         on: settings.serverOn,
@@ -1918,17 +2127,24 @@
           await persist(next);
         }
       }
-    )), /* @__PURE__ */ k("div", { class: "ce-host-port" }, /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-host" }, /* @__PURE__ */ k("span", null, t3("label.host")), /* @__PURE__ */ k(
+    ))), /* @__PURE__ */ k("div", { class: "ce-host-port" }, /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-host" }, /* @__PURE__ */ k("span", null, t3("label.host")), /* @__PURE__ */ k(
       "input",
       {
         id: "ce-host",
         name: "ce-host",
         type: "text",
         spellcheck: false,
+        disabled: gatewayLocked || busy || !consented,
         value: settings.host,
         placeholder: "127.0.0.1",
-        onChange: (e3) => setSettings(Object.assign({}, settings, { host: e3.currentTarget.value })),
-        onBlur: () => persist(settings)
+        onFocus: () => beginEdit("host"),
+        onChange: (e3) => {
+          const v3 = e3.currentTarget.value;
+          setSettings(function(prev) {
+            return Object.assign({}, prev, { host: v3 });
+          });
+        },
+        onBlur: endEditOnly
       }
     )), /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-port" }, /* @__PURE__ */ k("span", null, t3("label.port")), /* @__PURE__ */ k(
       "input",
@@ -1938,14 +2154,17 @@
         type: "number",
         min: "1",
         max: "65535",
+        disabled: gatewayLocked || busy || !consented,
         value: settings.port,
         placeholder: "8765",
-        onChange: (e3) => setSettings(
-          normalizeSettings(
-            Object.assign({}, settings, { port: Number(e3.currentTarget.value) })
-          )
-        ),
-        onBlur: () => persist(settings)
+        onFocus: () => beginEdit("port"),
+        onChange: (e3) => {
+          const v3 = Number(e3.currentTarget.value);
+          setSettings(function(prev) {
+            return normalizeSettings(Object.assign({}, prev, { port: v3 }));
+          });
+        },
+        onBlur: endEditOnly
       }
     ))), /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-browser-label" }, /* @__PURE__ */ k("span", null, t3("label.browserLabel")), /* @__PURE__ */ k(
       "input",
@@ -1953,51 +2172,66 @@
         id: "ce-browser-label",
         name: "ce-browser-label",
         type: "text",
+        disabled: gatewayLocked || busy || !consented,
         value: settings.browserLabel,
-        onChange: (e3) => setSettings(Object.assign({}, settings, { browserLabel: e3.currentTarget.value })),
-        onBlur: () => persist(settings)
+        onFocus: () => beginEdit("browserLabel"),
+        onChange: (e3) => {
+          const v3 = e3.currentTarget.value;
+          setSettings(function(prev) {
+            return Object.assign({}, prev, { browserLabel: v3 });
+          });
+        },
+        onBlur: endEditOnly
       }
-    )), /* @__PURE__ */ k("label", { class: "ce-field", htmlFor: "ce-browser-id" }, /* @__PURE__ */ k("span", null, t3("label.browserId")), /* @__PURE__ */ k(
-      "input",
+    )), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", { id: "ce-browser-id-label" }, t3("label.browserId")), /* @__PURE__ */ k(
+      "div",
       {
         id: "ce-browser-id",
-        name: "ce-browser-id",
-        type: "text",
-        readOnly: true,
-        spellcheck: false,
-        value: browserId || "\u2014"
-      }
-    ), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("browser.hint"))), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("label", { htmlFor: "ce-gateway-token" }, t3("label.gatewayToken")), /* @__PURE__ */ k(
-      "input",
-      {
-        id: "ce-gateway-token",
-        name: "ce-gateway-token",
-        type: "text",
-        autocomplete: "off",
-        spellcheck: false,
-        readOnly: true,
-        value: settings.apiKey,
-        placeholder: t3("key.placeholder")
-      }
-    ), /* @__PURE__ */ k("div", { class: "ce-actions ce-actions--tight" }, /* @__PURE__ */ k("button", { type: "button", class: "ce-btn", disabled: busy || !consented, onClick: onGenerateKey }, settings.apiKey ? t3("btn.rotate") : t3("btn.generate")), /* @__PURE__ */ k(
-      "button",
-      {
-        type: "button",
-        class: "ce-btn",
-        disabled: busy || !settings.apiKey.trim(),
-        onClick: onCopyKey
+        class: "ce-readonly-value",
+        role: "text",
+        "aria-labelledby": "ce-browser-id-label",
+        "aria-readonly": "true"
       },
-      t3("btn.copy")
-    ))), /* @__PURE__ */ k("div", { class: "ce-test-row" }, /* @__PURE__ */ k(
-      "button",
+      browserId || "\u2014"
+    ), /* @__PURE__ */ k("p", { class: "ce-hint" }, t3("browser.hint"))), /* @__PURE__ */ k("div", { class: "ce-field" }, /* @__PURE__ */ k("span", { id: "ce-gateway-token-label" }, t3("label.gatewayToken")), /* @__PURE__ */ k(
+      "div",
       {
-        type: "button",
-        class: "ce-btn ce-btn--solid",
-        disabled: busy || !consented,
-        onClick: onTest
+        class: "ce-token-box" + (gatewayLocked ? " is-locked" : ""),
+        "aria-labelledby": "ce-gateway-token-label"
       },
-      t3("test.connection")
-    ), /* @__PURE__ */ k(ToneLine, { tone: tone.kind, text: tone.text })), /* @__PURE__ */ k("h2", null, t3("label.permissions")), /* @__PURE__ */ k("label", { class: "ce-row" }, /* @__PURE__ */ k("span", null, t3("label.allowCreate")), /* @__PURE__ */ k(
+      /* @__PURE__ */ k(
+        "span",
+        {
+          id: "ce-gateway-token",
+          class: "ce-token-mask",
+          "aria-label": t3("label.gatewayToken")
+        },
+        settings.apiKey.trim() ? maskToken(settings.apiKey) : t3("key.placeholder")
+      ),
+      /* @__PURE__ */ k("div", { class: "ce-token-actions" }, /* @__PURE__ */ k(
+        "button",
+        {
+          type: "button",
+          class: "ce-icon-btn",
+          disabled: gatewayLocked || busy || !consented,
+          onClick: onGenerateKey,
+          "aria-label": settings.apiKey ? t3("btn.rotate") : t3("btn.generate"),
+          title: settings.apiKey ? t3("btn.rotate") : t3("btn.generate")
+        },
+        /* @__PURE__ */ k(IconRotate, { size: 13 })
+      ), /* @__PURE__ */ k(
+        "button",
+        {
+          type: "button",
+          class: "ce-icon-btn",
+          disabled: busy || !settings.apiKey.trim(),
+          onClick: onCopyKey,
+          "aria-label": t3("btn.copy"),
+          title: t3("btn.copy")
+        },
+        /* @__PURE__ */ k(IconCopy, { size: 13 })
+      ))
+    )), /* @__PURE__ */ k(ToneLine, { tone: tone.kind, text: tone.text }), /* @__PURE__ */ k("h2", null, t3("label.permissions")), /* @__PURE__ */ k("label", { class: "ce-row" }, /* @__PURE__ */ k("span", null, t3("label.allowCreate")), /* @__PURE__ */ k(
       Switch,
       {
         on: settings.allowCreate,
@@ -2036,12 +2270,14 @@
         min: "5",
         max: "600",
         value: settings.rpcTimeoutS,
-        onChange: (e3) => setSettings(
-          normalizeSettings(
-            Object.assign({}, settings, { rpcTimeoutS: Number(e3.currentTarget.value) })
-          )
-        ),
-        onBlur: () => persist(settings)
+        onFocus: () => beginEdit("rpcTimeoutS"),
+        onChange: (e3) => {
+          const v3 = Number(e3.currentTarget.value);
+          setSettings(function(prev) {
+            return normalizeSettings(Object.assign({}, prev, { rpcTimeoutS: v3 }));
+          });
+        },
+        onBlur: (e3) => commitDraftField("rpcTimeoutS", e3.currentTarget.value)
       }
     )), /* @__PURE__ */ k("details", { class: "ce-more" }, /* @__PURE__ */ k("summary", null, t3("label.faq")), /* @__PURE__ */ k("ul", null, faqKeys().map(function(key) {
       return /* @__PURE__ */ k("li", { key }, renderWithIssuesLink(t3(key)));

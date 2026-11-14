@@ -6,6 +6,8 @@ const ERROR_CODES = [
   'NOT_BOUND',
   'CONFIRM_REQUIRED',
   'DESTRUCTIVE_DISABLED',
+  'CREATE_DISABLED',
+  'PROJECTS_DISABLED',
   'UNAUTHORIZED',
   'TIMEOUT',
   'HOST_ERROR',
@@ -19,7 +21,8 @@ const ERROR_CODES = [
   'ATTACH_TIMEOUT',
   'INVALID_ARGS',
   'PLATFORM_BUSY',
-  'RATE_LIMIT'
+  'RATE_LIMIT',
+  'CAPTCHA'
 ];
 
 const RETRYABLE_CODES = ['PLATFORM_BUSY', 'RATE_LIMIT'];
@@ -177,21 +180,34 @@ export function dispatchRpc(msg) {
     );
 }
 
+function runtimeAlive() {
+  try {
+    return !!(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+  } catch (e) {
+    return false;
+  }
+}
+
 export function installRpcListener() {
-  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.onMessage) return;
+  if (!runtimeAlive() || !chrome.runtime.onMessage) return;
   // The isolated world (and its window globals) survives an extension reload, so a plain
   // "installed" flag would block the fresh listener forever. Newest injection wins instead.
   const gen = (Number(window.__chatExportRpcGen) || 0) + 1;
   window.__chatExportRpcGen = gen;
-  chrome.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
-    if (!msg || window.__chatExportRpcGen !== gen) return false;
-    if (msg.type === PING_TYPE) {
-      const CE = window.ChatExport;
-      sendResponse({ ok: true, platforms: CE && CE.platforms ? Object.keys(CE.platforms) : [] });
-      return false;
-    }
-    if (msg.type !== RPC_TYPE) return false;
-    dispatchRpc(msg).then(sendResponse);
-    return true;
-  });
+  try {
+    chrome.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
+      if (!msg || window.__chatExportRpcGen !== gen) return false;
+      if (!runtimeAlive()) return false;
+      if (msg.type === PING_TYPE) {
+        const CE = window.ChatExport;
+        sendResponse({ ok: true, platforms: CE && CE.platforms ? Object.keys(CE.platforms) : [] });
+        return false;
+      }
+      if (msg.type !== RPC_TYPE) return false;
+      dispatchRpc(msg).then(sendResponse);
+      return true;
+    });
+  } catch (e) {
+    /* Extension context invalidated */
+  }
 }

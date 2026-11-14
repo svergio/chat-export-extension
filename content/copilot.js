@@ -23,7 +23,7 @@
   }
 
   function rejectProjects() {
-    rpcErr('OPTION_NOT_FOUND', 'Projects are not supported on ' + platform, { supported: false });
+    rpcErr('PROJECTS_DISABLED', 'Projects are not supported on ' + platform, { supported: false });
   }
 
   function hostErr(err) {

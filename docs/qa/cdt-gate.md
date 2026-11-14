@@ -12,6 +12,7 @@ Live Chrome DevTools. **Not** unit/happy-dom.
 | `ui-random` | Seeded CE-popup allowlist clicks + ExportBar **fmt-menu only** (never Скачать / host Download) |
 | `usage` | All providers bar+ver; **export fidelity** (`chats.get` vs DOM); Folder\|Zip; Download toast; mode2/rebind; 1 platform toggle |
 | `console` | FAIL (or explicit SKIP) on `[chat-export] unauthorized` / Token expired / save failed |
+| `gateway` | Popup gateway card: lock when On, masked token, Ping + Update configuration (`cdt-probes/gateway-ui.js`) |
 
 Debug only (not in `--full`): `--section=popup` exhaust.
 
@@ -26,10 +27,11 @@ Legacy aliases still accepted: `buttons` → `ui-random`; `providers` / `save` /
 | Styles | `npm run test:cdt -- --section=styles` |
 | UI random | `npm run test:cdt -- --section=ui-random --seed=42 --random-clicks=20` |
 | Console | `npm run test:cdt -- --section=console` |
+| Gateway | `npm run test:cdt -- --section=gateway` |
 | Popup exhaust | `npm run test:cdt -- --section=popup` |
 | **Once before release** | `npm run test:cdt:full` |
 
-`test:cdt:full` = `--full --open-missing --save=all` → `styles` + `ui-random` + `usage` + `console`.
+`test:cdt:full` = `--full --open-missing --save=all` → `styles` + `ui-random` + `usage` + `console` + `gateway`.
 
 ### Flags
 
@@ -72,6 +74,7 @@ Hard-coded in `scripts/cdt-gate.mjs` as `UI_RANDOM_ALLOW` + blacklist. Host mode
 | Choose folder / Change folder | native picker |
 | Forget folder | destructive |
 | Rotate / Сменить token | destructive |
+| Ping / Update configuration | gateway section only (live enroll/WS) |
 | Donate / external links | leave page |
 | Скачать / Download chat | usage only (not ui-random) |
 | Host Download / model dropdown | not CE |
