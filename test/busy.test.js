@@ -144,9 +144,18 @@ test('composerReady and buildHostState', () => {
   assert.equal(ok.code, null);
   page('<main><button>Перейти на Pro</button></main>');
   const paywall = buildHostState('perplexity', { generating: false, composerReady: true });
-  assert.equal(paywall.state, 'rate_limit');
-  assert.equal(paywall.kind, 'paywall');
-  assert.equal(paywall.retryable, false);
+  assert.equal(paywall.state, 'ok', 'soft Free/Upgrade CTA must not gate platforms_status');
+  assert.equal(paywall.busy, false);
+  assert.equal(paywall.code, null);
+  page('<main><div role="alert">Бесплатный план · Улучшить тариф</div></main>');
+  const freePlan = buildHostState('perplexity', { generating: false, composerReady: true });
+  assert.equal(freePlan.state, 'ok');
+  assert.equal(freePlan.code, null);
+  page('<main><div role="alert">Usage limit reached</div></main>');
+  const hard = buildHostState('perplexity', { generating: false, composerReady: true });
+  assert.equal(hard.state, 'rate_limit');
+  assert.equal(hard.code, 'RATE_LIMIT');
+  assert.equal(hard.kind, 'quota');
 
   page('<main><iframe src="https://www.google.com/recaptcha/api2/anchor" title="reCAPTCHA"></iframe></main>');
   const captcha = buildHostState('chatgpt', { generating: false, composerReady: true });

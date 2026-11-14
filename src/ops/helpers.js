@@ -689,6 +689,11 @@ export function buildHostState(platform, state, candidates) {
   var thinking = !!(state && state.thinking);
   var streaming = !!(state && state.streaming);
   var composerReady = !!(state && state.composerReady);
+  // Free/Upgrade marketing is not a gate: list/export/delete must stay usable, and
+  // platforms_status must not report rate_limit for a persistent Pro CTA.
+  if (hit && hit.code === 'RATE_LIMIT' && isSoftPaywallOnly(hit.text)) {
+    hit = null;
+  }
   var usage =
     state && state.usage && typeof state.usage === 'object'
       ? state.usage

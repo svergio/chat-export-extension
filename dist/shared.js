@@ -5349,6 +5349,9 @@
     var thinking = !!(state && state.thinking);
     var streaming = !!(state && state.streaming);
     var composerReady2 = !!(state && state.composerReady);
+    if (hit && hit.code === "RATE_LIMIT" && isSoftPaywallOnly(hit.text)) {
+      hit = null;
+    }
     var usage = state && state.usage && typeof state.usage === "object" ? state.usage : hit && hit.code === "RATE_LIMIT" ? parseUsageFromText(hit.text) : null;
     var captchaWidget = hit && (hit.captchaWidget || hit.challenge) || state && (state.captchaWidget || state.challenge) || null;
     if (generating && hit && hit.code !== "UNAUTHORIZED") {
