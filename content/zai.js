@@ -243,6 +243,49 @@
     return t && t.length < 80 ? t : '';
   }
 
+  function modelIdsMatch(a, b) {
+    var idA = Ops.normalizeId ? Ops.normalizeId(a) : String(a || '').toLowerCase();
+    var idB = Ops.normalizeId ? Ops.normalizeId(b) : String(b || '').toLowerCase();
+    if (!idA || !idB) return false;
+    if (idA === idB) return true;
+    // Prefix overlap ("glm-5-3-flash" vs "glm-5-3-flash-2026…") — only for long-enough ids.
+    var short = idA.length < idB.length ? idA : idB;
+    var long = idA.length < idB.length ? idB : idA;
+    return short.length >= 4 && long.indexOf(short) === 0;
+  }
+
+  // Apply the requested model through the native selector before submit (chats_create model arg).
+  async function applyModelChoice(wanted) {
+    var want = String(wanted || '').trim();
+    if (!want) return '';
+    if (modelIdsMatch(findModel(), want)) return findModel();
+    var btn = findModelButton();
+    if (!btn) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (!Ops.openMenu || !Ops.pickMenuItem) rpcErr('OPTION_NOT_FOUND', 'model menu helpers unavailable');
+    var menu;
+    try {
+      menu = await Ops.openMenu(btn, { timeoutMs: 6000, retries: 1, message: 'Z.ai model menu did not open' });
+    } catch (e) {
+      rpcErr('OPTION_NOT_FOUND', 'model menu did not open: ' + want);
+    }
+    var picked = Ops.pickMenuItem(menu, function (it) {
+      return modelIdsMatch(it.label, want);
+    });
+    Ops.closeMenu(document);
+    if (!picked) rpcErr('OPTION_NOT_FOUND', 'model: ' + want);
+    if (picked.disabled || picked.locked) rpcErr('OPTION_LOCKED', 'model: ' + want);
+    capsCache = { key: '', data: null };
+    try {
+      await Ops.waitFor(
+        function () {
+          return modelIdsMatch(findModel(), want) ? true : null;
+        },
+        { timeoutMs: 4000, message: 'Z.ai model apply timeout' }
+      );
+    } catch (eVerify) {}
+    return picked.label || want;
+  }
+
   function sessionUser() {
     return { userName: '', userHandle: '', userEmail: '' };
   }
@@ -544,6 +587,19 @@
     }
   }
 
+  // Z.ai remembers last_mode (chat|agent|zcode); the ZCode/Agent workspace hides #chat-input.
+  // Landing back on the Chat composer before fill keeps create() on the /c/{id} path.
+  function findChatModeButton() {
+    var nodes = document.querySelectorAll('button, [role="tab"], a');
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      if (!visible(nodes[i])) continue;
+      if (nodes[i].closest('[data-chat-export], .chat-export-bar, .chat-export-menu')) continue;
+      if (/^(chat|chat mode|聊天)$/i.test(labelOf(nodes[i]))) return nodes[i];
+    }
+    return null;
+  }
+
   async function ensureNewChat() {
     if (!currentChatId() && visible(findComposerInput())) return;
     var neu =
@@ -572,6 +628,21 @@
       );
       return;
     } catch (e2) {}
+    // last_mode=agent / ZCode workspace: switch to the Chat composer before giving up on soft nav.
+    var chatMode = findChatModeButton();
+    if (chatMode) {
+      if (Ops.clickEl) Ops.clickEl(chatMode);
+      else chatMode.click();
+      try {
+        await Ops.waitFor(
+          function () {
+            return !currentChatId() && visible(findComposerInput()) ? true : null;
+          },
+          { timeoutMs: 5000, message: 'Z.ai chat mode timeout' }
+        );
+        return;
+      } catch (e3) {}
+    }
     location.assign(location.origin + '/');
     await Ops.waitFor(
       function () {
@@ -585,6 +656,20 @@
     return turnNodes().length;
   }
 
+  function composerHoldsText(input, text) {
+    if (!input) return false;
+    var cur =
+      input.value != null && input.value !== ''
+        ? String(input.value)
+        : String((input.innerText || input.textContent) || '');
+    var want = String(text || '').replace(/\u00a0/g, ' ').trim();
+    return cur.replace(/\u00a0/g, ' ').trim() === want;
+  }
+
+  function sendEnabled(send) {
+    return !!(send && !send.disabled && send.getAttribute('aria-disabled') !== 'true');
+  }
+
   async function submitComposer(text) {
     var input = findComposerInput();
     if (!input) rpcErr('HOST_ERROR', 'composer not found');
@@ -596,10 +681,27 @@
       input.dispatchEvent(new Event('input', { bubbles: true }));
     }
     if (Ops.sleep) await Ops.sleep(80);
+    // A naive value set leaves the React composer unregistered and Send disabled forever;
+    // verify the fill landed before any submit attempt instead of dying in the chatId wait.
+    if (!composerHoldsText(input, text)) {
+      rpcErr('HOST_ERROR', 'Z.ai composer fill failed (composer did not hold the text)');
+    }
     var send = findSendButton();
-    if (send && !send.disabled) {
-      if (Ops.clickEl) Ops.clickEl(send);
-      else send.click();
+    if (send) {
+      if (!sendEnabled(send)) {
+        try {
+          await Ops.waitFor(
+            function () {
+              return sendEnabled(findSendButton()) ? true : null;
+            },
+            { timeoutMs: 5000, intervalMs: 100, message: 'Z.ai send disabled' }
+          );
+        } catch (e) {
+          rpcErr('HOST_ERROR', 'Z.ai send disabled after fill (composer fill failed)');
+        }
+      }
+      if (Ops.clickEl) Ops.clickEl(findSendButton() || send);
+      else (findSendButton() || send).click();
       return;
     }
     if (Ops.dispatchEnter) Ops.dispatchEnter(input);
@@ -620,6 +722,72 @@
       },
       { timeoutMs: opts.timeoutMs || 180000, message: 'Z.ai reply timeout' }
     );
+  }
+
+  // Honor the operator wait bound (timeout_s / timeoutMs mirror server rpcTimeoutForArgs);
+  // the product default stays the 120s ceiling.
+  function waitTimeoutMs(args, fallback) {
+    var raw = args && args.timeoutMs != null ? args.timeoutMs : args && args.timeout_s;
+    var n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return fallback;
+    if (n <= 1000) n = n * 1000;
+    return Math.min(Math.max(n, 1000), fallback);
+  }
+
+  // Z.ai pushes /c/{id} asynchronously after POST /api/v1/chats/new resolves; tapping the
+  // response gives create() a second chatId source so URL lag never decays into a 120s timeout.
+  function tapNewChatFetch() {
+    var state = { id: '' };
+    if (typeof window.fetch !== 'function' || typeof window.Response !== 'function') {
+      return { state: state, restore: function () {} };
+    }
+    var orig = window.fetch;
+    window.fetch = function (input, init) {
+      var p = orig.apply(this, arguments);
+      try {
+        var url = typeof input === 'string' ? input : (input && input.url) || '';
+        var method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+        if (url.indexOf('/api/v1/chats/new') >= 0 && method === 'POST') {
+          p.then(function (res) {
+            try {
+              var body = res.clone ? res.clone() : null;
+              if (!body) return;
+              body.json().then(function (j) {
+                var got = j && (j.id || (j.chat && j.chat.id) || j.chatId);
+                if (got && !state.id) state.id = String(got);
+              }).catch(function () {});
+            } catch (eTap) {}
+          }).catch(function () {});
+        }
+      } catch (eWrap) {}
+      return p;
+    };
+    return {
+      state: state,
+      restore: function () {
+        try {
+          window.fetch = orig;
+        } catch (eRestore) {}
+      }
+    };
+  }
+
+  // On a chatId wait failure, surface the real gate (captcha widget / busy banner) instead of
+  // an opaque HOST_ERROR. Captcha is never auto-solved — the error only classifies the wall.
+  function throwGateAwareTimeout(err) {
+    if (err && err.code && err.code !== 'HOST_ERROR') return err;
+    var captcha = detectCaptcha();
+    if (captcha) {
+      rpcErr('CAPTCHA', 'Z.ai captcha challenge blocks chat creation', {
+        captchaWidget: captcha,
+        hint: 'Solve the captcha in the browser tab or hand off to a human. Captcha is never auto-solved.'
+      });
+    }
+    if (Ops.detectBusyBanner) {
+      var hit = Ops.detectBusyBanner(document);
+      if (hit && Ops.throwBusy) Ops.throwBusy(hit);
+    }
+    return err;
   }
 
   async function loadChatPayload(chatId, opts) {
@@ -857,6 +1025,7 @@
           if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await navigateToChat(chatId);
+          await applyModelChoice(args && args.model);
           await waitForIdle();
           var before = turnCount();
           var input = findComposerInput();
@@ -894,24 +1063,30 @@
           var text = String((args && args.text) || '').trim();
           if (!text) rpcErr('BAD_REQUEST', 'text is required');
           await ensureNewChat();
+          await applyModelChoice(args && args.model);
           await waitForIdle();
-          await submitComposer(text);
-          var chatId = await Ops.waitFor(
-            function () {
-              var id = currentChatId();
-              return id || null;
-            },
-            { timeoutMs: 120000, message: 'Z.ai chatId timeout' }
-          );
-          return {
-            platform: 'zai',
-            chatId: chatId,
-            title: findTitle(),
-            url: chatUrl(chatId),
-            updatedAt: new Date().toISOString()
-          };
+          var tap = tapNewChatFetch();
+          try {
+            await submitComposer(text);
+            var chatId = await Ops.waitFor(
+              function () {
+                var id = currentChatId() || tap.state.id;
+                return id || null;
+              },
+              { timeoutMs: waitTimeoutMs(args, 120000), message: 'Z.ai chatId timeout' }
+            );
+            return {
+              platform: 'zai',
+              chatId: chatId,
+              title: findTitle(),
+              url: chatUrl(chatId),
+              updatedAt: new Date().toISOString()
+            };
+          } finally {
+            tap.restore();
+          }
         } catch (err) {
-          hostErr(err);
+          hostErr(throwGateAwareTimeout(err));
         }
       },
       delete: async function (args) {
