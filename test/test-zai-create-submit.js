@@ -211,6 +211,30 @@ test('zai create keeps HOST_ERROR chatId timeout when no gate is present', async
   );
 });
 
+test('zai send surfaces CAPTCHA instead of eating an accept timeout', async () => {
+  const win = newWin('https://chat.z.ai/c/existing-1');
+  win.document.body.insertAdjacentHTML('beforeend', `<div data-sitekey="0xsend"></div>`);
+  sendBtn(win).addEventListener('click', () => {
+    win.fetch('/api/v1/chats/new', { method: 'POST' }).catch(() => {}); // send accepted, page busy
+  });
+  const spec = loadZai(win);
+  await assert.rejects(
+    spec.ops.send({ chatId: 'existing-1', text: 'hello', timeoutMs: 1200 }),
+    (err) => {
+      assert.equal(err.code, 'CAPTCHA');
+      assert.equal(err.details && err.details.captchaWidget && err.details.captchaWidget.sitekey, '0xsend');
+      return true;
+    }
+  );
+});
+
+test('zai send keeps success on accept timeout when no gate is present', async () => {
+  const win = newWin('https://chat.z.ai/c/existing-1');
+  const spec = loadZai(win);
+  const res = await spec.ops.send({ chatId: 'existing-1', text: 'hello', timeoutMs: 1200 });
+  assert.equal(res.chatId, 'existing-1', 'pre-existing accept-quirk contract preserved');
+});
+
 test('zai send applies model and submits in an existing chat', async () => {
   const win = newWin('https://chat.z.ai/c/existing-1');
   win.document.body.insertAdjacentHTML(
@@ -233,4 +257,108 @@ test('zai send applies model and submits in an existing chat', async () => {
   const res = await spec.ops.send({ chatId: 'existing-1', text: 'hello', model: 'glm-5-3-flash' });
   assert.equal(res.chatId, 'existing-1');
   assert.equal(chip(win).textContent, 'GLM-5.3-Flash');
+});
+
+// ── A3: soft upgrade / Free banner must NOT become RATE_LIMIT on zai ──
+
+test('isSoftPaywallOnly: soft marketing yes, hard limit no', () => {
+  assert.equal(realOps.isSoftPaywallOnly('Upgrade to Pro for more power'), true);
+  assert.equal(realOps.isSoftPaywallOnly('Free plan preview'), true);
+  assert.equal(realOps.isSoftPaywallOnly('Try a more powerful model'), true);
+  assert.equal(realOps.isSoftPaywallOnly('Usage limit reached'), false);
+  assert.equal(realOps.isSoftPaywallOnly('Upgrade to Pro — usage limit reached'), false);
+  assert.equal(realOps.isSoftPaywallOnly('Quota exceeded'), false);
+  assert.equal(realOps.isSoftPaywallOnly(''), false);
+});
+
+test('zai create reports HOST_ERROR (not RATE_LIMIT) for a soft upgrade banner', async () => {
+  const win = newWin();
+  sendBtn(win).disabled = true; // forces the fail-fast HOST_ERROR inside create
+  win.document.body.insertAdjacentHTML(
+    'beforeend',
+    `<div role="alert">Upgrade to Pro for more power</div>`
+  );
+  const spec = loadZai(win);
+  await assert.rejects(
+    spec.ops.create({ text: 'hello' }),
+    (err) => {
+      assert.equal(err.code, 'HOST_ERROR', 'soft upgrade banner must not surface as RATE_LIMIT');
+      assert.match(err.message, /not exhausted quota/);
+      assert.equal(err.details && err.details.softPaywall, true);
+      return true;
+    }
+  );
+});
+
+test('zai create keeps RATE_LIMIT for a hard-limit banner', async () => {
+  const win = newWin();
+  sendBtn(win).disabled = true;
+  win.document.body.insertAdjacentHTML(
+    'beforeend',
+    `<div role="alert">Usage limit reached. Quota exceeded for today.</div>`
+  );
+  const spec = loadZai(win);
+  await assert.rejects(
+    spec.ops.create({ text: 'hello' }),
+    (err) => err.code === 'RATE_LIMIT'
+  );
+});
+
+test('definePlatform downgrades soft-paywall RATE_LIMIT for zai submit hooks', async () => {
+  const win = new Window({ url: 'https://chat.z.ai/' });
+  win.ChatExport = {
+    Ops: Object.assign({}, realOps),
+    RpcError: RpcError,
+    platforms: {},
+    BAR_ATTR: 'data-chat-export-bar',
+    EXT_VERSION: 'test',
+    observe: () => {}
+  };
+  // src/definePlatform.js reads bare `window.ChatExport`, and guardBusy reads bare
+  // `document` — bind both briefly (restored in finally).
+  const prevWindow = globalThis.window;
+  const prevDocument = globalThis.document;
+  globalThis.window = win;
+  globalThis.document = win.document;
+  try {
+    const { definePlatform } = await import('../src/definePlatform.js');
+    definePlatform({
+      id: 'zai',
+      ops: {
+        create: async function () {
+          throw new RpcError('RATE_LIMIT', 'Upgrade to Pro for more power', {
+            banner: 'Upgrade to Pro for more power',
+            kind: 'paywall'
+          });
+        }
+      }
+    });
+    await assert.rejects(
+      win.ChatExport.platforms.zai.ops.create({}),
+      (err) => {
+        assert.equal(err.code, 'HOST_ERROR', 'wrap must downgrade soft-paywall-only banners');
+        assert.equal(err.details && err.details.softPaywall, true);
+        return true;
+      }
+    );
+    // Control: hard-limit text keeps the RATE_LIMIT code.
+    definePlatform({
+      id: 'zai',
+      ops: {
+        create: async function () {
+          throw new RpcError('RATE_LIMIT', 'usage limit reached', {
+            banner: 'usage limit reached',
+            kind: 'quota'
+          });
+        }
+      }
+    });
+    await assert.rejects(
+      win.ChatExport.platforms.zai.ops.create({}),
+      (err) => err.code === 'RATE_LIMIT'
+    );
+  } finally {
+    globalThis.window = prevWindow;
+    globalThis.document = prevDocument;
+  }
 });

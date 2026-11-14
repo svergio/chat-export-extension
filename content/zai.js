@@ -785,7 +785,18 @@
     }
     if (Ops.detectBusyBanner) {
       var hit = Ops.detectBusyBanner(document);
-      if (hit && Ops.throwBusy) Ops.throwBusy(hit);
+      if (hit && Ops.throwBusy) {
+        // Policy: a soft upgrade/free banner is not exhausted quota — never report it
+        // as RATE_LIMIT while send may still work. Hard-limit text stays RATE_LIMIT.
+        if (hit.code === 'RATE_LIMIT' && Ops.isSoftPaywallOnly && Ops.isSoftPaywallOnly(hit.text)) {
+          rpcErr('HOST_ERROR', 'Z.ai upgrade banner is not exhausted quota (send may still work)', {
+            banner: hit.text,
+            softPaywall: true,
+            note: 'Free/Upgrade marketing banner downgraded: Free badge is not RATE_LIMIT.'
+          });
+        }
+        Ops.throwBusy(hit);
+      }
     }
     return err;
   }
@@ -1042,10 +1053,13 @@
                 }
                 return null;
               },
-              { timeoutMs: 20000, message: 'Z.ai send accept timeout' }
+              { timeoutMs: waitTimeoutMs(args, 20000), message: 'Z.ai send accept timeout' }
             );
           } catch (acceptErr) {
             if (currentChatId() !== chatId) throw acceptErr;
+            // Accept timeout with chatId intact: success only when no gate is on screen —
+            // a visible captcha must surface (CAPTCHA), never be eaten as a silent success.
+            throwGateAwareTimeout(acceptErr);
           }
           return {
             platform: 'zai',
@@ -1055,7 +1069,7 @@
             updatedAt: new Date().toISOString()
           };
         } catch (err) {
-          hostErr(err);
+          hostErr(throwGateAwareTimeout(err));
         }
       },
       create: async function (args) {
