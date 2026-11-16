@@ -1,6 +1,12 @@
-[English](README.md) | [Русский](README.ru.md) · [![Support on DonationAlerts](https://img.shields.io/badge/Support-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server) · [![MCP Servers](https://img.shields.io/badge/MCP_Servers-listed-2563eb)](https://mcpservers.org/ru/) · [![Chat Export MCP on mcprush](https://mcprush.com/badge/chat-export-mcp/score.svg)](https://mcprush.com/to/chat-export-mcp?ref=badge)
+[English](README.md) | [Русский](README.ru.md) · [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/ecnkhadaajiodlaoflkjjnaclhloejgg?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/chat-export/ecnkhadaajiodlaoflkjjnaclhloejgg) · [![Support on DonationAlerts](https://img.shields.io/badge/Support-DonationAlerts-orange)](https://www.donationalerts.com/r/svwergio_mel) · [![chat-export-server MCP server](https://glama.ai/mcp/servers/svergio/chat-export-server/badges/score.svg)](https://glama.ai/mcp/servers/svergio/chat-export-server) · [![MCP Servers](https://img.shields.io/badge/MCP_Servers-listed-2563eb)](https://mcpservers.org/ru/) · [![Chat Export MCP on mcprush](https://mcprush.com/badge/chat-export-mcp/score.svg)](https://mcprush.com/to/chat-export-mcp?ref=badge)
 
 # Chat Export — Chrome extension
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/chat-export/ecnkhadaajiodlaoflkjjnaclhloejgg">
+    <img src="https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/UV4C4ybeBTsZt43U4xis.png" alt="Available in the Chrome Web Store" width="340" />
+  </a>
+</p>
 
 <p align="center">
   <img src="docs/media/demo-export.gif" alt="Export on ChatGPT, Grok, and Claude — pick a format and download" width="720" />
@@ -16,7 +22,7 @@ Export and control your **web** chats on **twelve** providers (ChatGPT, Grok, X 
 
 Chat Export is a **full product** in three public repos (extension, server, dashboard). Manual export works with the extension alone. MCP automation uses `chat-export-server` and the **MV3 extension bridge** in your Chrome tabs — **not** Chrome DevTools MCP. Deploy the server **natively**, via **Docker / Colima**, or **Kubernetes**. You supply the MCP client — common choices include **Cursor** (Chrome extension + MCP; Cursor marketplace listing pending approval), **Claude Desktop** and Claude MCP integrations (submission in progress), and **LangChain**-based local agents. None are bundled with the product.
 
-**Install zip:** [chat-export-extension-2.1.5.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.1.5/chat-export-extension-2.1.5.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.1.5](https://github.com/svergio/chat-export-extension/releases/tag/v2.1.5).
+**Install:** [Chrome Web Store](https://chromewebstore.google.com/detail/chat-export/ecnkhadaajiodlaoflkjjnaclhloejgg) (recommended). Sideload zip if needed: [chat-export-extension-2.1.6.zip](https://github.com/svergio/chat-export-extension/releases/download/v2.1.6/chat-export-extension-2.1.6.zip) — unzip, then Chrome → Developer mode → **Load unpacked**. Release notes: [v2.1.6](https://github.com/svergio/chat-export-extension/releases/tag/v2.1.6).
 
 ## The problem
 

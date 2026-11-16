@@ -1,7 +1,7 @@
 {
   "name": "chat-export-extension",
   "version": "2.1.6",
-  "description": "Export ChatGPT, Grok, X Grok, Claude, Copilot, Qwen, DeepSeek, Perplexity, Kimi, Z.ai, MiniMax, and JanitorAI chats to MD/YAML/JSON/HTML/PDF.",
+  "description": "Export the current AI chat to Markdown, PDF, JSON, HTML, or YAML — files stay on your computer.",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
