@@ -68,7 +68,7 @@ jobs:
           echo "$LISTING" | grep -q "locales/LN_ru.json"
 
       - name: Upload extension zip artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chat-export-extension-package
           path: dist-pack/chat-export-extension-*.zip
@@ -76,6 +76,6 @@ jobs:
 
       - name: Attach zip to GitHub Release
         if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist-pack/chat-export-extension-*.zip
