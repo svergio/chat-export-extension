@@ -53,6 +53,7 @@ test('resolvePack applies Folder / Zip to any number of formats', () => {
   const { CE } = loadChatExport();
   assert.equal(CE.resolvePack(1, 'zip'), 'zip');
   assert.equal(CE.resolvePack(1, 'folder'), 'file');
+  assert.equal(CE.resolvePack(1, 'folder', 1), 'folder');
   assert.equal(CE.resolvePack(2, 'zip'), 'zip');
   assert.equal(CE.resolvePack(2, 'folder'), 'folder');
   assert.equal(CE.resolvePack(3, undefined), 'zip');

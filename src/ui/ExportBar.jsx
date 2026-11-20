@@ -392,7 +392,7 @@ function ExportBarInner({ options }) {
   function dlTitle() {
     const labels = formats.map((id) => CE.FORMAT_LABEL[id] || id).join(', ');
     const multi = formats.length > 1;
-    const pack = CE.resolvePack(formats.length, packMode);
+    const pack = CE.resolvePack(formats.length, packMode, 0);
     const fmt = pack === 'file' ? labels : labels + ' (' + t(pack === 'folder' ? 'bar.pack.folder' : 'bar.pack.zip') + ')';
     return t(multi ? 'bar.dl.multi' : 'bar.dl.single')
       .replace('{fmt}', fmt)
@@ -501,7 +501,7 @@ function ExportBarInner({ options }) {
     lastIntentRef.current = now;
 
     const selected = formats.slice();
-    const pack = CE.resolvePack(selected.length, packMode);
+    const pack = CE.resolvePack(selected.length, packMode, 0);
     const shift = CE.wantsPathPicker(ev);
     const mode = shiftModeOf(getPlatformSettings());
     const saveAs = shift && mode === 'saveAs';
