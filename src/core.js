@@ -1513,9 +1513,14 @@
     });
   }
 
-  function resolvePack(formatCount, packMode) {
+  function resolvePack(formatCount, packMode, attachmentCount) {
     if (packMode === 'file') return 'file';
-    if (packMode === 'folder') return formatCount > 1 ? 'folder' : 'file';
+    if (packMode === 'folder') {
+      if (attachmentCount === undefined || attachmentCount === 0) {
+        if (formatCount === 1) return 'file';
+      }
+      return 'folder';
+    }
     return 'zip';
   }
 
@@ -1583,7 +1588,7 @@
     var hasDir = typeof window.showDirectoryPicker === 'function';
     if (!hasSave && !hasDir) return Promise.resolve(null);
 
-    var mode = resolvePack(list.length, pack);
+    var mode = resolvePack(list.length, pack, 0);
     if (mode === 'folder') {
       if (!hasDir) return Promise.resolve(null);
       return window.showDirectoryPicker({ mode: 'readwrite' }).then(function (dir) {
@@ -1684,7 +1689,7 @@
 
   function exportConversation(opts) {
     var formats = normalizeFormats(opts.formats);
-    var pack = resolvePack(formats.length, opts.pack);
+    var pack = resolvePack(formats.length, opts.pack, 0);
     return buildExportBundle(opts).then(function (bundle) {
       var base = bundle.base;
       var files = bundle.files;
