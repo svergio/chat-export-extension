@@ -338,52 +338,73 @@
     return n && n.parentElement === parent ? n : null;
   }
 
-  function commonAncestor(a, b, limit) {
-    if (!a || !b) return null;
-    var seen = [];
-    var n = a;
-    while (n && n !== limit && n !== document.body) {
-      seen.push(n);
-      n = n.parentElement;
-    }
-    n = b;
-    while (n && n !== limit && n !== document.body) {
-      if (seen.indexOf(n) >= 0) return n;
-      n = n.parentElement;
-    }
-    return null;
+  function isThinkChip(blob) {
+    // The composer control reads "Think" (it used to read "Thinking"). The model
+    // chip stays filtered by isThinkingLabel() inside findModel().
+    return /размышл|\bthink(?:ing)?\b/i.test(String(blob || ''));
   }
 
   function findComposerToolbar() {
     var footer = findComposerFooter();
     if (!footer) return null;
 
+    var barAttr = CE.BAR_ATTR || 'data-chat-export-bar';
     var thinking = null;
     var dictate = null;
     var attach = null;
     var voice = null;
-    var send =
-      footer.querySelector('button[data-testid="send-button"]') ||
-      footer.querySelector('button[aria-label*="Send" i]') ||
-      footer.querySelector('button[aria-label*="Отправ" i]');
+    var send = null;
     var btns = footer.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {
-      var blob = btnBlob(btns[i]);
-      if (!thinking && isThinkingLabel(blob) && !/диктов|dictat/i.test(blob)) thinking = btns[i];
-      if (!dictate && /диктов|dictat/i.test(blob)) dictate = btns[i];
-      if (!attach && /файл|file|attach|прикреп|добавить/i.test(blob)) attach = btns[i];
-      if (!voice && /голос|voice|разговор/i.test(blob) && !/диктов|dictat/i.test(blob)) voice = btns[i];
+      var btn = btns[i];
+      // Never treat our own export bar as a composer control.
+      if (btn.closest('[' + barAttr + ']')) continue;
+      var blob = btnBlob(btn);
+      if (!send && (btn.getAttribute('data-testid') === 'send-button' || /\bsend\b/i.test(blob) || /отправ/i.test(blob))) {
+        send = btn;
+      }
+      if (!thinking && isThinkChip(blob) && !/диктов|dictat/i.test(blob)) thinking = btn;
+      if (!dictate && /диктов|dictat/i.test(blob)) dictate = btn;
+      if (!attach && /файл|file|attach|прикреп|добавить/i.test(blob)) attach = btn;
+      if (!voice && /голос|voice|разговор/i.test(blob) && !/диктов|dictat/i.test(blob)) voice = btn;
     }
 
-    var endBtn = send || dictate || voice;
-    var row = commonAncestor(thinking || attach, endBtn, footer) || footer;
-    var thinkWrap = wrapChildOf(row, thinking);
-    return {
-      el: row,
-      insertAfter: thinkWrap,
+    // ChatGPT's composer footer is a CSS grid (leading controls | input | actions).
+    // A direct footer child lands in an implicit second row and pushes the bar
+    // below the composer. Always anchor inside one of the footer's own groups.
+    var endBtn = send || dictate || voice || thinking;
+    var group = endBtn ? wrapChildOf(footer, endBtn) : null;
+    var row = group && endBtn ? wrapChildOf(group, endBtn) || group : null;
+    if (!row && attach) {
+      group = wrapChildOf(footer, attach);
+      row = group;
+    }
+
+    var opts = {
       nativeFrom: thinking || attach,
       nativeIconFrom: attach || null
     };
+
+    if (!row) {
+      // Last resort: appending to the footer only stays on one row for non-grid
+      // layouts. On a grid footer, no bar beats a bar under the composer.
+      var display = '';
+      try {
+        display = getComputedStyle(footer).display || '';
+      } catch (e) {}
+      if (display.indexOf('grid') >= 0) return null;
+      opts.el = footer;
+      opts.placement = 'append';
+      return opts;
+    }
+
+    opts.el = row;
+    // Park the bar just before the action cluster: Send lives in that same
+    // cluster, so the spot stays stable when Send appears or disappears.
+    var before = wrapChildOf(row, endBtn);
+    if (before) opts.beforeChild = before;
+    else opts.placement = 'append';
+    return opts;
   }
 
   var Ops = CE.Ops || {};

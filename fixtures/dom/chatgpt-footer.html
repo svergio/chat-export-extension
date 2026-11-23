@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html><body>
+  <!-- Mirrors the live chatgpt.com composer footer: a 3-column grid whose flow
+       children are leading controls / input / actions, plus an absolutely
+       positioned expansion control. Mounting the export bar as a 4th flow child
+       would wrap it into an implicit second row (bar dropped below the input). -->
+  <fieldset>
+    <div
+      id="footer"
+      data-composer-footer-responsive=""
+      data-composer-rows="responsive"
+      style="display:grid"
+      class="ComposerLayoutFooter-_8IVRO SingleLineFooter-nTD287 ResponsiveFooter-p1PjLs"
+    >
+      <div class="min-w-0 justify-self-start" id="leading">
+        <div class="flex min-w-0 items-center">
+          <button
+            type="button"
+            aria-label="Add files and more"
+            id="attach"
+            class="no-drag cursor-interaction items-center select-none whitespace-nowrap flex border gap-1 rounded-full text-tertiary h-token-button-composer aspect-square shrink-0 items-center justify-center !px-0"
+          ></button>
+        </div>
+      </div>
+
+      <div class="FooterInput-ZEeVOK AnimatedFooterInput-nq8fqx" id="input-wrap">
+        <div class="ProseMirror" contenteditable="true" role="textbox" id="editor">draft</div>
+      </div>
+
+      <div class="z-20" id="expansion" data-composer-expansion-control=""></div>
+
+      <div class="min-w-0 justify-self-end z-30" id="actions">
+        <div class="flex min-w-0 items-center justify-end shrink-0" id="action-row">
+          <div class="flex min-w-0 flex-1 justify-end" id="think-wrap">
+            <button
+              type="button"
+              id="think"
+              class="no-drag cursor-interaction items-center select-none whitespace-nowrap flex gap-1.5 border-0 rounded-full text-tertiary h-token-button-composer py-0 ps-3 pe-3.5 text-base leading-relaxed"
+            >Think</button>
+          </div>
+          <div class="flex shrink-0 items-center" id="cluster">
+            <button type="button" aria-label="Dictate" id="dictate"></button>
+            <button type="button" aria-label="Start Voice" id="voice"></button>
+            <button type="button" aria-label="Send" id="send"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+</body></html>
