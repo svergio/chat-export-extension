@@ -4,9 +4,19 @@
   var CE = window.ChatExport;
   if (!CE || !CE.definePlatform) return;
 
+  var CHAT_ID_RE = /^[0-9a-fA-F-]{8,}$/;
+
+  // /c/{id}, /project/{pid}/c/{id} and project pages that carry the open chat
+  // in the query (?chat= / ?conversation=). Never guessed from the sidebar.
   function chatIdFromUrl() {
     var m = location.pathname.match(/\/c\/([0-9a-fA-F-]{8,})/);
-    return m ? m[1] : '';
+    if (m) return m[1];
+    try {
+      var q = new URLSearchParams(location.search);
+      var fromQuery = q.get('chat') || q.get('conversation') || q.get('chatId') || '';
+      if (CHAT_ID_RE.test(fromQuery)) return fromQuery;
+    } catch (e) {}
+    return '';
   }
 
   function findTitle() {
@@ -674,15 +684,10 @@
     Ops.clickEl(sub.el);
   }
 
+  // URL only: a sidebar link is some other chat (the newest), so guessing from
+  // it exported the wrong conversation on pages without a chat id.
   function currentChatId() {
-    var id = chatIdFromUrl();
-    if (id) return id;
-    var link = document.querySelector('a[href*="/c/"]');
-    if (link) {
-      var m = String(link.getAttribute('href') || '').match(/\/c\/([0-9a-fA-F-]{8,})/);
-      if (m) return m[1];
-    }
-    return '';
+    return chatIdFromUrl();
   }
 
   function responseTurnCount() {
@@ -714,14 +719,58 @@
     return 'grok';
   }
 
-  async function loadConversationMessages(chatId) {
-    var nodeRes = await apiFetch('/rest/app-chat/conversations/' + encodeURIComponent(chatId) + '/response-node');
-    if (nodeRes.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
-    if (!nodeRes.ok) await failFromResponse(nodeRes, 'response-node');
-    var node = await nodeRes.json();
-    var ids = (node.responseNodes || []).map(function (n) {
+  function nodeTime(n, resp) {
+    var raw = (resp && (resp.createTime || resp.createdAt)) || (n && (n.createTime || n.createdAt)) || '';
+    var t = Date.parse(raw);
+    return Number.isFinite(t) ? t : 0;
+  }
+
+  // response-node returns the whole tree (regenerations and edited prompts are
+  // siblings under one parentResponseId). Export only the branch the user sees:
+  // from the newest leaf up to the root.
+  function activeBranchIds(nodes, byId) {
+    var list = (nodes || []).filter(function (n) {
+      return n && n.responseId;
+    });
+    if (!list.length) return [];
+    var hasParents = list.some(function (n) {
+      return n.parentResponseId;
+    });
+    if (!hasParents) return list.map(function (n) {
       return n.responseId;
-    }).filter(Boolean);
+    });
+    var nodeById = {};
+    var hasChild = {};
+    var order = {};
+    list.forEach(function (n, i) {
+      nodeById[n.responseId] = n;
+      order[n.responseId] = i;
+      if (n.parentResponseId) hasChild[n.parentResponseId] = true;
+    });
+    var leaf = null;
+    list.forEach(function (n) {
+      if (hasChild[n.responseId]) return;
+      if (!leaf) {
+        leaf = n;
+        return;
+      }
+      var a = nodeTime(n, byId && byId[n.responseId]);
+      var b = nodeTime(leaf, byId && byId[leaf.responseId]);
+      // Newest leaf wins; without timestamps the later node in server order.
+      if (a > b || (a === b && order[n.responseId] > order[leaf.responseId])) leaf = n;
+    });
+    var chain = [];
+    var seen = {};
+    var cur = leaf;
+    while (cur && !seen[cur.responseId]) {
+      seen[cur.responseId] = true;
+      chain.push(cur.responseId);
+      cur = cur.parentResponseId ? nodeById[cur.parentResponseId] : null;
+    }
+    return chain.reverse();
+  }
+
+  async function loadResponses(chatId, ids) {
     var responses = [];
     var off;
     for (off = 0; off < ids.length; off += 40) {
@@ -742,14 +791,60 @@
     for (r = 0; r < responses.length; r++) {
       if (responses[r] && responses[r].responseId) byId[responses[r].responseId] = responses[r];
     }
+    return byId;
+  }
+
+  function responseFiles(resp) {
+    var names = [];
+    var atts = [].concat(resp.fileAttachments || [], resp.imageAttachments || []);
+    var meta = resp.fileAttachmentAssetMetadata || [];
+    var i;
+    for (i = 0; i < meta.length; i++) {
+      var m = meta[i] || {};
+      if (m.name || m.fileName) names.push(String(m.name || m.fileName));
+    }
+    if (!names.length) {
+      for (i = 0; i < atts.length; i++) {
+        var a = atts[i];
+        if (a && typeof a === 'object' && (a.name || a.fileName)) names.push(String(a.name || a.fileName));
+      }
+    }
+    var gen = resp.generatedImageUrls || [];
+    for (i = 0; i < gen.length; i++) if (gen[i]) names.push('generated image');
+    return names;
+  }
+
+  async function loadConversationMessagesWithStats(chatId) {
+    var nodeRes = await apiFetch('/rest/app-chat/conversations/' + encodeURIComponent(chatId) + '/response-node');
+    if (nodeRes.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
+    if (!nodeRes.ok) await failFromResponse(nodeRes, 'response-node');
+    var node = await nodeRes.json();
+    var nodes = node.responseNodes || [];
+    // Load every node so the newest leaf can be chosen by createTime.
+    var allIds = nodes.map(function (n) {
+      return n && n.responseId;
+    }).filter(Boolean);
+    var byId = await loadResponses(chatId, allIds);
+    var ids = activeBranchIds(nodes, byId);
     var ordered = [];
+    var missing = 0;
     var j;
     for (j = 0; j < ids.length; j++) {
       var resp = byId[ids[j]];
-      if (!resp) continue;
+      if (!resp) {
+        missing++;
+        continue;
+      }
       var sender = String(resp.sender || '').toLowerCase();
       if (sender !== 'human' && sender !== 'assistant' && sender !== 'user') continue;
       var text = String(resp.message || '').trim();
+      var files = responseFiles(resp);
+      if (files.length) {
+        var fileLines = files.map(function (n) {
+          return '[File: ' + n + ']';
+        }).join('\n');
+        text = text ? text + '\n\n' + fileLines : fileLines;
+      }
       if (!text) continue;
       var role = sender === 'human' || sender === 'user' ? 'user' : 'assistant';
       var sources = CE.dedupeSources(
@@ -769,7 +864,11 @@
         sources: sources
       });
     }
-    return ordered;
+    return { messages: ordered, missing: missing };
+  }
+
+  async function loadConversationMessages(chatId) {
+    return (await loadConversationMessagesWithStats(chatId)).messages;
   }
 
   function findComposerInput() {
@@ -1031,9 +1130,11 @@
   function exportDataFromApi() {
     var chatId = currentChatId();
     if (!chatId) return Promise.resolve(null);
-    return loadConversationMessages(chatId).then(function (messages) {
+    return loadConversationMessagesWithStats(chatId).then(function (stats) {
+      var messages = stats.messages;
       if (!messages.length) return null;
       var out = { messages: messages, title: findTitle(), model: findModel() };
+      if (stats.missing) out.warnings = ['missing-responses:' + stats.missing];
       return apiFetch('/rest/app-chat/conversations/' + encodeURIComponent(chatId))
         .then(function (res) {
           if (!res.ok) return out;

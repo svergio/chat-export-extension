@@ -1,0 +1,341 @@
+{
+ "thread": {
+  "id": "t1",
+  "name": "Synthetic Copilot"
+ },
+ "messages": [
+  {
+   "id": "u0",
+   "role": "user",
+   "content": "q0",
+   "parentMessageID": "root",
+   "createdAt": "2026-11-01T00:10:00.000Z",
+   "references": [
+    {
+     "type": "thread-scoped-file",
+     "name": "ce-copilot-upload.md",
+     "text": "# uploaded",
+     "language": "markdown"
+    }
+   ]
+  },
+  {
+   "id": "a0",
+   "role": "assistant",
+   "content": "ans0",
+   "parentMessageID": "u0",
+   "createdAt": "2026-11-01T00:11:00.000Z"
+  },
+  {
+   "id": "u1",
+   "role": "user",
+   "content": "q1",
+   "parentMessageID": "a0",
+   "createdAt": "2026-11-01T00:12:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a1",
+   "role": "assistant",
+   "content": "ans1",
+   "parentMessageID": "u1",
+   "createdAt": "2026-11-01T00:13:00.000Z"
+  },
+  {
+   "id": "u2",
+   "role": "user",
+   "content": "q2",
+   "parentMessageID": "a1",
+   "createdAt": "2026-11-01T00:14:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a2",
+   "role": "assistant",
+   "content": "ans2",
+   "parentMessageID": "u2",
+   "createdAt": "2026-11-01T00:15:00.000Z"
+  },
+  {
+   "id": "u3",
+   "role": "user",
+   "content": "q3",
+   "parentMessageID": "a2",
+   "createdAt": "2026-11-01T00:16:00.000Z",
+   "references": [],
+   "mediaContent": [
+    {
+     "name": "pixel.png"
+    }
+   ]
+  },
+  {
+   "id": "a3",
+   "role": "assistant",
+   "content": "ans3",
+   "parentMessageID": "u3",
+   "createdAt": "2026-11-01T00:17:00.000Z"
+  },
+  {
+   "id": "u4",
+   "role": "user",
+   "content": "q4",
+   "parentMessageID": "a3",
+   "createdAt": "2026-11-01T00:18:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a4",
+   "role": "assistant",
+   "content": "ans4",
+   "parentMessageID": "u4",
+   "createdAt": "2026-11-01T00:19:00.000Z"
+  },
+  {
+   "id": "u5",
+   "role": "user",
+   "content": "q5",
+   "parentMessageID": "a4",
+   "createdAt": "2026-11-01T00:20:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a5",
+   "role": "assistant",
+   "content": "ans5",
+   "parentMessageID": "u5",
+   "createdAt": "2026-11-01T00:21:00.000Z"
+  },
+  {
+   "id": "u6",
+   "role": "user",
+   "content": "q6",
+   "parentMessageID": "a5",
+   "createdAt": "2026-11-01T00:22:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a6",
+   "role": "assistant",
+   "content": "ans6",
+   "parentMessageID": "u6",
+   "createdAt": "2026-11-01T00:23:00.000Z"
+  },
+  {
+   "id": "u7",
+   "role": "user",
+   "content": "q7",
+   "parentMessageID": "a6",
+   "createdAt": "2026-11-01T00:24:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a7",
+   "role": "assistant",
+   "content": "ans7",
+   "parentMessageID": "u7",
+   "createdAt": "2026-11-01T00:25:00.000Z"
+  },
+  {
+   "id": "u8",
+   "role": "user",
+   "content": "q8",
+   "parentMessageID": "a7",
+   "createdAt": "2026-11-01T00:26:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a8",
+   "role": "assistant",
+   "content": "ans8",
+   "parentMessageID": "u8",
+   "createdAt": "2026-11-01T00:27:00.000Z"
+  },
+  {
+   "id": "u9",
+   "role": "user",
+   "content": "q9",
+   "parentMessageID": "a8",
+   "createdAt": "2026-11-01T00:28:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a9",
+   "role": "assistant",
+   "content": "ans9",
+   "parentMessageID": "u9",
+   "createdAt": "2026-11-01T00:29:00.000Z"
+  },
+  {
+   "id": "u10",
+   "role": "user",
+   "content": "q10",
+   "parentMessageID": "a9",
+   "createdAt": "2026-11-01T00:30:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a10",
+   "role": "assistant",
+   "content": "ans10",
+   "parentMessageID": "u10",
+   "createdAt": "2026-11-01T00:31:00.000Z"
+  },
+  {
+   "id": "u11",
+   "role": "user",
+   "content": "q11",
+   "parentMessageID": "a10",
+   "createdAt": "2026-11-01T00:32:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a11",
+   "role": "assistant",
+   "content": "ans11",
+   "parentMessageID": "u11",
+   "createdAt": "2026-11-01T00:33:00.000Z"
+  },
+  {
+   "id": "u12",
+   "role": "user",
+   "content": "q12",
+   "parentMessageID": "a11",
+   "createdAt": "2026-11-01T00:34:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a12",
+   "role": "assistant",
+   "content": "ans12",
+   "parentMessageID": "u12",
+   "createdAt": "2026-11-01T00:35:00.000Z"
+  },
+  {
+   "id": "u13",
+   "role": "user",
+   "content": "q13",
+   "parentMessageID": "a12",
+   "createdAt": "2026-11-01T00:36:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a13",
+   "role": "assistant",
+   "content": "ans13",
+   "parentMessageID": "u13",
+   "createdAt": "2026-11-01T00:37:00.000Z"
+  },
+  {
+   "id": "u14",
+   "role": "user",
+   "content": "q14",
+   "parentMessageID": "a13",
+   "createdAt": "2026-11-01T00:38:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a14",
+   "role": "assistant",
+   "content": "ans14",
+   "parentMessageID": "u14",
+   "createdAt": "2026-11-01T00:39:00.000Z"
+  },
+  {
+   "id": "u15",
+   "role": "user",
+   "content": "q15",
+   "parentMessageID": "a14",
+   "createdAt": "2026-11-01T00:40:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a15",
+   "role": "assistant",
+   "content": "ans15",
+   "parentMessageID": "u15",
+   "createdAt": "2026-11-01T00:41:00.000Z"
+  },
+  {
+   "id": "u16",
+   "role": "user",
+   "content": "q16",
+   "parentMessageID": "a15",
+   "createdAt": "2026-11-01T00:42:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a16",
+   "role": "assistant",
+   "content": "ans16",
+   "parentMessageID": "u16",
+   "createdAt": "2026-11-01T00:43:00.000Z"
+  },
+  {
+   "id": "u17",
+   "role": "user",
+   "content": "q17",
+   "parentMessageID": "a16",
+   "createdAt": "2026-11-01T00:44:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a17",
+   "role": "assistant",
+   "content": "ans17",
+   "parentMessageID": "u17",
+   "createdAt": "2026-11-01T00:45:00.000Z"
+  },
+  {
+   "id": "u18",
+   "role": "user",
+   "content": "q18",
+   "parentMessageID": "a17",
+   "createdAt": "2026-11-01T00:46:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a18",
+   "role": "assistant",
+   "content": "ans18",
+   "parentMessageID": "u18",
+   "createdAt": "2026-11-01T00:47:00.000Z"
+  },
+  {
+   "id": "u19",
+   "role": "user",
+   "content": "q19",
+   "parentMessageID": "a18",
+   "createdAt": "2026-11-01T00:48:00.000Z",
+   "references": []
+  },
+  {
+   "id": "a19",
+   "role": "assistant",
+   "content": "ans19",
+   "parentMessageID": "u19",
+   "createdAt": "2026-11-01T00:49:00.000Z"
+  },
+  {
+   "id": "a19old",
+   "role": "assistant",
+   "content": "OLD-RETRY-19",
+   "parentMessageID": "u19",
+   "createdAt": "2026-11-01T00:40:00.000Z"
+  },
+  {
+   "id": "u5old",
+   "role": "user",
+   "content": "OLD-EDIT-5",
+   "parentMessageID": "a4",
+   "createdAt": "2026-11-01T00:01:00.000Z"
+  },
+  {
+   "id": "a5old",
+   "role": "assistant",
+   "content": "OLD-EDIT-A5",
+   "parentMessageID": "u5old",
+   "createdAt": "2026-11-01T00:02:00.000Z"
+  }
+ ]
+}

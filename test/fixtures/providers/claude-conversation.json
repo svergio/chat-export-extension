@@ -1,0 +1,1708 @@
+{
+ "name": "Synthetic Claude",
+ "model": "claude-x",
+ "current_leaf_message_uuid": "a59",
+ "chat_messages": [
+  {
+   "uuid": "h0",
+   "parent_message_uuid": "00000000-0000-4000-8000-000000000000",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q0"
+    }
+   ],
+   "attachments": [
+    {
+     "file_name": "paste.txt",
+     "extracted_content": "PASTED-LONG-TEXT"
+    }
+   ],
+   "files": []
+  },
+  {
+   "uuid": "a0",
+   "parent_message_uuid": "h0",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans0"
+    }
+   ]
+  },
+  {
+   "uuid": "h1",
+   "parent_message_uuid": "a0",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q1"
+    }
+   ],
+   "attachments": [],
+   "files": [
+    {
+     "file_name": "img.png",
+     "file_kind": "image"
+    }
+   ]
+  },
+  {
+   "uuid": "a1",
+   "parent_message_uuid": "h1",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans1"
+    }
+   ]
+  },
+  {
+   "uuid": "h2",
+   "parent_message_uuid": "a1",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q2"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a2",
+   "parent_message_uuid": "h2",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans2"
+    }
+   ]
+  },
+  {
+   "uuid": "h3",
+   "parent_message_uuid": "a2",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q3"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a3",
+   "parent_message_uuid": "h3",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans3"
+    }
+   ]
+  },
+  {
+   "uuid": "h4",
+   "parent_message_uuid": "a3",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q4"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a4",
+   "parent_message_uuid": "h4",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans4"
+    }
+   ]
+  },
+  {
+   "uuid": "h5",
+   "parent_message_uuid": "a4",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q5"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a5",
+   "parent_message_uuid": "h5",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans5"
+    }
+   ]
+  },
+  {
+   "uuid": "h6",
+   "parent_message_uuid": "a5",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q6"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a6",
+   "parent_message_uuid": "h6",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans6"
+    }
+   ]
+  },
+  {
+   "uuid": "h7",
+   "parent_message_uuid": "a6",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q7"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a7",
+   "parent_message_uuid": "h7",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans7"
+    }
+   ]
+  },
+  {
+   "uuid": "h8",
+   "parent_message_uuid": "a7",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q8"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a8",
+   "parent_message_uuid": "h8",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans8"
+    }
+   ]
+  },
+  {
+   "uuid": "h9",
+   "parent_message_uuid": "a8",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q9"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a9",
+   "parent_message_uuid": "h9",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans9"
+    }
+   ]
+  },
+  {
+   "uuid": "h10",
+   "parent_message_uuid": "a9",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q10"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a10",
+   "parent_message_uuid": "h10",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans10"
+    }
+   ]
+  },
+  {
+   "uuid": "h11",
+   "parent_message_uuid": "a10",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q11"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a11",
+   "parent_message_uuid": "h11",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans11"
+    }
+   ]
+  },
+  {
+   "uuid": "h12",
+   "parent_message_uuid": "a11",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q12"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a12",
+   "parent_message_uuid": "h12",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans12"
+    }
+   ]
+  },
+  {
+   "uuid": "h13",
+   "parent_message_uuid": "a12",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q13"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a13",
+   "parent_message_uuid": "h13",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans13"
+    }
+   ]
+  },
+  {
+   "uuid": "h14",
+   "parent_message_uuid": "a13",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q14"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a14",
+   "parent_message_uuid": "h14",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans14"
+    }
+   ]
+  },
+  {
+   "uuid": "h15",
+   "parent_message_uuid": "a14",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q15"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a15",
+   "parent_message_uuid": "h15",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans15"
+    }
+   ]
+  },
+  {
+   "uuid": "h16",
+   "parent_message_uuid": "a15",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q16"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a16",
+   "parent_message_uuid": "h16",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans16"
+    }
+   ]
+  },
+  {
+   "uuid": "h17",
+   "parent_message_uuid": "a16",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q17"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a17",
+   "parent_message_uuid": "h17",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans17"
+    }
+   ]
+  },
+  {
+   "uuid": "h18",
+   "parent_message_uuid": "a17",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q18"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a18",
+   "parent_message_uuid": "h18",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans18"
+    }
+   ]
+  },
+  {
+   "uuid": "h19",
+   "parent_message_uuid": "a18",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q19"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a19",
+   "parent_message_uuid": "h19",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans19"
+    }
+   ]
+  },
+  {
+   "uuid": "h20",
+   "parent_message_uuid": "a19",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q20"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a20",
+   "parent_message_uuid": "h20",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans20"
+    }
+   ]
+  },
+  {
+   "uuid": "h21",
+   "parent_message_uuid": "a20",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q21"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a21",
+   "parent_message_uuid": "h21",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans21"
+    }
+   ]
+  },
+  {
+   "uuid": "h22",
+   "parent_message_uuid": "a21",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q22"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a22",
+   "parent_message_uuid": "h22",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans22"
+    }
+   ]
+  },
+  {
+   "uuid": "h23",
+   "parent_message_uuid": "a22",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q23"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a23",
+   "parent_message_uuid": "h23",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans23"
+    }
+   ]
+  },
+  {
+   "uuid": "h24",
+   "parent_message_uuid": "a23",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q24"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a24",
+   "parent_message_uuid": "h24",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans24"
+    }
+   ]
+  },
+  {
+   "uuid": "h25",
+   "parent_message_uuid": "a24",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q25"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a25",
+   "parent_message_uuid": "h25",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans25"
+    }
+   ]
+  },
+  {
+   "uuid": "h26",
+   "parent_message_uuid": "a25",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q26"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a26",
+   "parent_message_uuid": "h26",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans26"
+    }
+   ]
+  },
+  {
+   "uuid": "h27",
+   "parent_message_uuid": "a26",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q27"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a27",
+   "parent_message_uuid": "h27",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans27"
+    }
+   ]
+  },
+  {
+   "uuid": "h28",
+   "parent_message_uuid": "a27",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q28"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a28",
+   "parent_message_uuid": "h28",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans28"
+    }
+   ]
+  },
+  {
+   "uuid": "h29",
+   "parent_message_uuid": "a28",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q29"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a29",
+   "parent_message_uuid": "h29",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans29"
+    }
+   ]
+  },
+  {
+   "uuid": "h30",
+   "parent_message_uuid": "a29",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q30"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a30",
+   "parent_message_uuid": "h30",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans30"
+    }
+   ]
+  },
+  {
+   "uuid": "h31",
+   "parent_message_uuid": "a30",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q31"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a31",
+   "parent_message_uuid": "h31",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans31"
+    }
+   ]
+  },
+  {
+   "uuid": "h32",
+   "parent_message_uuid": "a31",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q32"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a32",
+   "parent_message_uuid": "h32",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans32"
+    }
+   ]
+  },
+  {
+   "uuid": "h33",
+   "parent_message_uuid": "a32",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q33"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a33",
+   "parent_message_uuid": "h33",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans33"
+    }
+   ]
+  },
+  {
+   "uuid": "h34",
+   "parent_message_uuid": "a33",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q34"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a34",
+   "parent_message_uuid": "h34",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans34"
+    }
+   ]
+  },
+  {
+   "uuid": "h35",
+   "parent_message_uuid": "a34",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q35"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a35",
+   "parent_message_uuid": "h35",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans35"
+    }
+   ]
+  },
+  {
+   "uuid": "h36",
+   "parent_message_uuid": "a35",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q36"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a36",
+   "parent_message_uuid": "h36",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans36"
+    }
+   ]
+  },
+  {
+   "uuid": "h37",
+   "parent_message_uuid": "a36",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q37"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a37",
+   "parent_message_uuid": "h37",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans37"
+    }
+   ]
+  },
+  {
+   "uuid": "h38",
+   "parent_message_uuid": "a37",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q38"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a38",
+   "parent_message_uuid": "h38",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans38"
+    }
+   ]
+  },
+  {
+   "uuid": "h39",
+   "parent_message_uuid": "a38",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q39"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a39",
+   "parent_message_uuid": "h39",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans39"
+    }
+   ]
+  },
+  {
+   "uuid": "h40",
+   "parent_message_uuid": "a39",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q40"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a40",
+   "parent_message_uuid": "h40",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans40"
+    }
+   ]
+  },
+  {
+   "uuid": "h41",
+   "parent_message_uuid": "a40",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q41"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a41",
+   "parent_message_uuid": "h41",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans41"
+    }
+   ]
+  },
+  {
+   "uuid": "h42",
+   "parent_message_uuid": "a41",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q42"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a42",
+   "parent_message_uuid": "h42",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans42"
+    }
+   ]
+  },
+  {
+   "uuid": "h43",
+   "parent_message_uuid": "a42",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q43"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a43",
+   "parent_message_uuid": "h43",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans43"
+    }
+   ]
+  },
+  {
+   "uuid": "h44",
+   "parent_message_uuid": "a43",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q44"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a44",
+   "parent_message_uuid": "h44",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans44"
+    }
+   ]
+  },
+  {
+   "uuid": "h45",
+   "parent_message_uuid": "a44",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q45"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a45",
+   "parent_message_uuid": "h45",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans45"
+    }
+   ]
+  },
+  {
+   "uuid": "h46",
+   "parent_message_uuid": "a45",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q46"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a46",
+   "parent_message_uuid": "h46",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans46"
+    }
+   ]
+  },
+  {
+   "uuid": "h47",
+   "parent_message_uuid": "a46",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q47"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a47",
+   "parent_message_uuid": "h47",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans47"
+    }
+   ]
+  },
+  {
+   "uuid": "h48",
+   "parent_message_uuid": "a47",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q48"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a48",
+   "parent_message_uuid": "h48",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans48"
+    }
+   ]
+  },
+  {
+   "uuid": "h49",
+   "parent_message_uuid": "a48",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q49"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a49",
+   "parent_message_uuid": "h49",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans49"
+    }
+   ]
+  },
+  {
+   "uuid": "h50",
+   "parent_message_uuid": "a49",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q50"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a50",
+   "parent_message_uuid": "h50",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans50"
+    }
+   ]
+  },
+  {
+   "uuid": "h51",
+   "parent_message_uuid": "a50",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q51"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a51",
+   "parent_message_uuid": "h51",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans51"
+    }
+   ]
+  },
+  {
+   "uuid": "h52",
+   "parent_message_uuid": "a51",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q52"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a52",
+   "parent_message_uuid": "h52",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans52"
+    }
+   ]
+  },
+  {
+   "uuid": "h53",
+   "parent_message_uuid": "a52",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q53"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a53",
+   "parent_message_uuid": "h53",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans53"
+    }
+   ]
+  },
+  {
+   "uuid": "h54",
+   "parent_message_uuid": "a53",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q54"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a54",
+   "parent_message_uuid": "h54",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans54"
+    }
+   ]
+  },
+  {
+   "uuid": "h55",
+   "parent_message_uuid": "a54",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q55"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a55",
+   "parent_message_uuid": "h55",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans55"
+    }
+   ]
+  },
+  {
+   "uuid": "h56",
+   "parent_message_uuid": "a55",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q56"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a56",
+   "parent_message_uuid": "h56",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans56"
+    }
+   ]
+  },
+  {
+   "uuid": "h57",
+   "parent_message_uuid": "a56",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q57"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a57",
+   "parent_message_uuid": "h57",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans57"
+    }
+   ]
+  },
+  {
+   "uuid": "h58",
+   "parent_message_uuid": "a57",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q58"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a58",
+   "parent_message_uuid": "h58",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans58"
+    }
+   ]
+  },
+  {
+   "uuid": "h59",
+   "parent_message_uuid": "a58",
+   "sender": "human",
+   "content": [
+    {
+     "type": "text",
+     "text": "q59"
+    }
+   ],
+   "attachments": [],
+   "files": []
+  },
+  {
+   "uuid": "a59",
+   "parent_message_uuid": "h59",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "hmm"
+    },
+    {
+     "type": "text",
+     "text": "ans59"
+    }
+   ]
+  },
+  {
+   "uuid": "a59b",
+   "parent_message_uuid": "h59",
+   "sender": "assistant",
+   "content": [
+    {
+     "type": "text",
+     "text": "OTHER-BRANCH"
+    }
+   ]
+  }
+ ]
+}

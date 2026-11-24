@@ -482,17 +482,72 @@
     return null;
   }
 
+  var THREAD_PAGE = 100;
+  var MAX_THREAD_PAGES = 50;
+
+  function threadPath(id, offset) {
+    return (
+      '/rest/thread/' +
+      encodeURIComponent(id) +
+      '?with_parent_info=true&with_schematized_response=true&limit=' +
+      THREAD_PAGE +
+      '&offset=' +
+      offset +
+      '&from_first=true&version=' +
+      API_VERSION +
+      '&source=default'
+    );
+  }
+
+  function entryKey(e) {
+    return (e && (e.backend_uuid || e.uuid || e.entry_uuid)) || '';
+  }
+
+  // One GET returns at most `limit` entries: page with offset until the
+  // server says there is no more (has_next_page / short page).
+  async function loadRestPages(id, data, warnings) {
+    var entries = data.entries.slice();
+    var seen = {};
+    entries.forEach(function (e) {
+      var k = entryKey(e);
+      if (k) seen[k] = true;
+    });
+    var page = data;
+    var pages = 1;
+    while (
+      page &&
+      (page.has_next_page === true || (page.has_next_page == null && (page.entries || []).length >= THREAD_PAGE))
+    ) {
+      if (pages >= MAX_THREAD_PAGES) {
+        warnings.push('page-cap');
+        break;
+      }
+      var res = await apiFetch(threadPath(id, entries.length));
+      if (!res.ok) {
+        warnings.push('page-error');
+        break;
+      }
+      page = await res.json();
+      pages++;
+      var fresh = 0;
+      ((page && page.entries) || []).forEach(function (e) {
+        var k = entryKey(e);
+        if (k && seen[k]) return;
+        if (k) seen[k] = true;
+        entries.push(e);
+        fresh++;
+      });
+      if (!fresh) break;
+    }
+    data.entries = entries;
+    return data;
+  }
+
   async function loadThreadApi(chatId) {
     var candidates = threadIdCandidates(chatId);
     var i;
     for (i = 0; i < candidates.length; i++) {
-      var path =
-        '/rest/thread/' +
-        encodeURIComponent(candidates[i]) +
-        '?with_parent_info=true&with_schematized_response=true&limit=100&offset=0&from_first=true&version=' +
-        API_VERSION +
-        '&source=default';
-      var res = await apiFetch(path);
+      var res = await apiFetch(threadPath(candidates[i], 0));
       if (res.status === 403 || res.status === 404) continue;
       if (!res.ok) continue;
       var data = await res.json();
@@ -501,7 +556,9 @@
       if (!entries.length && data && data.latest_entry) entries = [data.latest_entry];
       if (data && entries.length) {
         if (!data.entries || !data.entries.length) data.entries = entries;
-        return { data: data, chatId: candidates[i] };
+        var warnings = [];
+        await loadRestPages(candidates[i], data, warnings);
+        return { data: data, chatId: candidates[i], warnings: warnings };
       }
     }
     return null;
@@ -523,7 +580,8 @@
       title: title,
       chatId: loaded.chatId || chatId,
       model: model,
-      messages: messages
+      messages: messages,
+      warnings: loaded.warnings || []
     };
   }
 

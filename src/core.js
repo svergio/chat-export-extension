@@ -1201,8 +1201,42 @@
     }, 200);
   }
 
+  // A pending "this export may be incomplete" note: appended to the next
+  // outcome toast (saved / downloaded / regrant / failed) of the same export so
+  // the save toast does not wipe it out. Expires if no toast follows.
+  var exportWarning = null;
+  var EXPORT_WARNING_TTL_MS = 20000;
+
+  function exportWarningText(opts) {
+    var w = (opts && opts.warnings) || [];
+    if (!opts || (!opts.incomplete && !w.length)) return '';
+    if (opts.source === 'dom' || w.indexOf('api-unavailable') >= 0) return toastText('toast.incompleteDom');
+    var details = [];
+    for (var i = 0; i < w.length; i++) {
+      var m = /^missing-responses:(\d+)$/.exec(String(w[i]));
+      if (m) details.push(toastText('toast.incompleteMissing', { count: m[1] }));
+      else if (w[i] === 'node-cap') details.push(toastText('toast.incompleteCap'));
+      else if (w[i] === 'page-cap') details.push(toastText('toast.incompleteCap'));
+      else if (w[i] === 'page-error') details.push(toastText('toast.incompletePage'));
+    }
+    return toastText('toast.incompleteApi', { detail: details.join('; ') || '?' });
+  }
+
+  function setExportWarning(text) {
+    exportWarning = text ? { text: text, until: Date.now() + EXPORT_WARNING_TTL_MS } : null;
+  }
+
+  function takeExportWarning() {
+    var w = exportWarning;
+    exportWarning = null;
+    if (!w || Date.now() > w.until) return '';
+    return w.text;
+  }
+
   function showToast(text) {
     if (!text || typeof document === 'undefined') return;
+    var warn = takeExportWarning();
+    if (warn) text = text + ' — ' + warn;
     if (toastHideTimer) {
       clearTimeout(toastHideTimer);
       toastHideTimer = null;
@@ -1260,10 +1294,11 @@
   function downloadBlob(filename, data, mime, opts) {
     opts = opts || {};
     var toastOnSuccess = !!opts.toast;
+    var toastKey = opts.toastKey || 'toast.downloaded';
     function toastDownloaded() {
       if (!toastOnSuccess) return;
       var name = String(filename || 'chat').split('/').pop();
-      showToast(toastText('toast.downloaded', { name: name }));
+      showToast(toastText(toastKey, { name: name }));
     }
     var send = function (u8) {
       if (!u8 || !u8.length) {
@@ -1692,6 +1727,7 @@
   function exportConversation(opts) {
     var formats = normalizeFormats(opts.formats);
     var pack = resolvePack(formats.length, opts.pack, 0);
+    setExportWarning(exportWarningText(opts));
     return buildExportBundle(opts).then(function (bundle) {
       var base = bundle.base;
       var files = bundle.files;
@@ -1741,6 +1777,8 @@
     return saveDefault(pack, base, files, false);
   }
 
+  var NOT_FOLDER_REASONS = { 'too-large': true, error: true, permission: true, 'no-folder': true };
+
   function saveDefault(pack, base, files, rebind) {
     var job;
     if (pack === 'zip') {
@@ -1772,9 +1810,15 @@
       // No folder yet and the export is too big to hold until one is chosen.
       var queueFull = reason === 'too-large-to-queue';
       if (queueFull) showToast(toastText('toast.queueFull'));
+      // The folder path was available but this export did not go there (too
+      // big, write error, lost permission): say so instead of a plain "Downloaded".
+      var notFolder = !queueFull && NOT_FOLDER_REASONS[reason] === true;
       job.files.forEach(function (f, i) {
         setTimeout(function () {
-          downloadBlob(prefix + f.name, f.data, f.mime, { toast: !queueFull && i === 0 });
+          downloadBlob(prefix + f.name, f.data, f.mime, {
+            toast: !queueFull && i === 0,
+            toastKey: notFolder ? 'toast.downloadedNotFolder' : null
+          });
         }, i * 250);
       });
       return { ok: true, via: 'downloads', reason: res && res.reason };
@@ -2309,6 +2353,7 @@
     yamlDump: yamlDump,
     buildExportBundle: buildExportBundle,
     exportConversation: exportConversation,
+    exportWarningText: exportWarningText,
     downloadBlob: downloadBlob,
     showToast: showToast,
     dismissToast: dismissToast,

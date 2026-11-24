@@ -138,9 +138,21 @@
     return picked.uuid;
   }
 
+  async function chatOrgIds() {
+    var res = await fetch('/api/organizations', { credentials: 'include' });
+    if (!res.ok) return [];
+    var list = await res.json();
+    var ids = [];
+    for (var i = 0; i < (Array.isArray(list) ? list : []).length; i++) {
+      var caps = list[i] && list[i].capabilities;
+      if (list[i] && list[i].uuid && (!Array.isArray(caps) || caps.indexOf('chat') >= 0)) ids.push(list[i].uuid);
+    }
+    return ids;
+  }
+
   async function apiFetch(path, opts) {
     opts = opts || {};
-    var orgId = await resolveOrgId();
+    var orgId = opts.orgId || (await resolveOrgId());
     var url = '/api/organizations/' + encodeURIComponent(orgId) + path;
     var res = await fetch(url, {
       method: opts.method || 'GET',
@@ -274,15 +286,49 @@
     return chain;
   }
 
+  function fenceText(body) {
+    var b = String(body || '').replace(/\s+$/, '');
+    var ticks = '```';
+    while (b.indexOf(ticks) >= 0) ticks += '`';
+    return ticks + '\n' + b + '\n' + ticks;
+  }
+
+  // Pasted long text and uploaded documents live in attachments[] (with the
+  // extracted text); images/PDF uploads in files[]/files_v2[] (name only).
+  function attachmentsText(msg) {
+    var out = [];
+    var seen = {};
+    var atts = (msg && msg.attachments) || [];
+    var i;
+    for (i = 0; i < atts.length; i++) {
+      var a = atts[i] || {};
+      var name = String(a.file_name || a.name || 'attachment').trim() || 'attachment';
+      var body = typeof a.extracted_content === 'string' ? a.extracted_content : '';
+      seen[name] = 1;
+      out.push(body.trim() ? '[Attachment: ' + name + ']\n\n' + fenceText(body) : '[Attachment: ' + name + ']');
+    }
+    var files = [].concat((msg && msg.files_v2) || [], (msg && msg.files) || []);
+    for (i = 0; i < files.length; i++) {
+      var f = files[i] || {};
+      var fname = String(f.file_name || f.name || '').trim();
+      if (!fname || seen[fname]) continue;
+      seen[fname] = 1;
+      out.push('[File: ' + fname + ']');
+    }
+    return out.join('\n\n');
+  }
+
   function mapOneApiMessage(msg, modelName) {
     var sender = String(msg.sender || '').toLowerCase();
     if (sender !== 'human' && sender !== 'assistant') return null;
     var parts = messageParts(msg);
-    if (!parts.text) return null;
+    var extra = attachmentsText(msg);
+    var text = [parts.text, extra].filter(Boolean).join('\n\n');
+    if (!text) return null;
     var row = {
       role: sender === 'human' ? 'user' : 'assistant',
       roleTag: roleTagFor(sender === 'human' ? 'user' : 'assistant', modelName || msg.model),
-      text: parts.text,
+      text: text,
       links: []
     };
     if (parts.thinkingChars > 0) row.thinkingChars = parts.thinkingChars;
@@ -649,6 +695,20 @@
       encodeURIComponent(chatId) +
       '?tree=True&rendering_mode=messages&render_all_tools=true';
     var res = await apiFetch(path);
+    if (res.status === 404 || res.status === 403) {
+      // The chat may belong to another organization (personal + Team/Enterprise).
+      var primary = await resolveOrgId();
+      var others = (await chatOrgIds()).filter(function (o) {
+        return o !== primary;
+      });
+      for (var oi = 0; oi < others.length; oi++) {
+        var alt = await apiFetch(path, { orgId: others[oi] });
+        if (alt.ok) {
+          res = alt;
+          break;
+        }
+      }
+    }
     if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
     if (res.status === 401 || res.status === 403) rpcErr('UNAUTHORIZED', 'get ' + res.status);
     if (!res.ok) {

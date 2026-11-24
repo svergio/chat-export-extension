@@ -554,7 +554,10 @@ function ExportBarInner({ options }) {
           pack: pack,
           picked: picked,
           rebind: rebind,
-          exportSchemas: settings && settings.exportSchemas
+          exportSchemas: settings && settings.exportSchemas,
+          source: payload.source,
+          incomplete: payload.incomplete,
+          warnings: payload.warnings
         });
       })
       .then((res) => {
@@ -577,6 +580,11 @@ function ExportBarInner({ options }) {
       })
       .catch((err) => {
         if (err && err.name === 'AbortError') return;
+        // API-only platforms (JanitorAI) refuse a partial DOM export: say why.
+        if (err && err.details && err.details.apiOnly) {
+          CE.showToast(CE.toastText('toast.apiOnlyFailed'));
+          return;
+        }
         console.error('[chat-export]', err);
         CE.showToast(CE.toastText('toast.failed'));
       })

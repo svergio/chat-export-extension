@@ -102,9 +102,35 @@ export function definePlatform(spec) {
         userName: user.userName || '',
         userHandle: user.userHandle || '',
         userEmail: user.userEmail || '',
-        messages: messagesFromHydrate(res, model, (res && res.scroller) || scroller)
+        messages: messagesFromHydrate(res, model, (res && res.scroller) || scroller),
+        source: 'dom'
       };
     });
+  }
+
+  // DOM fallback after the API path failed or was unavailable: the page only
+  // holds what was rendered/scrolled, so the export may be partial. Mark it so
+  // the bar can warn instead of silently saving a truncated file.
+  function domFallback(reason) {
+    return getDataFromDom().then(function (data) {
+      if (data && typeof spec.exportData === 'function') {
+        data.incomplete = true;
+        data.fallbackReason = reason || 'api-unavailable';
+        data.warnings = ['api-unavailable'];
+      }
+      return data;
+    });
+  }
+
+  function apiOnlyError(message) {
+    var details = { apiOnly: true };
+    try {
+      if (typeof CE.RpcError === 'function') return new CE.RpcError('HOST_ERROR', message, details);
+    } catch (e) {}
+    var err = new Error(message);
+    err.code = 'HOST_ERROR';
+    err.details = details;
+    return err;
   }
 
   function getData() {
@@ -117,7 +143,7 @@ export function definePlatform(spec) {
           const apiOnly = spec.exportDomFallback === false;
           if (fromApi && Array.isArray(fromApi.messages) && (fromApi.messages.length || apiOnly)) {
             const user = (typeof spec.user === 'function' && spec.user()) || {};
-            return Object.assign(
+            const out = Object.assign(
               {
                 title: (typeof spec.title === 'function' && spec.title()) || 'chat',
                 chatId: currentChatId(),
@@ -128,12 +154,20 @@ export function definePlatform(spec) {
               },
               fromApi
             );
+            out.source = 'api';
+            if (Array.isArray(out.warnings) && out.warnings.length) out.incomplete = true;
+            return out;
           }
-          return getDataFromDom();
+          // API-only platforms never fall back to the (virtualized) DOM, even
+          // when exportData resolves to null instead of throwing.
+          if (apiOnly) {
+            throw apiOnlyError(id + ' export API unavailable');
+          }
+          return domFallback(fromApi ? 'api-empty' : 'api-unavailable');
         })
         .catch(function (err) {
           if (spec.exportDomFallback === false) throw err;
-          return getDataFromDom();
+          return domFallback('api-error');
         });
     }
     return getDataFromDom();

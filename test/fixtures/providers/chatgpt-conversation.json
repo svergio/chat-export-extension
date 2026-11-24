@@ -1,0 +1,3329 @@
+{
+ "title": "Synthetic ChatGPT",
+ "current_node": "last",
+ "mapping": {
+  "root": {
+   "id": "root",
+   "parent": null,
+   "message": null
+  },
+  "u0": {
+   "id": "u0",
+   "parent": "root",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q0"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a0": {
+   "id": "a0",
+   "parent": "u0",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans0"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u1": {
+   "id": "u1",
+   "parent": "a0",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q1"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a1": {
+   "id": "a1",
+   "parent": "u1",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans1"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u2": {
+   "id": "u2",
+   "parent": "a1",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q2"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a2": {
+   "id": "a2",
+   "parent": "u2",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans2"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u3": {
+   "id": "u3",
+   "parent": "a2",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q3"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a3": {
+   "id": "a3",
+   "parent": "u3",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans3"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u4": {
+   "id": "u4",
+   "parent": "a3",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q4"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a4": {
+   "id": "a4",
+   "parent": "u4",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans4"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u5": {
+   "id": "u5",
+   "parent": "a4",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q5"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a5": {
+   "id": "a5",
+   "parent": "u5",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans5"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u6": {
+   "id": "u6",
+   "parent": "a5",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q6"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a6": {
+   "id": "a6",
+   "parent": "u6",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans6"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u7": {
+   "id": "u7",
+   "parent": "a6",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q7"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a7": {
+   "id": "a7",
+   "parent": "u7",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans7"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u8": {
+   "id": "u8",
+   "parent": "a7",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q8"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a8": {
+   "id": "a8",
+   "parent": "u8",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans8"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u9": {
+   "id": "u9",
+   "parent": "a8",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q9"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a9": {
+   "id": "a9",
+   "parent": "u9",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans9"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u10": {
+   "id": "u10",
+   "parent": "a9",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q10"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a10": {
+   "id": "a10",
+   "parent": "u10",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans10"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u11": {
+   "id": "u11",
+   "parent": "a10",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q11"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a11": {
+   "id": "a11",
+   "parent": "u11",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans11"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u12": {
+   "id": "u12",
+   "parent": "a11",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q12"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a12": {
+   "id": "a12",
+   "parent": "u12",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans12"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u13": {
+   "id": "u13",
+   "parent": "a12",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q13"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a13": {
+   "id": "a13",
+   "parent": "u13",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans13"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u14": {
+   "id": "u14",
+   "parent": "a13",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q14"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a14": {
+   "id": "a14",
+   "parent": "u14",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans14"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u15": {
+   "id": "u15",
+   "parent": "a14",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q15"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a15": {
+   "id": "a15",
+   "parent": "u15",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans15"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u16": {
+   "id": "u16",
+   "parent": "a15",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q16"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a16": {
+   "id": "a16",
+   "parent": "u16",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans16"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u17": {
+   "id": "u17",
+   "parent": "a16",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q17"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a17": {
+   "id": "a17",
+   "parent": "u17",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans17"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u18": {
+   "id": "u18",
+   "parent": "a17",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q18"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a18": {
+   "id": "a18",
+   "parent": "u18",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans18"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u19": {
+   "id": "u19",
+   "parent": "a18",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q19"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a19": {
+   "id": "a19",
+   "parent": "u19",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans19"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u20": {
+   "id": "u20",
+   "parent": "a19",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q20"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a20": {
+   "id": "a20",
+   "parent": "u20",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans20"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u21": {
+   "id": "u21",
+   "parent": "a20",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q21"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a21": {
+   "id": "a21",
+   "parent": "u21",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans21"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u22": {
+   "id": "u22",
+   "parent": "a21",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q22"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a22": {
+   "id": "a22",
+   "parent": "u22",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans22"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u23": {
+   "id": "u23",
+   "parent": "a22",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q23"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a23": {
+   "id": "a23",
+   "parent": "u23",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans23"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u24": {
+   "id": "u24",
+   "parent": "a23",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q24"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a24": {
+   "id": "a24",
+   "parent": "u24",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans24"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u25": {
+   "id": "u25",
+   "parent": "a24",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q25"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a25": {
+   "id": "a25",
+   "parent": "u25",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans25"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u26": {
+   "id": "u26",
+   "parent": "a25",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q26"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a26": {
+   "id": "a26",
+   "parent": "u26",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans26"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u27": {
+   "id": "u27",
+   "parent": "a26",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q27"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a27": {
+   "id": "a27",
+   "parent": "u27",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans27"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u28": {
+   "id": "u28",
+   "parent": "a27",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q28"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a28": {
+   "id": "a28",
+   "parent": "u28",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans28"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u29": {
+   "id": "u29",
+   "parent": "a28",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q29"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a29": {
+   "id": "a29",
+   "parent": "u29",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans29"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u30": {
+   "id": "u30",
+   "parent": "a29",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q30"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a30": {
+   "id": "a30",
+   "parent": "u30",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans30"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u31": {
+   "id": "u31",
+   "parent": "a30",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q31"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a31": {
+   "id": "a31",
+   "parent": "u31",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans31"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u32": {
+   "id": "u32",
+   "parent": "a31",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q32"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a32": {
+   "id": "a32",
+   "parent": "u32",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans32"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u33": {
+   "id": "u33",
+   "parent": "a32",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q33"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a33": {
+   "id": "a33",
+   "parent": "u33",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans33"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u34": {
+   "id": "u34",
+   "parent": "a33",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q34"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a34": {
+   "id": "a34",
+   "parent": "u34",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans34"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u35": {
+   "id": "u35",
+   "parent": "a34",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q35"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a35": {
+   "id": "a35",
+   "parent": "u35",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans35"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u36": {
+   "id": "u36",
+   "parent": "a35",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q36"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a36": {
+   "id": "a36",
+   "parent": "u36",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans36"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u37": {
+   "id": "u37",
+   "parent": "a36",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q37"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a37": {
+   "id": "a37",
+   "parent": "u37",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans37"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u38": {
+   "id": "u38",
+   "parent": "a37",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q38"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a38": {
+   "id": "a38",
+   "parent": "u38",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans38"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u39": {
+   "id": "u39",
+   "parent": "a38",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q39"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a39": {
+   "id": "a39",
+   "parent": "u39",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans39"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u40": {
+   "id": "u40",
+   "parent": "a39",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q40"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a40": {
+   "id": "a40",
+   "parent": "u40",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans40"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u41": {
+   "id": "u41",
+   "parent": "a40",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q41"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a41": {
+   "id": "a41",
+   "parent": "u41",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans41"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u42": {
+   "id": "u42",
+   "parent": "a41",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q42"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a42": {
+   "id": "a42",
+   "parent": "u42",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans42"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u43": {
+   "id": "u43",
+   "parent": "a42",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q43"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a43": {
+   "id": "a43",
+   "parent": "u43",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans43"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u44": {
+   "id": "u44",
+   "parent": "a43",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q44"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a44": {
+   "id": "a44",
+   "parent": "u44",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans44"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u45": {
+   "id": "u45",
+   "parent": "a44",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q45"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a45": {
+   "id": "a45",
+   "parent": "u45",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans45"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u46": {
+   "id": "u46",
+   "parent": "a45",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q46"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a46": {
+   "id": "a46",
+   "parent": "u46",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans46"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u47": {
+   "id": "u47",
+   "parent": "a46",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q47"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a47": {
+   "id": "a47",
+   "parent": "u47",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans47"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u48": {
+   "id": "u48",
+   "parent": "a47",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q48"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a48": {
+   "id": "a48",
+   "parent": "u48",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans48"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u49": {
+   "id": "u49",
+   "parent": "a48",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q49"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a49": {
+   "id": "a49",
+   "parent": "u49",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans49"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u50": {
+   "id": "u50",
+   "parent": "a49",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q50"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a50": {
+   "id": "a50",
+   "parent": "u50",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans50"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u51": {
+   "id": "u51",
+   "parent": "a50",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q51"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a51": {
+   "id": "a51",
+   "parent": "u51",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans51"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u52": {
+   "id": "u52",
+   "parent": "a51",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q52"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a52": {
+   "id": "a52",
+   "parent": "u52",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans52"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u53": {
+   "id": "u53",
+   "parent": "a52",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q53"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a53": {
+   "id": "a53",
+   "parent": "u53",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans53"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u54": {
+   "id": "u54",
+   "parent": "a53",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q54"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a54": {
+   "id": "a54",
+   "parent": "u54",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans54"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u55": {
+   "id": "u55",
+   "parent": "a54",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q55"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a55": {
+   "id": "a55",
+   "parent": "u55",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans55"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u56": {
+   "id": "u56",
+   "parent": "a55",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q56"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a56": {
+   "id": "a56",
+   "parent": "u56",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans56"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u57": {
+   "id": "u57",
+   "parent": "a56",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q57"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a57": {
+   "id": "a57",
+   "parent": "u57",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans57"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u58": {
+   "id": "u58",
+   "parent": "a57",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q58"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a58": {
+   "id": "a58",
+   "parent": "u58",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans58"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u59": {
+   "id": "u59",
+   "parent": "a58",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q59"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a59": {
+   "id": "a59",
+   "parent": "u59",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans59"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u60": {
+   "id": "u60",
+   "parent": "a59",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q60"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a60": {
+   "id": "a60",
+   "parent": "u60",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans60"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u61": {
+   "id": "u61",
+   "parent": "a60",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q61"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a61": {
+   "id": "a61",
+   "parent": "u61",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans61"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u62": {
+   "id": "u62",
+   "parent": "a61",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q62"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a62": {
+   "id": "a62",
+   "parent": "u62",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans62"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u63": {
+   "id": "u63",
+   "parent": "a62",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q63"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a63": {
+   "id": "a63",
+   "parent": "u63",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans63"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u64": {
+   "id": "u64",
+   "parent": "a63",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q64"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a64": {
+   "id": "a64",
+   "parent": "u64",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans64"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u65": {
+   "id": "u65",
+   "parent": "a64",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q65"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a65": {
+   "id": "a65",
+   "parent": "u65",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans65"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u66": {
+   "id": "u66",
+   "parent": "a65",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q66"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a66": {
+   "id": "a66",
+   "parent": "u66",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans66"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u67": {
+   "id": "u67",
+   "parent": "a66",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q67"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a67": {
+   "id": "a67",
+   "parent": "u67",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans67"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u68": {
+   "id": "u68",
+   "parent": "a67",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q68"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a68": {
+   "id": "a68",
+   "parent": "u68",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans68"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u69": {
+   "id": "u69",
+   "parent": "a68",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q69"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a69": {
+   "id": "a69",
+   "parent": "u69",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans69"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u70": {
+   "id": "u70",
+   "parent": "a69",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q70"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a70": {
+   "id": "a70",
+   "parent": "u70",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans70"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u71": {
+   "id": "u71",
+   "parent": "a70",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q71"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a71": {
+   "id": "a71",
+   "parent": "u71",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans71"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u72": {
+   "id": "u72",
+   "parent": "a71",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q72"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a72": {
+   "id": "a72",
+   "parent": "u72",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans72"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u73": {
+   "id": "u73",
+   "parent": "a72",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q73"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a73": {
+   "id": "a73",
+   "parent": "u73",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans73"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u74": {
+   "id": "u74",
+   "parent": "a73",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q74"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a74": {
+   "id": "a74",
+   "parent": "u74",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans74"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u75": {
+   "id": "u75",
+   "parent": "a74",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q75"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a75": {
+   "id": "a75",
+   "parent": "u75",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans75"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u76": {
+   "id": "u76",
+   "parent": "a75",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q76"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a76": {
+   "id": "a76",
+   "parent": "u76",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans76"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u77": {
+   "id": "u77",
+   "parent": "a76",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q77"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a77": {
+   "id": "a77",
+   "parent": "u77",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans77"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u78": {
+   "id": "u78",
+   "parent": "a77",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q78"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a78": {
+   "id": "a78",
+   "parent": "u78",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans78"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u79": {
+   "id": "u79",
+   "parent": "a78",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q79"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a79": {
+   "id": "a79",
+   "parent": "u79",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans79"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u80": {
+   "id": "u80",
+   "parent": "a79",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q80"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a80": {
+   "id": "a80",
+   "parent": "u80",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans80"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u81": {
+   "id": "u81",
+   "parent": "a80",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q81"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a81": {
+   "id": "a81",
+   "parent": "u81",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans81"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u82": {
+   "id": "u82",
+   "parent": "a81",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q82"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a82": {
+   "id": "a82",
+   "parent": "u82",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans82"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u83": {
+   "id": "u83",
+   "parent": "a82",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q83"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a83": {
+   "id": "a83",
+   "parent": "u83",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans83"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u84": {
+   "id": "u84",
+   "parent": "a83",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q84"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a84": {
+   "id": "a84",
+   "parent": "u84",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans84"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u85": {
+   "id": "u85",
+   "parent": "a84",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q85"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a85": {
+   "id": "a85",
+   "parent": "u85",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans85"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u86": {
+   "id": "u86",
+   "parent": "a85",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q86"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a86": {
+   "id": "a86",
+   "parent": "u86",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans86"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u87": {
+   "id": "u87",
+   "parent": "a86",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q87"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a87": {
+   "id": "a87",
+   "parent": "u87",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans87"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u88": {
+   "id": "u88",
+   "parent": "a87",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q88"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a88": {
+   "id": "a88",
+   "parent": "u88",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans88"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u89": {
+   "id": "u89",
+   "parent": "a88",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q89"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a89": {
+   "id": "a89",
+   "parent": "u89",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans89"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u90": {
+   "id": "u90",
+   "parent": "a89",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q90"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a90": {
+   "id": "a90",
+   "parent": "u90",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans90"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u91": {
+   "id": "u91",
+   "parent": "a90",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q91"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a91": {
+   "id": "a91",
+   "parent": "u91",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans91"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u92": {
+   "id": "u92",
+   "parent": "a91",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q92"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a92": {
+   "id": "a92",
+   "parent": "u92",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans92"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u93": {
+   "id": "u93",
+   "parent": "a92",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q93"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a93": {
+   "id": "a93",
+   "parent": "u93",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans93"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u94": {
+   "id": "u94",
+   "parent": "a93",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q94"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a94": {
+   "id": "a94",
+   "parent": "u94",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans94"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u95": {
+   "id": "u95",
+   "parent": "a94",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q95"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a95": {
+   "id": "a95",
+   "parent": "u95",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans95"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u96": {
+   "id": "u96",
+   "parent": "a95",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q96"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a96": {
+   "id": "a96",
+   "parent": "u96",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans96"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u97": {
+   "id": "u97",
+   "parent": "a96",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q97"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a97": {
+   "id": "a97",
+   "parent": "u97",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans97"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u98": {
+   "id": "u98",
+   "parent": "a97",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q98"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a98": {
+   "id": "a98",
+   "parent": "u98",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans98"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "u99": {
+   "id": "u99",
+   "parent": "a98",
+   "message": {
+    "author": {
+     "role": "user"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "q99"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a99": {
+   "id": "a99",
+   "parent": "u99",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "ans99"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "a99old": {
+   "id": "a99old",
+   "parent": "u99",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "OLD-REGEN"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "web": {
+   "id": "web",
+   "parent": "a99",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "code",
+     "language": "unknown",
+     "text": "search(\"weather\")"
+    },
+    "metadata": {},
+    "recipient": "web.run"
+   }
+  },
+  "code": {
+   "id": "code",
+   "parent": "web",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "code",
+     "language": "python",
+     "text": "print(6*7)"
+    },
+    "metadata": {},
+    "recipient": "python"
+   }
+  },
+  "out": {
+   "id": "out",
+   "parent": "code",
+   "message": {
+    "author": {
+     "role": "tool",
+     "name": "python"
+    },
+    "content": {
+     "content_type": "execution_output",
+     "text": "42"
+    },
+    "metadata": {}
+   }
+  },
+  "final": {
+   "id": "final",
+   "parent": "out",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "multimodal_text",
+     "parts": [
+      {
+       "content_type": "image_asset_pointer",
+       "asset_pointer": "file-1"
+      },
+      "see image"
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "thought": {
+   "id": "thought",
+   "parent": "final",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "thoughts",
+     "thoughts": [
+      {
+       "content": "thinking..."
+      }
+     ]
+    },
+    "metadata": {}
+   }
+  },
+  "last": {
+   "id": "last",
+   "parent": "thought",
+   "message": {
+    "author": {
+     "role": "assistant"
+    },
+    "content": {
+     "content_type": "text",
+     "parts": [
+      "LAST"
+     ]
+    },
+    "metadata": {}
+   }
+  }
+ },
+ "default_model_slug": "gpt-5"
+}

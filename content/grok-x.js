@@ -677,24 +677,62 @@
     return out;
   }
 
-  async function fetchConversationMessages(chatId) {
+  var MAX_ITEM_PAGES = 50;
+
+  // First page with the retry loop (fresh chats can be briefly empty), then
+  // follow the cursor while the server keeps returning new items.
+  async function fetchConversationPages(chatId) {
     var last = null;
+    var first = null;
     for (var attempt = 0; attempt < 6; attempt++) {
       var data = await gqlGet(GQL.items, { restId: String(chatId) });
       var block = data.grok_conversation_items_by_rest_id;
-      if (block && block.items && block.items.length) return block.items;
+      if (block && block.items && block.items.length) {
+        first = block;
+        break;
+      }
       last = block;
       if (attempt < 5) await Ops.sleep(500 * (attempt + 1));
     }
-    rpcErr(
-      'NOT_FOUND',
-      'conversation not found or empty: ' + chatId,
-      last ? { empty: true } : { missing: true }
-    );
+    if (!first) {
+      rpcErr(
+        'NOT_FOUND',
+        'conversation not found or empty: ' + chatId,
+        last ? { empty: true } : { missing: true }
+      );
+    }
+    var items = first.items.slice();
+    var seen = {};
+    items.forEach(function (it) {
+      if (it && it.chat_item_id) seen[String(it.chat_item_id)] = true;
+    });
+    var cursor = first.cursor || null;
+    var usedCursors = {};
+    var capped = false;
+    for (var page = 1; cursor && !usedCursors[cursor]; page++) {
+      if (page >= MAX_ITEM_PAGES) {
+        capped = true;
+        break;
+      }
+      usedCursors[cursor] = true;
+      var next = (await gqlGet(GQL.items, { restId: String(chatId), cursor: cursor })).grok_conversation_items_by_rest_id || {};
+      var fresh = 0;
+      (next.items || []).forEach(function (it) {
+        var key = it && it.chat_item_id ? String(it.chat_item_id) : '';
+        if (key && seen[key]) return;
+        if (key) seen[key] = true;
+        items.push(it);
+        fresh++;
+      });
+      if (!fresh) break;
+      cursor = next.cursor || null;
+    }
+    return { items: items, capped: capped };
   }
 
   async function getChatPayloadFromApi(chatId) {
-    var items = await fetchConversationMessages(chatId);
+    var pages = await fetchConversationPages(chatId);
+    var items = pages.items;
     var u = findUserMeta();
     var model = findModel(activeRoot()) || '';
     var messages = messagesFromApiItems(items, model);
@@ -709,7 +747,8 @@
       userName: u.userName || '',
       userHandle: u.userHandle || '',
       userEmail: u.userEmail || '',
-      messages: messages
+      messages: messages,
+      warnings: pages.capped ? ['page-cap'] : []
     };
   }
 
@@ -729,7 +768,8 @@
         userName: payload.userName,
         userHandle: payload.userHandle,
         userEmail: payload.userEmail,
-        messages: payload.messages
+        messages: payload.messages,
+        warnings: payload.warnings
       };
     } catch (e) {
       return null;

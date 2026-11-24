@@ -864,12 +864,47 @@
     return 'chatgpt';
   }
 
+  function fence(lang, body) {
+    var b = String(body || '').replace(/\s+$/, '');
+    var ticks = '```';
+    while (b.indexOf(ticks) >= 0) ticks += '`';
+    return ticks + (lang || '') + '\n' + b + '\n' + ticks;
+  }
+
+  // Code interpreter (python) turns keep their payload in content.text, not
+  // parts. Other content_type:'code' rows are internal tool calls (web search,
+  // memory "bio", image gen JSON) and stay out of the export.
+  function isPythonTurn(m) {
+    var to = String((m && m.recipient) || '');
+    var name = String((m && m.author && m.author.name) || '');
+    return /python/i.test(to) || /python/i.test(name);
+  }
+
+  function contentToText(content, role, m) {
+    var c = content || {};
+    var type = String(c.content_type || '');
+    if (type === 'code') {
+      if (!isPythonTurn(m) || typeof c.text !== 'string' || !c.text.trim()) return '';
+      var lang = c.language && c.language !== 'unknown' ? String(c.language) : 'python';
+      return fence(lang, c.text);
+    }
+    if (type === 'execution_output') {
+      if (!isPythonTurn(m) || typeof c.text !== 'string' || !c.text.trim()) return '';
+      return 'Output:\n\n' + fence('', c.text);
+    }
+    if (role === 'tool') return '';
+    return partsToText(c.parts || []);
+  }
+
   function nodeToMessage(node) {
     var m = node && node.message;
     if (!m || !m.author) return null;
     var role = m.author.role;
-    if (role !== 'user' && role !== 'assistant') return null;
-    var text = partsToText((m.content && m.content.parts) || []);
+    var type = String((m.content && m.content.content_type) || '');
+    // Tool rows: only the code-interpreter output is user-visible.
+    if (role === 'tool' && type === 'execution_output' && isPythonTurn(m)) role = 'assistant';
+    else if (role !== 'user' && role !== 'assistant') return null;
+    var text = contentToText(m.content, m.author.role, m);
     if (!text) return null;
     var meta = m.metadata || {};
     var model = meta.model_slug || meta.resolved_model_slug || meta.default_model_slug || '';
@@ -886,14 +921,22 @@
     return msg;
   }
 
-  function mappingToMessages(conv) {
+  // Guard against a cyclic mapping only; real chats stay far below this.
+  var MAX_CHAIN_NODES = 100000;
+
+  function mappingToMessages(conv, warnings) {
     var mapping = (conv && conv.mapping) || {};
     var cur = conv && conv.current_node;
     var chain = [];
-    while (cur && mapping[cur]) {
+    var seen = {};
+    while (cur && mapping[cur] && !seen[cur]) {
+      seen[cur] = true;
       chain.push(cur);
       cur = mapping[cur].parent;
-      if (chain.length > 5000) break;
+      if (chain.length >= MAX_CHAIN_NODES) {
+        if (warnings && cur && mapping[cur]) warnings.push('node-cap');
+        break;
+      }
     }
     chain.reverse();
     var out = [];
@@ -932,14 +975,17 @@
     var conv = await fetchConversation(chatId);
     var user = await sessionUser();
     var meta = findUserMeta();
+    var warnings = [];
+    var messages = mappingToMessages(conv, warnings);
     return {
+      warnings: warnings,
       title: conv.title || findTitle(),
       chatId: chatId,
       model: conv.default_model_slug || findModel(),
       userName: meta.userName || user.name || '',
       userHandle: meta.userHandle || '',
       userEmail: meta.userEmail || user.email || '',
-      messages: mappingToMessages(conv)
+      messages: messages
     };
   }
 

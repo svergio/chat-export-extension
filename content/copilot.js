@@ -89,7 +89,9 @@
         res = await fetch(url, {
           method: opts.method || 'GET',
           headers: headers,
-          credentials: 'omit'
+          credentials: 'omit',
+          // KI-003: the thread GET is HTTP-cached and can miss the newest turns.
+          cache: 'no-store'
         });
       } catch (e) {
         lastErr = e;
@@ -137,10 +139,87 @@
     );
   }
 
+  function fenceText(lang, body) {
+    var b = String(body || '').replace(/\s+$/, '');
+    var ticks = '```';
+    while (b.indexOf(ticks) >= 0) ticks += '`';
+    return ticks + (lang || '') + '\n' + b + '\n' + ticks;
+  }
+
+  // KI-004: inline file/code attachments ride in references[]; images only
+  // leave a mediaContent marker (bytes are not served by the thread GET).
+  function referencesText(m) {
+    var out = [];
+    var refs = (m && m.references) || [];
+    var i;
+    for (i = 0; i < refs.length; i++) {
+      var r = refs[i] || {};
+      var name = String(r.name || r.path || r.title || r.url || r.type || 'reference').trim();
+      if (typeof r.text === 'string' && r.text.trim()) {
+        out.push('[Attachment: ' + name + ']\n\n' + fenceText(r.language || '', r.text));
+      } else {
+        out.push('[Reference: ' + name + ']');
+      }
+    }
+    var media = (m && m.mediaContent) || [];
+    for (i = 0; i < media.length; i++) {
+      var md = media[i] || {};
+      out.push('[Image attachment' + (md.name ? ': ' + md.name : '') + ']');
+    }
+    return out.join('\n\n');
+  }
+
+  function messageTime(m, idx) {
+    var t = Date.parse((m && (m.createdAt || m.created_at)) || '');
+    return Number.isFinite(t) ? t : idx;
+  }
+
+  // KI-002: REST returns every retry/edit sibling in one flat list. Keep the
+  // branch the DOM shows by default: newest leaf up via parentMessageID.
+  function activeBranch(messages) {
+    var list = (messages || []).filter(function (m) {
+      return m && m.id;
+    });
+    if (!list.length) return (messages || []).filter(Boolean);
+    var hasParents = list.some(function (m) {
+      return m.parentMessageID && m.parentMessageID !== 'root';
+    });
+    if (!hasParents) return list;
+    var byId = {};
+    var hasChild = {};
+    var idx = {};
+    list.forEach(function (m, i) {
+      byId[m.id] = m;
+      idx[m.id] = i;
+      if (m.parentMessageID) hasChild[m.parentMessageID] = true;
+    });
+    var leaf = null;
+    list.forEach(function (m) {
+      if (hasChild[m.id]) return;
+      if (!leaf) {
+        leaf = m;
+        return;
+      }
+      var a = messageTime(m, idx[m.id]);
+      var b = messageTime(leaf, idx[leaf.id]);
+      if (a > b || (a === b && idx[m.id] > idx[leaf.id])) leaf = m;
+    });
+    var chain = [];
+    var seen = {};
+    var cur = leaf;
+    while (cur && !seen[cur.id]) {
+      seen[cur.id] = true;
+      chain.push(cur);
+      cur = cur.parentMessageID ? byId[cur.parentMessageID] : null;
+    }
+    return chain.reverse();
+  }
+
   function mapApiMessages(messages) {
     var out = [];
-    for (var i = 0; i < (messages || []).length; i++) {
-      var m = messages[i];
+    var branch = activeBranch(messages);
+    for (var i = 0; i < branch.length; i++) {
+      var m = branch[i];
       if (!m) continue;
       var role = String(m.role || '').toLowerCase();
       if (role !== 'user' && role !== 'assistant') continue;
@@ -155,6 +234,8 @@
           .join('\n\n')
           .trim();
       }
+      var extra = referencesText(m);
+      if (extra) text = text ? text + '\n\n' + extra : extra;
       if (!text) continue;
       out.push({
         role: role,

@@ -34,7 +34,8 @@
   }
 
   function currentChatId() {
-    var m = location.pathname.match(/\/[a-z]{2}\/chats\/(\d+)/i);
+    // English UI has no locale prefix: /chats/{id}; others use /ru/chats/{id}.
+    var m = location.pathname.match(/^(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/chats\/(\d+)/i);
     return m ? m[1] : '';
   }
 
@@ -539,11 +540,50 @@
     return list.reverse();
   }
 
+  function isBotRow(m) {
+    return !!m && (m.is_bot === true || m.isBot === true || String(m.role || '').toLowerCase() === 'assistant');
+  }
+
+  // KI-005: swipes are sibling bot rows after the same user turn (flat list,
+  // no parent pointer). The chosen one is committed as is_main:true on the
+  // next user send; before that every variant is is_main:false. Keep the
+  // committed rows, else the newest variant (the one just generated/selected).
+  function dropSwipeVariants(messages) {
+    var out = [];
+    var group = [];
+    function flush() {
+      if (!group.length) return;
+      var hasFlag = group.some(function (m) {
+        return m && Object.prototype.hasOwnProperty.call(m, 'is_main');
+      });
+      if (group.length === 1 || !hasFlag) {
+        out.push.apply(out, group);
+      } else {
+        var main = group.filter(function (m) {
+          return m.is_main === true;
+        });
+        if (main.length) out.push.apply(out, main);
+        else out.push(group[group.length - 1]);
+      }
+      group = [];
+    }
+    for (var i = 0; i < messages.length; i++) {
+      if (isBotRow(messages[i])) {
+        group.push(messages[i]);
+        continue;
+      }
+      flush();
+      out.push(messages[i]);
+    }
+    flush();
+    return out;
+  }
+
   function payloadFromGet(data, chatId) {
     var chat = (data && data.chat) || {};
     var character = (data && data.character) || {};
-    var messages = chronologicalMessages(
-      (data && data.chatMessages) || (data && data.chat_messages) || chat.messages || []
+    var messages = dropSwipeVariants(
+      chronologicalMessages((data && data.chatMessages) || (data && data.chat_messages) || chat.messages || [])
     );
     var title =
       String(chat.title || chat.name || character.name || character.char_name || findTitle() || 'chat').trim() ||
@@ -752,13 +792,16 @@
     );
   }
 
+  // API-only export (exportDomFallback:false): the DOM is virtualized, so a
+  // failure must surface as an error, never as a partial page scrape.
   async function exportDataFromApi() {
     var chatId = currentChatId();
-    if (!chatId) return null;
+    if (!chatId) rpcErr('NOT_FOUND', 'JanitorAI chat id not found in URL', { apiOnly: true });
     try {
       return await loadChatFromApi(chatId);
     } catch (e) {
-      return null;
+      var details = Object.assign({}, (e && e.details) || {}, { apiOnly: true, code: (e && e.code) || 'HOST_ERROR' });
+      throw new CE.RpcError((e && e.code) || 'HOST_ERROR', (e && e.message) || 'JanitorAI export failed', details);
     }
   }
 

@@ -1096,8 +1096,35 @@
         toastFadeTimer = null;
       }, 200);
     }
+    var exportWarning = null;
+    var EXPORT_WARNING_TTL_MS = 2e4;
+    function exportWarningText(opts) {
+      var w4 = opts && opts.warnings || [];
+      if (!opts || !opts.incomplete && !w4.length) return "";
+      if (opts.source === "dom" || w4.indexOf("api-unavailable") >= 0) return toastText("toast.incompleteDom");
+      var details = [];
+      for (var i3 = 0; i3 < w4.length; i3++) {
+        var m3 = /^missing-responses:(\d+)$/.exec(String(w4[i3]));
+        if (m3) details.push(toastText("toast.incompleteMissing", { count: m3[1] }));
+        else if (w4[i3] === "node-cap") details.push(toastText("toast.incompleteCap"));
+        else if (w4[i3] === "page-cap") details.push(toastText("toast.incompleteCap"));
+        else if (w4[i3] === "page-error") details.push(toastText("toast.incompletePage"));
+      }
+      return toastText("toast.incompleteApi", { detail: details.join("; ") || "?" });
+    }
+    function setExportWarning(text) {
+      exportWarning = text ? { text, until: Date.now() + EXPORT_WARNING_TTL_MS } : null;
+    }
+    function takeExportWarning() {
+      var w4 = exportWarning;
+      exportWarning = null;
+      if (!w4 || Date.now() > w4.until) return "";
+      return w4.text;
+    }
     function showToast(text) {
       if (!text || typeof document === "undefined") return;
+      var warn = takeExportWarning();
+      if (warn) text = text + " \u2014 " + warn;
       if (toastHideTimer) {
         clearTimeout(toastHideTimer);
         toastHideTimer = null;
@@ -1152,10 +1179,11 @@
     function downloadBlob(filename, data, mime, opts) {
       opts = opts || {};
       var toastOnSuccess = !!opts.toast;
+      var toastKey = opts.toastKey || "toast.downloaded";
       function toastDownloaded() {
         if (!toastOnSuccess) return;
         var name = String(filename || "chat").split("/").pop();
-        showToast(toastText("toast.downloaded", { name }));
+        showToast(toastText(toastKey, { name }));
       }
       var send = function(u8) {
         if (!u8 || !u8.length) {
@@ -1560,6 +1588,7 @@
     function exportConversation(opts) {
       var formats = normalizeFormats(opts.formats);
       var pack = resolvePack(formats.length, opts.pack, 0);
+      setExportWarning(exportWarningText(opts));
       return buildExportBundle(opts).then(function(bundle) {
         var base = bundle.base;
         var files = bundle.files;
@@ -1607,6 +1636,7 @@
       }
       return saveDefault(pack, base, files, false);
     }
+    var NOT_FOLDER_REASONS = { "too-large": true, error: true, permission: true, "no-folder": true };
     function saveDefault(pack, base, files, rebind) {
       var job;
       if (pack === "zip") {
@@ -1635,9 +1665,13 @@
         var prefix = FALLBACK_DIR + (job.subdir ? job.subdir + "/" : "");
         var queueFull = reason === "too-large-to-queue";
         if (queueFull) showToast(toastText("toast.queueFull"));
+        var notFolder = !queueFull && NOT_FOLDER_REASONS[reason] === true;
         job.files.forEach(function(f3, i3) {
           setTimeout(function() {
-            downloadBlob(prefix + f3.name, f3.data, f3.mime, { toast: !queueFull && i3 === 0 });
+            downloadBlob(prefix + f3.name, f3.data, f3.mime, {
+              toast: !queueFull && i3 === 0,
+              toastKey: notFolder ? "toast.downloadedNotFolder" : null
+            });
           }, i3 * 250);
         });
         return { ok: true, via: "downloads", reason: res && res.reason };
@@ -2100,6 +2134,7 @@
       yamlDump,
       buildExportBundle,
       exportConversation,
+      exportWarningText,
       downloadBlob,
       showToast,
       dismissToast,
@@ -2738,6 +2773,13 @@
     "toast.failed": "Export failed",
     "toast.regrant": "Folder access needed \u2014 click the folder button on the bar",
     "toast.queueFull": "No folder chosen yet and this export is too big to hold \u2014 saved to Downloads instead",
+    "toast.incompleteDom": "export may be incomplete: the chat API was unavailable, only what is loaded on the page was saved",
+    "toast.incompleteApi": "export may be incomplete: {detail}",
+    "toast.incompleteMissing": "{count} messages could not be loaded",
+    "toast.incompleteCap": "the chat is longer than the export limit",
+    "toast.incompletePage": "part of the chat could not be loaded",
+    "toast.downloadedNotFolder": "Saved to Downloads, NOT to your folder: {name}",
+    "toast.apiOnlyFailed": "Export failed: the chat API is unavailable (sign in again or reload the page)",
     "bar.folder": "Save folder",
     "bar.folder.regrant": "Restore folder access",
     "bar.folder.set": "Set folder",
@@ -2925,6 +2967,13 @@
     "toast.failed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F",
     "toast.regrant": "\u041D\u0443\u0436\u0435\u043D \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435 \u2014 \u043D\u0430\u0436\u043C\u0438 \u043A\u043D\u043E\u043F\u043A\u0443 \u043F\u0430\u043F\u043A\u0438 \u043D\u0430 \u043F\u0430\u043D\u0435\u043B\u0438",
     "toast.queueFull": "\u041F\u0430\u043F\u043A\u0430 \u0435\u0449\u0451 \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430, \u0430 \u044D\u043A\u0441\u043F\u043E\u0440\u0442 \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u0431\u043E\u043B\u044C\u0448\u043E\u0439, \u0447\u0442\u043E\u0431\u044B \u0434\u0435\u0440\u0436\u0430\u0442\u044C \u0435\u0433\u043E \u0432 \u043E\u0447\u0435\u0440\u0435\u0434\u0438, \u2014 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u043B\u0438 \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB",
+    "toast.incompleteDom": "\u044D\u043A\u0441\u043F\u043E\u0440\u0442 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043D\u0435\u043F\u043E\u043B\u043D\u044B\u043C: API \u0447\u0430\u0442\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E, \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u0442\u043E, \u0447\u0442\u043E \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D\u043E \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435",
+    "toast.incompleteApi": "\u044D\u043A\u0441\u043F\u043E\u0440\u0442 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043D\u0435\u043F\u043E\u043B\u043D\u044B\u043C: {detail}",
+    "toast.incompleteMissing": "\u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439: {count}",
+    "toast.incompleteCap": "\u0447\u0430\u0442 \u0434\u043B\u0438\u043D\u043D\u0435\u0435 \u043B\u0438\u043C\u0438\u0442\u0430 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "toast.incompletePage": "\u0447\u0430\u0441\u0442\u044C \u0447\u0430\u0442\u0430 \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u043B\u0430\u0441\u044C",
+    "toast.downloadedNotFolder": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB, \u0430 \u041D\u0415 \u0432 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u043F\u0430\u043F\u043A\u0443: {name}",
+    "toast.apiOnlyFailed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F: API \u0447\u0430\u0442\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E (\u0432\u043E\u0439\u0434\u0438 \u0437\u0430\u043D\u043E\u0432\u043E \u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443)",
     "bar.folder": "\u041F\u0430\u043F\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
     "bar.folder.regrant": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435",
     "bar.folder.set": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
@@ -3751,7 +3800,10 @@
           pack,
           picked,
           rebind,
-          exportSchemas: settings && settings.exportSchemas
+          exportSchemas: settings && settings.exportSchemas,
+          source: payload.source,
+          incomplete: payload.incomplete,
+          warnings: payload.warnings
         });
       }).then((res) => {
         if (res && res.pending) {
@@ -3772,6 +3824,10 @@
         }
       }).catch((err) => {
         if (err && err.name === "AbortError") return;
+        if (err && err.details && err.details.apiOnly) {
+          CE2.showToast(CE2.toastText("toast.apiOnlyFailed"));
+          return;
+        }
         console.error("[chat-export]", err);
         CE2.showToast(CE2.toastText("toast.failed"));
       }).then(() => {
@@ -3996,9 +4052,31 @@
           userName: user.userName || "",
           userHandle: user.userHandle || "",
           userEmail: user.userEmail || "",
-          messages: messagesFromHydrate(res, model, res && res.scroller || scroller)
+          messages: messagesFromHydrate(res, model, res && res.scroller || scroller),
+          source: "dom"
         };
       });
+    }
+    function domFallback(reason) {
+      return getDataFromDom().then(function(data) {
+        if (data && typeof spec.exportData === "function") {
+          data.incomplete = true;
+          data.fallbackReason = reason || "api-unavailable";
+          data.warnings = ["api-unavailable"];
+        }
+        return data;
+      });
+    }
+    function apiOnlyError(message) {
+      var details = { apiOnly: true };
+      try {
+        if (typeof CE2.RpcError === "function") return new CE2.RpcError("HOST_ERROR", message, details);
+      } catch (e3) {
+      }
+      var err = new Error(message);
+      err.code = "HOST_ERROR";
+      err.details = details;
+      return err;
     }
     function getData() {
       if (typeof spec.exportData === "function") {
@@ -4008,7 +4086,7 @@
           const apiOnly = spec.exportDomFallback === false;
           if (fromApi && Array.isArray(fromApi.messages) && (fromApi.messages.length || apiOnly)) {
             const user = typeof spec.user === "function" && spec.user() || {};
-            return Object.assign(
+            const out = Object.assign(
               {
                 title: typeof spec.title === "function" && spec.title() || "chat",
                 chatId: currentChatId(),
@@ -4019,11 +4097,17 @@
               },
               fromApi
             );
+            out.source = "api";
+            if (Array.isArray(out.warnings) && out.warnings.length) out.incomplete = true;
+            return out;
           }
-          return getDataFromDom();
+          if (apiOnly) {
+            throw apiOnlyError(id + " export API unavailable");
+          }
+          return domFallback(fromApi ? "api-empty" : "api-unavailable");
         }).catch(function(err) {
           if (spec.exportDomFallback === false) throw err;
-          return getDataFromDom();
+          return domFallback("api-error");
         });
       }
       return getDataFromDom();

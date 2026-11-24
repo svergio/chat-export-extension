@@ -1,0 +1,264 @@
+{
+ "responseNodes": [
+  {
+   "responseId": "h0",
+   "sender": "human",
+   "parentResponseId": null
+  },
+  {
+   "responseId": "a0",
+   "sender": "assistant",
+   "parentResponseId": "h0"
+  },
+  {
+   "responseId": "h1",
+   "sender": "human",
+   "parentResponseId": "a0"
+  },
+  {
+   "responseId": "a1",
+   "sender": "assistant",
+   "parentResponseId": "h1"
+  },
+  {
+   "responseId": "h2",
+   "sender": "human",
+   "parentResponseId": "a1"
+  },
+  {
+   "responseId": "a2",
+   "sender": "assistant",
+   "parentResponseId": "h2"
+  },
+  {
+   "responseId": "h3",
+   "sender": "human",
+   "parentResponseId": "a2"
+  },
+  {
+   "responseId": "a3",
+   "sender": "assistant",
+   "parentResponseId": "h3"
+  },
+  {
+   "responseId": "h4",
+   "sender": "human",
+   "parentResponseId": "a3"
+  },
+  {
+   "responseId": "a4",
+   "sender": "assistant",
+   "parentResponseId": "h4"
+  },
+  {
+   "responseId": "h5old",
+   "sender": "human",
+   "parentResponseId": "a4"
+  },
+  {
+   "responseId": "a5old",
+   "sender": "assistant",
+   "parentResponseId": "h5old"
+  },
+  {
+   "responseId": "h5",
+   "sender": "human",
+   "parentResponseId": "a4"
+  },
+  {
+   "responseId": "a5",
+   "sender": "assistant",
+   "parentResponseId": "h5"
+  },
+  {
+   "responseId": "h6",
+   "sender": "human",
+   "parentResponseId": "a5"
+  },
+  {
+   "responseId": "a6",
+   "sender": "assistant",
+   "parentResponseId": "h6"
+  },
+  {
+   "responseId": "h7",
+   "sender": "human",
+   "parentResponseId": "a6"
+  },
+  {
+   "responseId": "a7",
+   "sender": "assistant",
+   "parentResponseId": "h7"
+  },
+  {
+   "responseId": "h8",
+   "sender": "human",
+   "parentResponseId": "a7"
+  },
+  {
+   "responseId": "a8",
+   "sender": "assistant",
+   "parentResponseId": "h8"
+  },
+  {
+   "responseId": "h9",
+   "sender": "human",
+   "parentResponseId": "a8"
+  },
+  {
+   "responseId": "a9",
+   "sender": "assistant",
+   "parentResponseId": "h9"
+  },
+  {
+   "responseId": "a9old",
+   "sender": "assistant",
+   "parentResponseId": "h9"
+  }
+ ],
+ "responses": {
+  "h0": {
+   "responseId": "h0",
+   "sender": "human",
+   "message": "q0",
+   "createTime": "2026-11-01T00:00:00.000Z"
+  },
+  "a0": {
+   "responseId": "a0",
+   "sender": "assistant",
+   "message": "ans0",
+   "createTime": "2026-11-01T00:01:00.000Z"
+  },
+  "h1": {
+   "responseId": "h1",
+   "sender": "human",
+   "message": "q1",
+   "createTime": "2026-11-01T00:02:00.000Z"
+  },
+  "a1": {
+   "responseId": "a1",
+   "sender": "assistant",
+   "message": "ans1",
+   "createTime": "2026-11-01T00:03:00.000Z"
+  },
+  "h2": {
+   "responseId": "h2",
+   "sender": "human",
+   "message": "q2",
+   "createTime": "2026-11-01T00:04:00.000Z"
+  },
+  "a2": {
+   "responseId": "a2",
+   "sender": "assistant",
+   "message": "ans2",
+   "createTime": "2026-11-01T00:05:00.000Z"
+  },
+  "h3": {
+   "responseId": "h3",
+   "sender": "human",
+   "message": "q3",
+   "createTime": "2026-11-01T00:06:00.000Z"
+  },
+  "a3": {
+   "responseId": "a3",
+   "sender": "assistant",
+   "message": "ans3",
+   "createTime": "2026-11-01T00:07:00.000Z"
+  },
+  "h4": {
+   "responseId": "h4",
+   "sender": "human",
+   "message": "q4",
+   "createTime": "2026-11-01T00:08:00.000Z"
+  },
+  "a4": {
+   "responseId": "a4",
+   "sender": "assistant",
+   "message": "ans4",
+   "createTime": "2026-11-01T00:09:00.000Z"
+  },
+  "h5old": {
+   "responseId": "h5old",
+   "sender": "human",
+   "message": "OLD-EDIT-Q5",
+   "createTime": "2026-11-01T00:10:00.000Z"
+  },
+  "a5old": {
+   "responseId": "a5old",
+   "sender": "assistant",
+   "message": "OLD-EDIT-A5",
+   "createTime": "2026-11-01T00:11:00.000Z"
+  },
+  "h5": {
+   "responseId": "h5",
+   "sender": "human",
+   "message": "q5",
+   "createTime": "2026-11-01T00:30:00.000Z",
+   "fileAttachmentAssetMetadata": [
+    {
+     "name": "notes.pdf"
+    }
+   ]
+  },
+  "a5": {
+   "responseId": "a5",
+   "sender": "assistant",
+   "message": "ans5",
+   "createTime": "2026-11-01T00:31:00.000Z"
+  },
+  "h6": {
+   "responseId": "h6",
+   "sender": "human",
+   "message": "q6",
+   "createTime": "2026-11-01T00:32:00.000Z"
+  },
+  "a6": {
+   "responseId": "a6",
+   "sender": "assistant",
+   "message": "ans6",
+   "createTime": "2026-11-01T00:33:00.000Z"
+  },
+  "h7": {
+   "responseId": "h7",
+   "sender": "human",
+   "message": "q7",
+   "createTime": "2026-11-01T00:34:00.000Z"
+  },
+  "a7": {
+   "responseId": "a7",
+   "sender": "assistant",
+   "message": "ans7",
+   "createTime": "2026-11-01T00:35:00.000Z"
+  },
+  "h8": {
+   "responseId": "h8",
+   "sender": "human",
+   "message": "q8",
+   "createTime": "2026-11-01T00:36:00.000Z"
+  },
+  "a8": {
+   "responseId": "a8",
+   "sender": "assistant",
+   "message": "ans8",
+   "createTime": "2026-11-01T00:37:00.000Z"
+  },
+  "h9": {
+   "responseId": "h9",
+   "sender": "human",
+   "message": "q9",
+   "createTime": "2026-11-01T00:38:00.000Z"
+  },
+  "a9": {
+   "responseId": "a9",
+   "sender": "assistant",
+   "message": "ans9",
+   "createTime": "2026-11-01T00:39:00.000Z"
+  },
+  "a9old": {
+   "responseId": "a9old",
+   "sender": "assistant",
+   "message": "OLD-REGEN-A9",
+   "createTime": "2026-11-01T00:30:00.000Z"
+  }
+ }
+}
