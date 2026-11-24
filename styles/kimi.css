@@ -161,9 +161,9 @@
   --ce-menu-scale-y-from: 0.85;
 }
 
-/* Folder state "needs folder / regrant": orange, same as base and other skins. */
-.chat-export-bar--kimi > .chat-export-folder--warn,
-.chat-export-bar--kimi > .chat-export-folder--warn:hover {
+/* Folder state "needs folder / regrant": orange. [data-ce-scheme] + double class (0,4,0) beats the light-theme folder rule (0,3,0). */
+.chat-export-bar--kimi[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--kimi[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
   border-color: #c45c26 !important;
   color: #c45c26 !important;
 }
