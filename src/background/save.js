@@ -1,6 +1,9 @@
 import { maybeOpenWelcome } from './onboarding.js';
 
-const MAX_B64 = 8 * 1024 * 1024;
+// Direct write into an already granted folder: bounded by the 64 MiB runtime
+// message limit (base64 + JSON envelope), not by storage.session. Exports that
+// must wait for a folder are bounded separately by canQueue (session quota).
+const MAX_B64 = 48 * 1024 * 1024;
 const JOB_PREFIX = 'ce.job.';
 // folder.html popup only: { windowId, tabId, mode }. Queued jobs live in QUEUE_KEY.
 const FOLDER_WIN_KEY = 'ce.folderWindow';

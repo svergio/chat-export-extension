@@ -1457,7 +1457,7 @@
   }
 
   // src/background/save.js
-  var MAX_B64 = 8 * 1024 * 1024;
+  var MAX_B64 = 48 * 1024 * 1024;
   var JOB_PREFIX = "ce.job.";
   var FOLDER_WIN_KEY = "ce.folderWindow";
   var QUEUE_KEY = "ce.folderQueue";
