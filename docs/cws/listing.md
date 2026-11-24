@@ -149,7 +149,7 @@ https://github.com/svergio/chat-export-extension
 
 | Item | Path |
 |------|------|
-| Upload ZIP | `dist-pack/chat-export-extension-2.1.6.zip` (~1.3MB) |
+| Upload ZIP | `dist-pack/chat-export-extension-2.1.7.zip` (~1.3MB) |
 | Build | `npm run build && npm run pack` |
 
 Do not upload `CHROMEWEBSTORE.md`, `docs/cws/assets/`, or `node_modules` inside the zip — `scripts/pack.mjs` already excludes them.
@@ -158,6 +158,7 @@ Do not upload `CHROMEWEBSTORE.md`, `docs/cws/assets/`, or `node_modules` inside 
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
+| 2.1.7 | 2026-11-24 | Folder queue, welcome, 48MB folder save, provider export + Janitor metadata, bar/folder UI fixes | Draft |
 | 2.1.6 | 2026-11-16 | Keyword list removed; server GitHub link added; published | Published |
 
 **Store URL:** https://chromewebstore.google.com/detail/chat-export/ecnkhadaajiodlaoflkjjnaclhloejgg

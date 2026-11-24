@@ -1,6 +1,6 @@
 {
   "name": "chat-export-extension",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "Export the current AI chat to Markdown, PDF, JSON, HTML, or YAML — files stay on your computer.",
   "private": true,
   "scripts": {
