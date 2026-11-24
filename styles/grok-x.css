@@ -40,6 +40,7 @@
 
 [data-chat-export-bar='grok-x'] .chat-export-fmt:hover,
 [data-chat-export-bar='grok-x'] .chat-export-fmt.is-open,
+[data-chat-export-bar='grok-x'] .chat-export-folder:hover,
 [data-chat-export-bar='grok-x'] .chat-export-dl:hover {
   background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
 }
@@ -72,6 +73,7 @@
   opacity: 1 !important;
 }
 
+[data-chat-export-bar='grok-x'] .chat-export-folder,
 [data-chat-export-bar='grok-x'] .chat-export-dl {
   width: 34px !important;
   min-width: 34px !important;
@@ -95,6 +97,7 @@
 
 /* X keyboard focus: 2px neutral ring plus the hover tint, no outline */
 [data-chat-export-bar='grok-x'] .chat-export-fmt:focus-visible,
+[data-chat-export-bar='grok-x'] .chat-export-folder:focus-visible,
 [data-chat-export-bar='grok-x'] .chat-export-dl:focus-visible {
   outline: none !important;
   background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
@@ -117,6 +120,7 @@
   justify-content: center;
 }
 
+[data-chat-export-bar='grok-x'] .chat-export-folder > .chat-export-folder-icon,
 [data-chat-export-bar='grok-x'] .chat-export-dl svg {
   width: 20px !important;
   height: 20px !important;
@@ -200,4 +204,12 @@
   --ce-menu-tx-from: 0px;
   --ce-menu-ty-from: 0px;
   --ce-menu-blur-from: 0px;
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+/* [data-ce-scheme] + double class: outrank the scheme colour pins and :hover above. */
+[data-chat-export-bar='grok-x'][data-ce-scheme] .chat-export-folder.chat-export-folder--warn,
+[data-chat-export-bar='grok-x'][data-ce-scheme] .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }

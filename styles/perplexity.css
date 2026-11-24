@@ -8,6 +8,7 @@
 }
 
 .chat-export-bar--perplexity > .chat-export-fmt,
+.chat-export-bar--perplexity > .chat-export-folder,
 .chat-export-bar--perplexity > .chat-export-dl {
   box-sizing: border-box !important;
   display: inline-flex !important;
@@ -30,6 +31,7 @@
   padding: 0 12px !important;
 }
 
+.chat-export-bar--perplexity > .chat-export-folder,
 .chat-export-bar--perplexity > .chat-export-dl {
   width: 32px !important;
   min-width: 32px !important;
@@ -51,6 +53,7 @@
   height: 10px !important;
 }
 
+.chat-export-bar--perplexity > .chat-export-folder:hover,
 .chat-export-bar--perplexity .chat-export-dl:hover {
   background: color-mix(in srgb, currentColor 8%, transparent) !important;
 }
@@ -70,6 +73,7 @@
 
 .chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-fmt:hover,
 .chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-fmt.is-open,
+.chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-folder:hover,
 .chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-dl:hover {
   background: color-mix(in srgb, currentColor 12%, transparent) !important;
 }
@@ -99,4 +103,27 @@
 .chat-export-menu[data-chat-export-menu='perplexity'] .chat-export-menu-item.is-active,
 .chat-export-menu[data-chat-export-menu='perplexity'] .chat-export-pack-btn.is-active {
   background: rgba(32, 128, 141, 0.2);
+}
+
+/* Folder: base.css leaves color: inherit (host slot colour leaks in). Pin the
+   Perplexity foreground per scheme; fmt/dl copy the model chip classes. */
+.chat-export-bar--perplexity > .chat-export-folder {
+  color: rgba(255, 255, 255, 0.93) !important;
+}
+
+.chat-export-bar--perplexity[data-ce-scheme='light'] > .chat-export-folder {
+  color: rgb(21, 23, 27) !important;
+}
+
+.chat-export-bar--perplexity > .chat-export-folder:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(32, 128, 141, 0.6) !important;
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+/* [data-ce-scheme] + double class: outrank the scheme colour pins and :hover above. */
+.chat-export-bar--perplexity[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--perplexity[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }

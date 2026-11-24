@@ -3,6 +3,7 @@
 }
 
 .chat-export-bar--copilot > .chat-export-fmt,
+.chat-export-bar--copilot > .chat-export-folder,
 .chat-export-bar--copilot > .chat-export-dl {
   box-sizing: border-box !important;
   display: inline-flex !important;
@@ -23,6 +24,7 @@
   gap: 4px !important;
 }
 
+.chat-export-bar--copilot > .chat-export-folder,
 .chat-export-bar--copilot > .chat-export-dl {
   width: 32px !important;
   min-width: 32px !important;
@@ -35,12 +37,14 @@
 }
 
 .chat-export-bar--copilot > .chat-export-fmt,
+.chat-export-bar--copilot > .chat-export-folder,
 .chat-export-bar--copilot > .chat-export-dl {
   color: var(--fgColor-muted, #9198a1) !important;
 }
 
 .chat-export-bar--copilot > .chat-export-fmt:hover,
 .chat-export-bar--copilot > .chat-export-fmt.is-open,
+.chat-export-bar--copilot > .chat-export-folder:hover,
 .chat-export-bar--copilot > .chat-export-dl:hover {
   color: var(--fgColor-default, #f0f6fc) !important;
 }
@@ -121,4 +125,33 @@
   --ce-menu-scale-y-from: 1;
   --ce-menu-tx-from: -8px;
   --ce-menu-ty-from: 0px;
+}
+
+/* Folder has no copied Primer class (dl copies the attach chip): give it the
+   chip box itself — 6px radius, 1px control border, transparent hover tint. */
+.chat-export-bar--copilot > .chat-export-folder {
+  border-radius: 6px !important;
+  border: 1px solid var(--control-borderColor-rest, var(--borderColor-default, #3d444d)) !important;
+  background: transparent !important;
+}
+
+.chat-export-bar--copilot[data-ce-scheme='light'] > .chat-export-folder {
+  border-color: var(--control-borderColor-rest, var(--borderColor-default, #d1d9e0)) !important;
+}
+
+.chat-export-bar--copilot > .chat-export-folder:hover {
+  background: var(--control-transparent-bgColor-hover, rgba(177, 186, 196, 0.12)) !important;
+}
+
+.chat-export-bar--copilot > .chat-export-folder:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #1f6feb) !important;
+  outline-offset: -2px !important;
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+/* [data-ce-scheme] + double class: outrank the scheme colour pins and :hover above. */
+.chat-export-bar--copilot[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--copilot[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }

@@ -32,6 +32,7 @@
 }
 
 /* Match Grok icon buttons (mic/attach): exact 32x32 hit target */
+.chat-export-bar--grok > .chat-export-folder,
 .chat-export-bar--grok .chat-export-dl {
   width: 32px !important;
   min-width: 32px !important;
@@ -50,6 +51,7 @@
   justify-content: center;
 }
 
+.chat-export-bar--grok > .chat-export-folder > .chat-export-folder-icon,
 .chat-export-bar--grok .chat-export-dl svg {
   width: 20px !important;
   height: 20px !important;
@@ -131,4 +133,34 @@
   --ce-menu-ease-out: cubic-bezier(0, 0, 0, 1);
   --ce-menu-scale-x-from: 0.97;
   --ce-menu-scale-y-from: 0.97;
+}
+
+/* Folder: base.css leaves color: inherit (host slot colour leaks in). Pin the
+   Grok foreground per scheme; the dl copies the dictation button classes. */
+.chat-export-bar--grok > .chat-export-folder {
+  border: 0 !important;
+  border-radius: 9999px !important;
+  background: transparent !important;
+  color: rgb(230, 229, 227) !important;
+}
+
+.chat-export-bar--grok[data-ce-scheme='light'] > .chat-export-folder {
+  color: rgb(44, 44, 43) !important;
+}
+
+.chat-export-bar--grok > .chat-export-folder:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent) !important;
+}
+
+.chat-export-bar--grok > .chat-export-folder:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 35%, transparent) !important;
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+/* [data-ce-scheme] + double class: outrank the scheme colour pins and :hover above. */
+.chat-export-bar--grok[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--grok[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }
