@@ -1394,9 +1394,14 @@
         return chain;
       });
     }
-    function resolvePack(formatCount, packMode) {
+    function resolvePack(formatCount, packMode, attachmentCount) {
       if (packMode === "file") return "file";
-      if (packMode === "folder") return formatCount > 1 ? "folder" : "file";
+      if (packMode === "folder") {
+        if (attachmentCount === void 0 || attachmentCount === 0) {
+          if (formatCount === 1) return "file";
+        }
+        return "folder";
+      }
       return "zip";
     }
     function wantsPathPicker(ev) {
@@ -1458,7 +1463,7 @@
       var hasSave = typeof window.showSaveFilePicker === "function";
       var hasDir = typeof window.showDirectoryPicker === "function";
       if (!hasSave && !hasDir) return Promise.resolve(null);
-      var mode = resolvePack(list.length, pack);
+      var mode = resolvePack(list.length, pack, 0);
       if (mode === "folder") {
         if (!hasDir) return Promise.resolve(null);
         return window.showDirectoryPicker({ mode: "readwrite" }).then(function(dir) {
@@ -1553,7 +1558,7 @@
     }
     function exportConversation(opts) {
       var formats = normalizeFormats(opts.formats);
-      var pack = resolvePack(formats.length, opts.pack);
+      var pack = resolvePack(formats.length, opts.pack, 0);
       return buildExportBundle(opts).then(function(bundle) {
         var base = bundle.base;
         var files = bundle.files;
@@ -3551,7 +3556,7 @@
     function dlTitle() {
       const labels = formats.map((id) => CE2.FORMAT_LABEL[id] || id).join(", ");
       const multi = formats.length > 1;
-      const pack = CE2.resolvePack(formats.length, packMode);
+      const pack = CE2.resolvePack(formats.length, packMode, 0);
       const fmt = pack === "file" ? labels : labels + " (" + t3(pack === "folder" ? "bar.pack.folder" : "bar.pack.zip") + ")";
       return t3(multi ? "bar.dl.multi" : "bar.dl.single").replace("{fmt}", fmt).replace("{shiftHint}", t3(shiftMode === "saveAs" ? "bar.shift.saveAs" : "bar.shift.rebind"));
     }
@@ -3647,7 +3652,7 @@
       if (now - lastIntentRef.current < 400) return;
       lastIntentRef.current = now;
       const selected = formats.slice();
-      const pack = CE2.resolvePack(selected.length, packMode);
+      const pack = CE2.resolvePack(selected.length, packMode, 0);
       const shift = CE2.wantsPathPicker(ev);
       const mode = shiftModeOf(getPlatformSettings());
       const saveAs = shift && mode === "saveAs";

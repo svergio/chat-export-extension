@@ -207,15 +207,9 @@
         nativeIconClass: more ? String(more.className || '').trim() : ''
       };
     }
-    if (input && input.parentElement) {
-      return {
-        el: input.parentElement,
-        insertAfter: input,
-        beforeChild: null,
-        nativeFrom: chip || send || input,
-        nativeIconFrom: more || send || null
-      };
-    }
+    // No stable anchor outside the composer: pill fallback would mount inside
+    // the input wrapper (same bug pattern as the Grok login page). Return null,
+    // let mount() bail.
     return null;
   }
 
@@ -938,6 +932,7 @@
     exportData: exportDataFromApi,
     exportDomFallback: true,
     active: function () {
+      if (/login|sign[_-]?in|sign[_-]?up|auth|register|forgot|password|reset/i.test(location.pathname)) return false;
       return visible(findComposerInput()) || !!currentChatId();
     },
     composer: findComposerToolbar,

@@ -27,3 +27,21 @@ test('manifest content_scripts css paths exist', () => {
     }
   }
 });
+
+test('qwen.css pins the folder button color in both schemes', () => {
+  const text = readFileSync(join(root, 'styles/qwen.css'), 'utf8');
+  // base.css sets `.chat-export-folder { color: inherit }` — Qwen's slot inherits
+  // black on dark, so the stroked folder glyph went invisible. Both schemes must
+  // pin an explicit color, and the warn (rebind) state must stay orange.
+  const dark = /\.chat-export-bar--qwen > \.chat-export-folder \{[^}]*color:\s*var\(/;
+  const light = /\[data-ce-scheme='light'\] > \.chat-export-folder \{[^}]*color:\s*var\(/;
+  const warn = /\.chat-export-bar--qwen > \.chat-export-folder--warn \{[^}]*color:\s*#c45c26/;
+  assert.match(text, dark, 'dark scheme must pin folder color');
+  assert.match(text, light, 'light scheme must pin folder color');
+  assert.match(text, warn, 'warn state must stay #c45c26');
+  assert.doesNotMatch(
+    text,
+    /\.chat-export-bar--qwen > \.chat-export-folder \{[^}]*color:\s*inherit/,
+    'folder color must not fall back to inherit'
+  );
+});

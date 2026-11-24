@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><body>
+  <!-- Mirrors the live grok.com composer: a CSS-grid form whose flow child is a
+       display:contents wrapper holding the leading actions row (attach "+" and,
+       when signed in, the Model chip), the tiptap input and the send control.
+       The export bar must sit in that flex row beside the Model chip — the login
+       page has no chip, so there is no anchor and no bar. -->
+  <form data-composer="true" id="composer" style="display:grid;position:relative">
+    <div style="display:contents">
+      <div class="grok-actions" id="actions" style="display:flex">
+        <button type="button" aria-label="Добавить файлы, навыки и коннекторы" id="attach">+</button>
+        <button type="button" aria-label="Модель: Быстрый" id="model" class="grok-model-chip">Быстрый</button>
+      </div>
+      <div id="input-wrap">
+        <div class="tiptap ProseMirror" contenteditable="true" id="editor">draft</div>
+      </div>
+      <button type="button" id="send">↑</button>
+    </div>
+  </form>
+</body></html>

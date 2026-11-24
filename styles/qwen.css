@@ -49,6 +49,23 @@
   opacity: 1 !important;
 }
 
+/* Folder falls back to base.css `color: inherit` — Qwen's slot inherits black
+   on dark, so the stroked folder glyph went invisible. Pin it like fmt/dl. */
+.chat-export-bar--qwen > .chat-export-folder {
+  border-color: var(--line-border, rgba(250, 251, 255, 0.12)) !important;
+  color: var(--text-primary, #fafbff) !important;
+}
+
+.chat-export-bar--qwen[data-ce-scheme='light'] > .chat-export-folder {
+  border-color: var(--line-border, rgba(34, 34, 34, 0.06)) !important;
+  color: var(--text-primary, #222) !important;
+}
+
+.chat-export-bar--qwen > .chat-export-folder--warn {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
+}
+
 .chat-export-bar--qwen > .chat-export-dl {
   box-sizing: border-box !important;
   width: 32px !important;

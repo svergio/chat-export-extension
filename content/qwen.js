@@ -515,6 +515,7 @@
     exportData: exportDataFromApi,
     exportDomFallback: false,
     active: function () {
+      if (/login|sign[_-]?in|sign[_-]?up|auth|register|forgot|password|reset/i.test(location.pathname)) return false;
       return visible(findComposerInput());
     },
     composer: findComposerToolbar,

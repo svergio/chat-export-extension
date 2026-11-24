@@ -223,6 +223,12 @@
     // Grok composer is CSS grid ("leading field actions") with a display:contents
     // toolbar. A new direct child becomes an extra grid item and overlaps the input.
     // Mount inside an existing flex slot instead.
+    // Mount contract (site-map grok.com.md): flex slot beside the Model chip.
+    // The login page has no model chip (attach "+" is not an anchor — its slot
+    // lives inside the composer pill, and nativeFrom would copy the round "+"
+    // look onto the fmt pill). Returning null lets mount() bail and hide the bar.
+    if (!modelBtn) return null;
+
     var slot = null;
     var insertAfter = null;
     if (modelBtn && isFlexish(modelBtn.parentElement)) {
@@ -234,12 +240,7 @@
     } else {
       var bottom = form.querySelector('.flex.absolute.inset-x-0.bottom-0');
       var row = (bottom && bottom.querySelector('.grow')) || bottom;
-      if (!row) {
-        var input =
-          form.querySelector('[data-testid="chat-input"]') ||
-          form.querySelector('[contenteditable="true"]');
-        row = (input && input.parentElement) || form;
-      }
+      if (!row) return null;
       slot = row;
       insertAfter = modelBtn;
     }
@@ -247,8 +248,7 @@
     var nativeFrom =
       modelBtn ||
       attachBtn ||
-      (slot && slot.querySelector('button')) ||
-      form.querySelector('button');
+      (slot && slot.querySelector('button'));
 
     var nativeIconFrom =
       form.querySelector('button[aria-label*="Диктовка" i]') ||
