@@ -1,3 +1,5 @@
+import { maybeOpenWelcome } from './onboarding.js';
+
 const MAX_B64 = 8 * 1024 * 1024;
 const JOB_PREFIX = 'ce.job.';
 const FOLDER_WIN_KEY = 'ce.folderWindow';
@@ -166,7 +168,9 @@ function requeue(tabId, ids) {
   return serial(async function () {
     const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
     const rec = got[FOLDER_WIN_KEY];
-    if (!rec || rec.tabId !== tabId) return dropJobs(ids);
+    // tabId === null: requeue into whichever record exists (the welcome page
+    // drains with allQueued and does not know the origin provider tab).
+    if (!rec || (tabId != null && rec.tabId !== tabId)) return dropJobs(ids);
     rec.jobs = ids.concat(rec.jobs);
     await writeFolderRecord(rec);
   });
@@ -256,6 +260,13 @@ async function notifyRegrant(sender, jobId, mode) {
 async function deferToRegrant(job, mode, sender) {
   const jobId = await storeJob(job);
   await attachJobToSender(jobId, mode, sender);
+  // First export that finds no folder ever = onboarding moment: open the
+  // welcome page (inline folder pick, drains the queued job via allQueued)
+  // instead of the blocking folder popup. The bar still gets the pending
+  // no-folder response and keeps its own folder button as a fallback.
+  if (mode === 'pick' && (await maybeOpenWelcome('first-export'))) {
+    return { ok: false, reason: 'no-folder', jobId: jobId, pending: true };
+  }
   const pinged = await notifyRegrant(sender, jobId, mode);
   if (pinged) {
     return { ok: false, reason: 'needs_regrant', jobId: jobId, pending: true };
@@ -311,10 +322,14 @@ function notifyOrigin(origin, res) {
 
 async function handlePicked(msg, sender) {
   const tabId = sender && sender.tab ? sender.tab.id : null;
-  const ids = tabId != null ? await takeQueuedJobs(tabId) : [];
+  // Extension pages (welcome onboarding) may pass allQueued to drain jobs from
+  // any origin tab — they run outside the provider tab whose id would miss them.
+  const fromExtPage = !!(sender && sender.url && sender.url.indexOf(chrome.runtime.getURL('')) === 0);
+  const drainAll = !!msg.allQueued && fromExtPage;
+  const ids = drainAll ? await takeQueuedJobs(null) : tabId != null ? await takeQueuedJobs(tabId) : [];
   if (msg.jobId && ids.indexOf(msg.jobId) < 0) ids.push(msg.jobId);
   // Also drain jobs attached to the provider tab (regrant from ExportBar).
-  if (msg.originTabId != null && msg.originTabId !== tabId) {
+  if (!drainAll && msg.originTabId != null && msg.originTabId !== tabId) {
     const extra = await takeQueuedJobs(msg.originTabId);
     for (let i = 0; i < extra.length; i++) {
       if (ids.indexOf(extra[i]) < 0) ids.push(extra[i]);
@@ -333,7 +348,8 @@ async function handlePicked(msg, sender) {
     }
     failure = res;
     await chrome.storage.session.set({ [JOB_PREFIX + ids[i]]: job });
-    if (tabId != null) await requeue(tabId, ids.slice(i));
+    if (drainAll) await requeue(null, ids.slice(i));
+    else if (tabId != null) await requeue(tabId, ids.slice(i));
     break;
   }
   const st = await broadcastStatus();

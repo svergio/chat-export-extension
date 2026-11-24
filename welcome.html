@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat Export</title>
+    <link rel="stylesheet" href="popup.css" />
+    <style>
+      html,
+      body {
+        background: var(--ce-surface);
+      }
+      body {
+        min-width: 0;
+        max-width: none;
+        min-height: 100vh;
+        font-size: 13px;
+        visibility: hidden;
+      }
+      body.is-ready {
+        visibility: visible;
+      }
+      .ce-welcome {
+        padding: 0;
+      }
+      .ce-welcome .ce-card {
+        min-height: 100vh;
+        padding: 14px 18px 18px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .ce-welcome-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .ce-welcome-brand img {
+        width: 26px;
+        height: 26px;
+      }
+      .ce-welcome h1 {
+        font-size: 17px;
+        color: var(--ce-ink);
+      }
+      .ce-welcome .ce-lead {
+        color: var(--ce-ink);
+        margin: 6px 0 0;
+      }
+      .ce-step {
+        margin-top: 14px;
+        padding: 10px 12px;
+        border: 1px solid var(--ce-line);
+        border-radius: var(--ce-radius-sm);
+        background: var(--ce-surface-2);
+      }
+      .ce-step h2 {
+        margin: 0 0 4px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ce-ink);
+      }
+      .ce-step .ce-hint {
+        margin: 0 0 8px;
+      }
+      .ce-step .ce-actions {
+        margin-top: 8px;
+      }
+      .ce-step .ce-btn {
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ce-welcome-msg:empty {
+        display: none;
+      }
+      .ce-welcome-msg {
+        margin: 8px 0 0;
+        font-weight: 600;
+        color: var(--ce-ink);
+      }
+      .ce-welcome-msg[data-tone='ok'] {
+        color: var(--ce-ok);
+      }
+      .ce-welcome-msg[data-tone='warn'] {
+        color: var(--ce-warn);
+      }
+      .ce-welcome-msg[data-tone='danger'] {
+        color: var(--ce-danger);
+      }
+      .ce-welcome-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        margin-top: 6px;
+      }
+      .ce-welcome-links a {
+        color: var(--ce-accent);
+      }
+      .ce-welcome-footnote {
+        margin: 12px 0 0;
+        padding: 8px 10px;
+        border-left: 3px solid var(--ce-accent);
+        background: var(--ce-surface-2);
+        color: var(--ce-ink);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .ce-welcome-done {
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="ce-wrap ce-welcome">
+      <div class="ce-card">
+        <header class="ce-head">
+          <div class="ce-welcome-brand">
+            <img src="icons/icon48.png" alt="" />
+            <h1 id="title"></h1>
+          </div>
+          <p id="lead" class="ce-lead"></p>
+        </header>
+
+        <section class="ce-step" id="step-folder">
+          <h2 id="folderTitle"></h2>
+          <p id="folderHint" class="ce-hint"></p>
+          <p id="folderNote" class="ce-hint"></p>
+          <div class="ce-actions">
+            <button type="button" id="pick" class="ce-btn ce-btn--primary"></button>
+          </div>
+          <p id="msg" class="ce-welcome-msg" role="status"></p>
+        </section>
+
+        <section class="ce-step" id="step-rate">
+          <h2 id="rateTitle"></h2>
+          <p id="rateNote" class="ce-hint"></p>
+          <div class="ce-actions">
+            <a
+              id="rateLink"
+              class="ce-btn ce-btn--primary"
+              href="https://chromewebstore.google.com/detail/chat-export/ecnkhadaajiodlaoflkjjnaclhloejgg"
+              target="_blank"
+              rel="noopener"
+            ></a>
+          </div>
+        </section>
+
+        <section class="ce-step" id="step-help">
+          <h2 id="helpTitle"></h2>
+          <p id="helpNote" class="ce-hint"></p>
+          <div class="ce-actions">
+            <a id="discordLink" class="ce-btn" href="https://discord.gg/QxJW9qt2KW" target="_blank" rel="noopener"></a>
+          </div>
+        </section>
+
+        <section class="ce-step" id="step-links">
+          <h2 id="linksTitle"></h2>
+          <div class="ce-welcome-links">
+            <a id="githubLink" href="https://github.com/svergio/chat-export-extension" target="_blank" rel="noopener"></a>
+            <a
+              id="issuesLink"
+              href="https://github.com/svergio/chat-export-extension/issues"
+              target="_blank"
+              rel="noopener"
+            ></a>
+            <a id="donateLink" href="https://www.donationalerts.com/r/svwergio_mel" target="_blank" rel="noopener"></a>
+          </div>
+        </section>
+
+        <p id="note" class="ce-welcome-footnote"></p>
+
+        <div class="ce-actions ce-welcome-done">
+          <button type="button" id="done" class="ce-btn"></button>
+        </div>
+      </div>
+    </main>
+    <script src="dist/welcome.js"></script>
+  </body>
+</html>

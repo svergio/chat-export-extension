@@ -35,7 +35,7 @@ await esbuild.build({
 });
 console.log('wrote dist/popup.js');
 
-for (const name of ['folder', 'offscreen']) {
+for (const name of ['folder', 'offscreen', 'welcome']) {
   await esbuild.build({
     ...common,
     entryPoints: [join(root, `src/${name}/main.js`)],

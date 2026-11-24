@@ -11,6 +11,7 @@ import {
 import { getBridgeStatus, loadStored, saveSettings, normalizeSettings, hasTosConsent, hasFaqConsent } from '../settings.js';
 import { toolbarKindFromUrl } from '../hostSkin.js';
 import { registerSaveHandlers } from './save.js';
+import { maybeOpenWelcome } from './onboarding.js';
 
 registerSaveHandlers();
 
@@ -62,13 +63,18 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   }
 });
 
-chrome.runtime.onInstalled.addListener(function () {
+chrome.runtime.onInstalled.addListener(function (details) {
   chrome.tabs.query({}, function (tabs) {
     if (!tabs) return;
     for (var i = 0; i < tabs.length; i++) {
       setTabIcon(tabs[i].id, tabs[i].url);
     }
   });
+  // Onboarding: welcome page on a fresh install (once per profile; the second
+  // trigger — first export with no folder — lives in save.js deferToRegrant).
+  if (details && details.reason === 'install') {
+    maybeOpenWelcome('install').catch(function () {});
+  }
 });
 
 chrome.runtime.onStartup.addListener(function () {

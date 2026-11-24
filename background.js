@@ -1402,6 +1402,25 @@
     return "idle";
   }
 
+  // src/background/onboarding.js
+  var WELCOME_FLAG = "ce.onboarding.welcomeShown";
+  var WELCOME_TRIGGER_KEY = "ce.onboarding.trigger";
+  var WELCOME_URL = "welcome.html";
+  async function maybeOpenWelcome(trigger) {
+    try {
+      const got = await chrome.storage.local.get(WELCOME_FLAG);
+      if (got && got[WELCOME_FLAG]) return false;
+      await chrome.storage.local.set({
+        [WELCOME_FLAG]: Date.now(),
+        [WELCOME_TRIGGER_KEY]: trigger || null
+      });
+      await chrome.tabs.create({ url: chrome.runtime.getURL(WELCOME_URL) });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // src/background/save.js
   var MAX_B64 = 8 * 1024 * 1024;
   var JOB_PREFIX = "ce.job.";
@@ -1550,7 +1569,7 @@
     return serial(async function() {
       const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
       const rec = got[FOLDER_WIN_KEY];
-      if (!rec || rec.tabId !== tabId) return dropJobs(ids);
+      if (!rec || tabId != null && rec.tabId !== tabId) return dropJobs(ids);
       rec.jobs = ids.concat(rec.jobs);
       await writeFolderRecord(rec);
     });
@@ -1632,6 +1651,9 @@
   async function deferToRegrant(job, mode, sender) {
     const jobId = await storeJob(job);
     await attachJobToSender(jobId, mode, sender);
+    if (mode === "pick" && await maybeOpenWelcome("first-export")) {
+      return { ok: false, reason: "no-folder", jobId, pending: true };
+    }
     const pinged = await notifyRegrant(sender, jobId, mode);
     if (pinged) {
       return { ok: false, reason: "needs_regrant", jobId, pending: true };
@@ -1678,9 +1700,11 @@
   }
   async function handlePicked(msg, sender) {
     const tabId = sender && sender.tab ? sender.tab.id : null;
-    const ids = tabId != null ? await takeQueuedJobs(tabId) : [];
+    const fromExtPage = !!(sender && sender.url && sender.url.indexOf(chrome.runtime.getURL("")) === 0);
+    const drainAll = !!msg.allQueued && fromExtPage;
+    const ids = drainAll ? await takeQueuedJobs(null) : tabId != null ? await takeQueuedJobs(tabId) : [];
     if (msg.jobId && ids.indexOf(msg.jobId) < 0) ids.push(msg.jobId);
-    if (msg.originTabId != null && msg.originTabId !== tabId) {
+    if (!drainAll && msg.originTabId != null && msg.originTabId !== tabId) {
       const extra = await takeQueuedJobs(msg.originTabId);
       for (let i = 0; i < extra.length; i++) {
         if (ids.indexOf(extra[i]) < 0) ids.push(extra[i]);
@@ -1699,7 +1723,8 @@
       }
       failure = res;
       await chrome.storage.session.set({ [JOB_PREFIX + ids[i]]: job });
-      if (tabId != null) await requeue(tabId, ids.slice(i));
+      if (drainAll) await requeue(null, ids.slice(i));
+      else if (tabId != null) await requeue(tabId, ids.slice(i));
       break;
     }
     const st = await broadcastStatus();
@@ -1811,13 +1836,17 @@
       setTabIcon(tabId, tab && tab.url || changeInfo.url);
     }
   });
-  chrome.runtime.onInstalled.addListener(function() {
+  chrome.runtime.onInstalled.addListener(function(details) {
     chrome.tabs.query({}, function(tabs) {
       if (!tabs) return;
       for (var i = 0; i < tabs.length; i++) {
         setTabIcon(tabs[i].id, tabs[i].url);
       }
     });
+    if (details && details.reason === "install") {
+      maybeOpenWelcome("install").catch(function() {
+      });
+    }
   });
   chrome.runtime.onStartup.addListener(function() {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {

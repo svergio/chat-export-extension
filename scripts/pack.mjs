@@ -16,6 +16,7 @@ const required = [
   'popup.html',
   'popup.css',
   'folder.html',
+  'welcome.html',
   'offscreen.html',
   'styles',
   'dist',

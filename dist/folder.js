@@ -425,7 +425,25 @@
     "folderPage.notPicked": "No folder chosen yet. Pick a subfolder and try again.",
     "folderPage.cancel": "Cancel export",
     "folderPage.pendingMany": "{count} exports will be saved as soon as you choose a folder.",
-    "folderPage.savedMany": "Saved {count} exports to \xAB{name}\xBB"
+    "folderPage.savedMany": "Saved {count} exports to \xAB{name}\xBB",
+    "onboarding.docTitle": "Chat Export \u2014 welcome",
+    "onboarding.title": "Thank you for installing Chat Export!",
+    "onboarding.lead": "Chats are saved as files straight into a folder on your computer \u2014 nothing is uploaded anywhere.",
+    "onboarding.stepFolder": "1. Choose a folder for exports",
+    "onboarding.folderNote": "You can change the folder any time in the extension settings.",
+    "onboarding.picked": "Folder \xAB{name}\xBB selected. Exports will be saved there.",
+    "onboarding.stepRate": "2. Rate the extension",
+    "onboarding.rateNote": "If Chat Export is useful to you, please rate it on the Chrome Web Store \u2014 it really helps the project.",
+    "onboarding.rateCta": "Rate on Chrome Web Store",
+    "onboarding.stepHelp": "3. Questions or something broke?",
+    "onboarding.helpNote": "Write in Discord and attach a screenshot \u2014 we will help.",
+    "onboarding.helpCta": "Discord chat",
+    "onboarding.linksTitle": "Project",
+    "onboarding.github": "GitHub",
+    "onboarding.issues": "Bug reports (issues)",
+    "onboarding.donate": "Donate",
+    "onboarding.note": "Format, pack mode and the save folder can be changed any time from the extension popup \u2014 pin the Chat Export icon to the toolbar.",
+    "onboarding.done": "Done"
   };
 
   // locales/LN_ru.json
@@ -588,7 +606,25 @@
     "folderPage.notPicked": "\u041F\u0430\u043F\u043A\u0430 \u043F\u043E\u043A\u0430 \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u043E\u0434\u043F\u0430\u043F\u043A\u0443 \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430.",
     "folderPage.cancel": "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u044D\u043A\u0441\u043F\u043E\u0440\u0442",
     "folderPage.pendingMany": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432 \u0432 \u043E\u0447\u0435\u0440\u0435\u0434\u0438: {count}. \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u043C \u0441\u0440\u0430\u0437\u0443 \u043F\u043E\u0441\u043B\u0435 \u0432\u044B\u0431\u043E\u0440\u0430 \u043F\u0430\u043F\u043A\u0438.",
-    "folderPage.savedMany": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432: {count} \u0432 \xAB{name}\xBB"
+    "folderPage.savedMany": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432: {count} \u0432 \xAB{name}\xBB",
+    "onboarding.docTitle": "Chat Export \u2014 \u0434\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C",
+    "onboarding.title": "\u0421\u043F\u0430\u0441\u0438\u0431\u043E \u0437\u0430 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043A\u0443 Chat Export!",
+    "onboarding.lead": "\u0427\u0430\u0442\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F \u0444\u0430\u0439\u043B\u0430\u043C\u0438 \u043F\u0440\u044F\u043C\u043E \u0432 \u043F\u0430\u043F\u043A\u0443 \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435 \u2014 \u043D\u0438\u0447\u0435\u0433\u043E \u043D\u0438\u043A\u0443\u0434\u0430 \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u0442\u0441\u044F.",
+    "onboarding.stepFolder": "1. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u0430\u043F\u043A\u0443 \u0434\u043B\u044F \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+    "onboarding.folderNote": "\u041F\u0430\u043F\u043A\u0443 \u043C\u043E\u0436\u043D\u043E \u043F\u043E\u043C\u0435\u043D\u044F\u0442\u044C \u0432 \u043B\u044E\u0431\u043E\u0439 \u043C\u043E\u043C\u0435\u043D\u0442 \u0432 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u044F.",
+    "onboarding.picked": "\u041F\u0430\u043F\u043A\u0430 \xAB{name}\xBB \u0432\u044B\u0431\u0440\u0430\u043D\u0430. \u042D\u043A\u0441\u043F\u043E\u0440\u0442\u044B \u0431\u0443\u0434\u0443\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0442\u044C\u0441\u044F \u0442\u0443\u0434\u0430.",
+    "onboarding.stepRate": "2. \u041E\u0446\u0435\u043D\u0438\u0442\u0435 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435",
+    "onboarding.rateNote": "\u0415\u0441\u043B\u0438 Chat Export \u0432\u0430\u043C \u043F\u043E\u043B\u0435\u0437\u0435\u043D, \u043F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043E\u0446\u0435\u043D\u0438\u0442\u0435 \u0435\u0433\u043E \u0432 Chrome Web Store \u2014 \u044D\u0442\u043E \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E \u043F\u043E\u043C\u043E\u0433\u0430\u0435\u0442 \u043F\u0440\u043E\u0435\u043A\u0442\u0443.",
+    "onboarding.rateCta": "\u041E\u0446\u0435\u043D\u0438\u0442\u044C \u0432 Chrome Web Store",
+    "onboarding.stepHelp": "3. \u0412\u043E\u043F\u0440\u043E\u0441\u044B \u0438\u043B\u0438 \u0447\u0442\u043E-\u0442\u043E \u043D\u0435 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442?",
+    "onboarding.helpNote": "\u041D\u0430\u043F\u0438\u0448\u0438\u0442\u0435 \u0432 Discord \u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0438\u0442\u0435 \u0441\u043A\u0440\u0438\u043D\u0448\u043E\u0442 \u2014 \u043F\u043E\u043C\u043E\u0436\u0435\u043C.",
+    "onboarding.helpCta": "\u0427\u0430\u0442 \u0432 Discord",
+    "onboarding.linksTitle": "\u041F\u0440\u043E\u0435\u043A\u0442",
+    "onboarding.github": "GitHub",
+    "onboarding.issues": "\u0421\u043E\u043E\u0431\u0449\u0438\u0442\u044C \u043E \u043F\u0440\u043E\u0431\u043B\u0435\u043C\u0435 (issues)",
+    "onboarding.donate": "\u0414\u043E\u043D\u0430\u0442",
+    "onboarding.note": "\u0424\u043E\u0440\u043C\u0430\u0442, \u0440\u0435\u0436\u0438\u043C \u043F\u0430\u043A\u0435\u0442\u0430 \u0438 \u043F\u0430\u043F\u043A\u0443 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F \u043C\u043E\u0436\u043D\u043E \u043F\u043E\u043C\u0435\u043D\u044F\u0442\u044C \u0432 \u043B\u044E\u0431\u043E\u0439 \u043C\u043E\u043C\u0435\u043D\u0442 \u0432 \u043F\u043E\u043F\u0430\u043F\u0435 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u044F \u2014 \u0437\u0430\u043A\u0440\u0435\u043F\u0438\u0442\u0435 \u0438\u043A\u043E\u043D\u043A\u0443 Chat Export \u043D\u0430 \u043F\u0430\u043D\u0435\u043B\u0438.",
+    "onboarding.done": "\u0413\u043E\u0442\u043E\u0432\u043E"
   };
 
   // src/i18n/index.js
