@@ -47,10 +47,15 @@ function fakeIndexedDB(data) {
   };
 }
 
+function welcomeBodyInnerHtml(win, pageHtml) {
+  const doc = new win.DOMParser().parseFromString(pageHtml, 'text/html');
+  doc.querySelectorAll('script').forEach((el) => el.remove());
+  return doc.body ? doc.body.innerHTML : '';
+}
+
 function openWelcome(opts = {}) {
   const win = new Window({ url: 'chrome-extension://test-id/welcome.html' });
-  const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('</body>')).replace(/<script[^>]*><\/script>/g, '');
-  win.document.body.innerHTML = body;
+  win.document.body.innerHTML = welcomeBodyInnerHtml(win, html);
   const idb = new Map(opts.existing ? [['default', opts.existing]] : []);
   const sent = [];
   const removed = [];
