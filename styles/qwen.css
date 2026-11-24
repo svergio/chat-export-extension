@@ -61,7 +61,8 @@
   color: var(--text-primary, #222) !important;
 }
 
-.chat-export-bar--qwen > .chat-export-folder--warn {
+.chat-export-bar--qwen[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--qwen[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
   border-color: #c45c26 !important;
   color: #c45c26 !important;
 }

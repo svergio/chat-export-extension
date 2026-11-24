@@ -8,6 +8,7 @@
 }
 
 .chat-export-bar--kimi > .chat-export-fmt,
+.chat-export-bar--kimi > .chat-export-folder,
 .chat-export-bar--kimi > .chat-export-dl {
   box-sizing: border-box !important;
   position: relative !important;
@@ -34,6 +35,7 @@
   transition: background 0.15s ease, color 0.15s ease !important;
 }
 
+.chat-export-bar--kimi > .chat-export-folder,
 .chat-export-bar--kimi > .chat-export-dl {
   min-width: 36px !important;
   width: 36px !important;
@@ -44,12 +46,14 @@
 
 .chat-export-bar--kimi > .chat-export-fmt:hover,
 .chat-export-bar--kimi > .chat-export-fmt.is-open,
+.chat-export-bar--kimi > .chat-export-folder:hover,
 .chat-export-bar--kimi > .chat-export-dl:hover {
   background: var(--Others-SubLayerBg-active, rgba(255, 255, 255, 0.08)) !important;
   color: var(--Labels-Primary, rgba(255, 255, 255, 0.84)) !important;
 }
 
 .chat-export-bar--kimi > .chat-export-fmt:focus-visible,
+.chat-export-bar--kimi > .chat-export-folder:focus-visible,
 .chat-export-bar--kimi > .chat-export-dl:focus-visible {
   box-shadow: 0 0 0 2px var(--Colors-KMBlue, #1a88ff) !important;
 }
@@ -84,16 +88,19 @@
 }
 
 .chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-fmt,
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-folder,
 .chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-dl {
   color: var(--Labels-Secondary, rgba(0, 0, 0, 0.56)) !important;
 }
 
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-folder,
 .chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-dl {
   color: var(--Labels-Primary, rgba(0, 0, 0, 0.84)) !important;
 }
 
 .chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-fmt:hover,
 .chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-fmt.is-open,
+.chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-folder:hover,
 .chat-export-bar--kimi[data-ce-scheme='light'] > .chat-export-dl:hover {
   background: var(--Others-SubLayerBg-active, rgba(0, 0, 0, 0.06)) !important;
   color: var(--Labels-Primary, rgba(0, 0, 0, 0.84)) !important;
@@ -152,4 +159,11 @@
   --ce-menu-ease-out: cubic-bezier(0.4, 0, 1, 1);
   --ce-menu-scale-x-from: 0.85;
   --ce-menu-scale-y-from: 0.85;
+}
+
+/* Folder state "needs folder / regrant": orange. [data-ce-scheme] + double class (0,4,0) beats the light-theme folder rule (0,3,0). */
+.chat-export-bar--kimi[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--kimi[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }

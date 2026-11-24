@@ -7,6 +7,7 @@
 }
 
 .chat-export-bar--deepseek > .chat-export-fmt,
+.chat-export-bar--deepseek > .chat-export-folder,
 .chat-export-bar--deepseek > .chat-export-dl {
   box-sizing: border-box !important;
   position: relative !important;
@@ -32,6 +33,7 @@
   transition: border 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
 }
 
+.chat-export-bar--deepseek > .chat-export-folder,
 .chat-export-bar--deepseek > .chat-export-dl {
   min-width: 34px !important;
   width: 34px !important;
@@ -40,6 +42,7 @@
 
 .chat-export-bar--deepseek > .chat-export-fmt:hover,
 .chat-export-bar--deepseek > .chat-export-fmt.is-open,
+.chat-export-bar--deepseek > .chat-export-folder:hover,
 .chat-export-bar--deepseek > .chat-export-dl:hover {
   background: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.08)) !important;
   border-color: var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.12)) !important;
@@ -47,6 +50,7 @@
 }
 
 .chat-export-bar--deepseek > .chat-export-fmt:focus-visible,
+.chat-export-bar--deepseek > .chat-export-folder:focus-visible,
 .chat-export-bar--deepseek > .chat-export-dl:focus-visible {
   box-shadow: 0 0 0 2px var(--dsw-alias-button-primary-fill, #5686fe) !important;
 }
@@ -122,4 +126,11 @@
   --ce-menu-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ce-menu-scale-x-from: 0.8;
   --ce-menu-scale-y-from: 0.8;
+}
+
+/* Folder state "needs folder / regrant": orange. [data-ce-scheme] + double class (0,4,0) beats the light-theme folder rule (0,3,0). */
+.chat-export-bar--deepseek[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--deepseek[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }
