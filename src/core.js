@@ -1116,7 +1116,9 @@
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
     if (!t) t = 'chat';
-    if (t.length > 80) t = t.slice(0, 80);
+    // Cut by code points so an emoji (surrogate pair) is never split in half.
+    var chars = Array.from(t);
+    if (chars.length > 80) t = chars.slice(0, 80).join('');
     return t;
   }
 
@@ -1767,9 +1769,12 @@
         );
       }
       var prefix = FALLBACK_DIR + (job.subdir ? job.subdir + '/' : '');
+      // No folder yet and the export is too big to hold until one is chosen.
+      var queueFull = reason === 'too-large-to-queue';
+      if (queueFull) showToast(toastText('toast.queueFull'));
       job.files.forEach(function (f, i) {
         setTimeout(function () {
-          downloadBlob(prefix + f.name, f.data, f.mime, { toast: i === 0 });
+          downloadBlob(prefix + f.name, f.data, f.mime, { toast: !queueFull && i === 0 });
         }, i * 250);
       });
       return { ok: true, via: 'downloads', reason: res && res.reason };

@@ -362,6 +362,7 @@
     "toast.downloaded": "Downloaded: {name}",
     "toast.failed": "Export failed",
     "toast.regrant": "Folder access needed \u2014 click the folder button on the bar",
+    "toast.queueFull": "No folder chosen yet and this export is too big to hold \u2014 saved to Downloads instead",
     "bar.folder": "Save folder",
     "bar.folder.regrant": "Restore folder access",
     "bar.folder.set": "Set folder",
@@ -430,8 +431,8 @@
     "onboarding.title": "Thank you for installing Chat Export!",
     "onboarding.lead": "Chats are saved as files straight into a folder on your computer \u2014 nothing is uploaded anywhere.",
     "onboarding.stepFolder": "1. Choose a folder for exports",
-    "onboarding.folderNote": "You can change the folder any time in the extension settings.",
-    "onboarding.picked": "Folder \xAB{name}\xBB selected. Exports will be saved there.",
+    "onboarding.folderNote": "You can change the folder any time in the extension settings. After a browser restart Chrome may ask you to confirm folder access again \u2014 that's expected.",
+    "onboarding.picked": "Folder \xAB{name}\xBB selected.",
     "onboarding.stepRate": "2. Rate the extension",
     "onboarding.rateNote": "If Chat Export is useful to you, please rate it on the Chrome Web Store \u2014 it really helps the project.",
     "onboarding.rateCta": "Rate on Chrome Web Store",
@@ -443,7 +444,12 @@
     "onboarding.issues": "Bug reports (issues)",
     "onboarding.donate": "Donate",
     "onboarding.note": "Format, pack mode and the save folder can be changed any time from the extension popup \u2014 pin the Chat Export icon to the toolbar.",
-    "onboarding.done": "Done"
+    "onboarding.done": "Done",
+    "onboarding.queueNote": "An export started before you chose a folder waits until you pick one or close the browser.",
+    "onboarding.saveFailed": "Exports still waiting: {count}. {reason}",
+    "onboarding.err.permission": "Chrome did not grant access to the folder \u2014 try again and allow it.",
+    "onboarding.err.noFolder": "The folder is no longer available \u2014 choose it again.",
+    "onboarding.err.write": "Could not write the file \u2014 try again."
   };
 
   // locales/LN_ru.json
@@ -543,6 +549,7 @@
     "toast.downloaded": "\u0421\u043A\u0430\u0447\u0430\u043D\u043E: {name}",
     "toast.failed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F",
     "toast.regrant": "\u041D\u0443\u0436\u0435\u043D \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435 \u2014 \u043D\u0430\u0436\u043C\u0438 \u043A\u043D\u043E\u043F\u043A\u0443 \u043F\u0430\u043F\u043A\u0438 \u043D\u0430 \u043F\u0430\u043D\u0435\u043B\u0438",
+    "toast.queueFull": "\u041F\u0430\u043F\u043A\u0430 \u0435\u0449\u0451 \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430, \u0430 \u044D\u043A\u0441\u043F\u043E\u0440\u0442 \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u0431\u043E\u043B\u044C\u0448\u043E\u0439, \u0447\u0442\u043E\u0431\u044B \u0434\u0435\u0440\u0436\u0430\u0442\u044C \u0435\u0433\u043E \u0432 \u043E\u0447\u0435\u0440\u0435\u0434\u0438, \u2014 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u043B\u0438 \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB",
     "bar.folder": "\u041F\u0430\u043F\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
     "bar.folder.regrant": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435",
     "bar.folder.set": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
@@ -611,8 +618,8 @@
     "onboarding.title": "\u0421\u043F\u0430\u0441\u0438\u0431\u043E \u0437\u0430 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043A\u0443 Chat Export!",
     "onboarding.lead": "\u0427\u0430\u0442\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F \u0444\u0430\u0439\u043B\u0430\u043C\u0438 \u043F\u0440\u044F\u043C\u043E \u0432 \u043F\u0430\u043F\u043A\u0443 \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435 \u2014 \u043D\u0438\u0447\u0435\u0433\u043E \u043D\u0438\u043A\u0443\u0434\u0430 \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u0442\u0441\u044F.",
     "onboarding.stepFolder": "1. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u0430\u043F\u043A\u0443 \u0434\u043B\u044F \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
-    "onboarding.folderNote": "\u041F\u0430\u043F\u043A\u0443 \u043C\u043E\u0436\u043D\u043E \u043F\u043E\u043C\u0435\u043D\u044F\u0442\u044C \u0432 \u043B\u044E\u0431\u043E\u0439 \u043C\u043E\u043C\u0435\u043D\u0442 \u0432 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u044F.",
-    "onboarding.picked": "\u041F\u0430\u043F\u043A\u0430 \xAB{name}\xBB \u0432\u044B\u0431\u0440\u0430\u043D\u0430. \u042D\u043A\u0441\u043F\u043E\u0440\u0442\u044B \u0431\u0443\u0434\u0443\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0442\u044C\u0441\u044F \u0442\u0443\u0434\u0430.",
+    "onboarding.folderNote": "\u041F\u0430\u043F\u043A\u0443 \u043C\u043E\u0436\u043D\u043E \u043F\u043E\u043C\u0435\u043D\u044F\u0442\u044C \u0432 \u043B\u044E\u0431\u043E\u0439 \u043C\u043E\u043C\u0435\u043D\u0442 \u0432 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u044F. \u041F\u043E\u0441\u043B\u0435 \u043F\u0435\u0440\u0435\u0437\u0430\u043F\u0443\u0441\u043A\u0430 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430 Chrome \u043C\u043E\u0436\u0435\u0442 \u0441\u043D\u043E\u0432\u0430 \u043F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u044C \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435 \u2014 \u044D\u0442\u043E \u043D\u043E\u0440\u043C\u0430\u043B\u044C\u043D\u043E.",
+    "onboarding.picked": "\u041F\u0430\u043F\u043A\u0430 \xAB{name}\xBB \u0432\u044B\u0431\u0440\u0430\u043D\u0430.",
     "onboarding.stepRate": "2. \u041E\u0446\u0435\u043D\u0438\u0442\u0435 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435",
     "onboarding.rateNote": "\u0415\u0441\u043B\u0438 Chat Export \u0432\u0430\u043C \u043F\u043E\u043B\u0435\u0437\u0435\u043D, \u043F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043E\u0446\u0435\u043D\u0438\u0442\u0435 \u0435\u0433\u043E \u0432 Chrome Web Store \u2014 \u044D\u0442\u043E \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E \u043F\u043E\u043C\u043E\u0433\u0430\u0435\u0442 \u043F\u0440\u043E\u0435\u043A\u0442\u0443.",
     "onboarding.rateCta": "\u041E\u0446\u0435\u043D\u0438\u0442\u044C \u0432 Chrome Web Store",
@@ -624,7 +631,12 @@
     "onboarding.issues": "\u0421\u043E\u043E\u0431\u0449\u0438\u0442\u044C \u043E \u043F\u0440\u043E\u0431\u043B\u0435\u043C\u0435 (issues)",
     "onboarding.donate": "\u0414\u043E\u043D\u0430\u0442",
     "onboarding.note": "\u0424\u043E\u0440\u043C\u0430\u0442, \u0440\u0435\u0436\u0438\u043C \u043F\u0430\u043A\u0435\u0442\u0430 \u0438 \u043F\u0430\u043F\u043A\u0443 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F \u043C\u043E\u0436\u043D\u043E \u043F\u043E\u043C\u0435\u043D\u044F\u0442\u044C \u0432 \u043B\u044E\u0431\u043E\u0439 \u043C\u043E\u043C\u0435\u043D\u0442 \u0432 \u043F\u043E\u043F\u0430\u043F\u0435 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u044F \u2014 \u0437\u0430\u043A\u0440\u0435\u043F\u0438\u0442\u0435 \u0438\u043A\u043E\u043D\u043A\u0443 Chat Export \u043D\u0430 \u043F\u0430\u043D\u0435\u043B\u0438.",
-    "onboarding.done": "\u0413\u043E\u0442\u043E\u0432\u043E"
+    "onboarding.done": "\u0413\u043E\u0442\u043E\u0432\u043E",
+    "onboarding.queueNote": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442, \u043D\u0430\u0447\u0430\u0442\u044B\u0439 \u0434\u043E \u0432\u044B\u0431\u043E\u0440\u0430 \u043F\u0430\u043F\u043A\u0438, \u043F\u043E\u0434\u043E\u0436\u0434\u0451\u0442, \u043F\u043E\u043A\u0430 \u0432\u044B \u0435\u0451 \u043D\u0435 \u0432\u044B\u0431\u0435\u0440\u0435\u0442\u0435 \u0438\u043B\u0438 \u043D\u0435 \u0437\u0430\u043A\u0440\u043E\u0435\u0442\u0435 \u0431\u0440\u0430\u0443\u0437\u0435\u0440.",
+    "onboarding.saveFailed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432 \u0435\u0449\u0451 \u0432 \u043E\u0447\u0435\u0440\u0435\u0434\u0438: {count}. {reason}",
+    "onboarding.err.permission": "Chrome \u043D\u0435 \u0434\u0430\u043B \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u043F\u0430\u043F\u043A\u0435 \u2014 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437 \u0438 \u0440\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u0435.",
+    "onboarding.err.noFolder": "\u041F\u0430\u043F\u043A\u0430 \u0431\u043E\u043B\u044C\u0448\u0435 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0430 \u2014 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0435\u0451 \u0437\u0430\u043D\u043E\u0432\u043E.",
+    "onboarding.err.write": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u0444\u0430\u0439\u043B \u2014 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437."
   };
 
   // src/i18n/index.js
@@ -780,7 +792,7 @@
     return fill("folderPage.savedMany", { count: n, name });
   }
   async function finish(name) {
-    const res = await sendBridge("folderPicked").catch(function(e) {
+    const res = await sendBridge("folderPicked", { allQueued: true }).catch(function(e) {
       return { ok: false, error: String(e && e.message || e) };
     });
     if (res && res.ok) {
@@ -888,7 +900,7 @@
     cancelEl.textContent = t("folderPage.cancel");
     cancelEl.onclick = onCancel;
     chrome.runtime.onMessage.addListener(function(msg) {
-      if (!msg || msg.type !== "ce-folder-queue" || msg.tabId !== state.tabId) return;
+      if (!msg || msg.type !== "ce-folder-queue") return;
       state.count = msg.count || 0;
       if (msg.mode) state.mode = msg.mode;
       render();

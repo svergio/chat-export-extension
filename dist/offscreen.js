@@ -100,8 +100,7 @@
     for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
     return out;
   }
-  async function writeFile(dir, file) {
-    const name = await uniqueName(dir, safeName(file.name, "chat"), "file");
+  async function writeFile(dir, name, file) {
     const fh = await dir.getFileHandle(name, { create: true });
     const w = await fh.createWritable();
     try {
@@ -117,7 +116,21 @@
     }
     return name;
   }
-  async function write(msg) {
+  var writeLock = Promise.resolve();
+  function serial(fn) {
+    const run = writeLock.then(fn, fn);
+    writeLock = run.catch(function() {
+    });
+    return run;
+  }
+  async function removeQuietly(dir, name, recursive) {
+    try {
+      await dir.removeEntry(name, recursive ? { recursive: true } : void 0);
+    } catch (e) {
+      void e;
+    }
+  }
+  async function writeNow(msg) {
     const root = await loadHandle();
     const state = await folderState(root);
     if (state !== "granted") {
@@ -129,13 +142,28 @@
     const files = Array.isArray(msg.files) ? msg.files : [];
     let dir = root;
     let written = null;
-    if (msg.pack === "folder" && msg.subdir) {
-      written = await uniqueName(root, safeName(msg.subdir, "chat"), "dir");
-      dir = await root.getDirectoryHandle(written, { create: true });
-    }
     const names = [];
-    for (const f of files) names.push(await writeFile(dir, f));
+    try {
+      if (msg.pack === "folder" && msg.subdir) {
+        written = await uniqueName(root, safeName(msg.subdir, "chat"), "dir");
+        dir = await root.getDirectoryHandle(written, { create: true });
+      }
+      for (const f of files) {
+        const name = await uniqueName(dir, safeName(f.name, "chat"), "file");
+        names.push(name);
+        await writeFile(dir, name, f);
+      }
+    } catch (e) {
+      if (written) await removeQuietly(root, written, true);
+      else for (const n of names) await removeQuietly(dir, n, false);
+      throw e;
+    }
     return { ok: true, folder: root.name, name: written || names[0] || null, files: names };
+  }
+  function write(msg) {
+    return serial(function() {
+      return writeNow(msg);
+    });
   }
   async function status() {
     const h = await loadHandle();

@@ -8,6 +8,7 @@ const leadEl = document.getElementById('lead');
 const folderTitleEl = document.getElementById('folderTitle');
 const folderHintEl = document.getElementById('folderHint');
 const folderNoteEl = document.getElementById('folderNote');
+const queueNoteEl = document.getElementById('queueNote');
 const pickEl = document.getElementById('pick');
 const msgEl = document.getElementById('msg');
 const rateTitleEl = document.getElementById('rateTitle');
@@ -51,6 +52,31 @@ function applyTheme(ui, dataSkin) {
   root.style.colorScheme = scheme;
 }
 
+const REASON_KEYS = {
+  permission: 'onboarding.err.permission',
+  'no-folder': 'onboarding.err.noFolder',
+  unsupported: 'saveFolder.unsupported'
+};
+
+function reasonText(reason) {
+  return t(REASON_KEYS[reason] || 'onboarding.err.write');
+}
+
+function errorReason(e) {
+  const n = e && e.name;
+  if (n === 'NotAllowedError' || n === 'SecurityError') return 'permission';
+  if (n === 'NotFoundError') return 'no-folder';
+  return 'error';
+}
+
+function pickedText(name, res) {
+  let s = fill('onboarding.picked', { name: name });
+  const n = (res && res.saved) || 0;
+  if (n === 1) s += ' ' + fill('folderPage.saved', { name: name });
+  else if (n > 1) s += ' ' + fill('folderPage.savedMany', { count: n, name: name });
+  return s;
+}
+
 async function onPick() {
   if (busy) return;
   busy = true;
@@ -59,21 +85,26 @@ async function onPick() {
   try {
     const handle = await showDirectoryPicker({ mode: 'readwrite', id: 'chat-export', startIn: 'downloads' });
     const perm = await handle.requestPermission({ mode: 'readwrite' });
-    if (perm !== 'granted') throw new DOMException('permission ' + perm, 'AbortError');
+    if (perm !== 'granted') throw new DOMException('permission ' + perm, 'NotAllowedError');
     await saveHandle(handle);
     // allQueued: drains exports queued from any provider tab — onboarding runs
     // in its own tab, so the sender tab id alone would miss them.
-    const res = await sendBridge('folderPicked', { allQueued: true }).catch(function (e) {
-      return { ok: false, error: String((e && e.message) || e) };
+    const res = await sendBridge('folderPicked', { allQueued: true }).catch(function () {
+      return { ok: false, reason: 'error' };
     });
     if (res && res.ok) {
-      say(fill('onboarding.picked', { name: handle.name }), 'ok');
+      say(pickedText(handle.name, res), 'ok');
     } else {
-      say(String((res && (res.error || res.reason)) || 'error'), 'danger');
+      // The folder itself is saved; only some queued exports did not make it.
+      const left = (res && res.pending) || 0;
+      let s = pickedText(handle.name, res);
+      if (left) s += ' ' + fill('onboarding.saveFailed', { count: left, reason: reasonText(res && res.reason) });
+      else s += ' ' + reasonText(res && res.reason);
+      say(s, 'warn');
     }
   } catch (e) {
     if (e && e.name === 'AbortError') say(t('folderPage.notPicked'), 'warn');
-    else say(String((e && e.message) || e), 'danger');
+    else say(reasonText(errorReason(e)), 'danger');
   } finally {
     busy = false;
     pickEl.disabled = false;
@@ -98,7 +129,9 @@ async function init() {
   });
   const ui = (stored && stored.settings && stored.settings.ui) || {};
   t = createTranslator(resolveLocale(ui.locale));
-  const dataSkin = await resolveUiDataSkinForFolder(ui);
+  const dataSkin = await resolveUiDataSkinForFolder(ui).catch(function () {
+    return null;
+  });
   applyTheme(ui, dataSkin);
 
   document.title = t('onboarding.docTitle');
@@ -107,6 +140,7 @@ async function init() {
   folderTitleEl.textContent = t('onboarding.stepFolder');
   folderHintEl.textContent = t('folderPage.hint');
   folderNoteEl.textContent = t('onboarding.folderNote');
+  queueNoteEl.textContent = t('onboarding.queueNote');
   pickEl.textContent = t('folderPage.pick');
   rateTitleEl.textContent = t('onboarding.stepRate');
   rateNoteEl.textContent = t('onboarding.rateNote');
@@ -122,7 +156,6 @@ async function init() {
   doneEl.textContent = t('onboarding.done');
   doneEl.onclick = onClose;
   pickEl.onclick = onPick;
-  document.body.classList.add('is-ready');
 
   if (!fsSupported()) {
     pickEl.disabled = true;
@@ -132,7 +165,21 @@ async function init() {
   const existing = await loadHandle().catch(function () {
     return null;
   });
-  if (existing) say(t('label.saveFolder') + ': ' + existing.name, 'ok');
+  if (existing) {
+    say(t('label.saveFolder') + ': ' + existing.name, 'ok');
+    return;
+  }
+  const q = await sendBridge('folderQueue').catch(function () {
+    return null;
+  });
+  const n = (q && q.ok && q.count) || 0;
+  if (n === 1) say(t('folderPage.pending'), 'warn');
+  else if (n > 1) say(fill('folderPage.pendingMany', { count: n }), 'warn');
 }
 
-init();
+// Never leave the page blank: the body is hidden until is-ready.
+init()
+  .catch(function () {})
+  .finally(function () {
+    document.body.classList.add('is-ready');
+  });

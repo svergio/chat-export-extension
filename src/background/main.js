@@ -11,7 +11,7 @@ import {
 import { getBridgeStatus, loadStored, saveSettings, normalizeSettings, hasTosConsent, hasFaqConsent } from '../settings.js';
 import { toolbarKindFromUrl } from '../hostSkin.js';
 import { registerSaveHandlers } from './save.js';
-import { maybeOpenWelcome } from './onboarding.js';
+import { onInstalledWelcome } from './onboarding.js';
 
 registerSaveHandlers();
 
@@ -72,9 +72,8 @@ chrome.runtime.onInstalled.addListener(function (details) {
   });
   // Onboarding: welcome page on a fresh install (once per profile; the second
   // trigger — first export with no folder — lives in save.js deferToRegrant).
-  if (details && details.reason === 'install') {
-    maybeOpenWelcome('install').catch(function () {});
-  }
+  // Existing users updating get the flag silently and never see the page.
+  onInstalledWelcome(details).catch(function () {});
 });
 
 chrome.runtime.onStartup.addListener(function () {

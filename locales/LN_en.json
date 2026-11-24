@@ -94,6 +94,7 @@
   "toast.downloaded": "Downloaded: {name}",
   "toast.failed": "Export failed",
   "toast.regrant": "Folder access needed — click the folder button on the bar",
+  "toast.queueFull": "No folder chosen yet and this export is too big to hold — saved to Downloads instead",
   "bar.folder": "Save folder",
   "bar.folder.regrant": "Restore folder access",
   "bar.folder.set": "Set folder",
@@ -162,8 +163,8 @@
   "onboarding.title": "Thank you for installing Chat Export!",
   "onboarding.lead": "Chats are saved as files straight into a folder on your computer — nothing is uploaded anywhere.",
   "onboarding.stepFolder": "1. Choose a folder for exports",
-  "onboarding.folderNote": "You can change the folder any time in the extension settings.",
-  "onboarding.picked": "Folder «{name}» selected. Exports will be saved there.",
+  "onboarding.folderNote": "You can change the folder any time in the extension settings. After a browser restart Chrome may ask you to confirm folder access again — that's expected.",
+  "onboarding.picked": "Folder «{name}» selected.",
   "onboarding.stepRate": "2. Rate the extension",
   "onboarding.rateNote": "If Chat Export is useful to you, please rate it on the Chrome Web Store — it really helps the project.",
   "onboarding.rateCta": "Rate on Chrome Web Store",
@@ -175,5 +176,10 @@
   "onboarding.issues": "Bug reports (issues)",
   "onboarding.donate": "Donate",
   "onboarding.note": "Format, pack mode and the save folder can be changed any time from the extension popup — pin the Chat Export icon to the toolbar.",
-  "onboarding.done": "Done"
+  "onboarding.done": "Done",
+  "onboarding.queueNote": "An export started before you chose a folder waits until you pick one or close the browser.",
+  "onboarding.saveFailed": "Exports still waiting: {count}. {reason}",
+  "onboarding.err.permission": "Chrome did not grant access to the folder — try again and allow it.",
+  "onboarding.err.noFolder": "The folder is no longer available — choose it again.",
+  "onboarding.err.write": "Could not write the file — try again."
 }

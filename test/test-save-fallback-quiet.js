@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { loadChatExport } from './core-harness.js';
 
 function captureWarn(win) {
@@ -73,4 +74,43 @@ test('unexpected folder save error still console.warns once', async () => {
   assert.equal(res.via, 'downloads');
   assert.equal(warnings.length, 1);
   assert.match(warnings[0], /fell back to Downloads: error boom/);
+});
+
+test('too-large-to-queue falls back to Downloads with its own localized toast', async () => {
+  const { win, CE } = loadChatExport();
+  const en = JSON.parse(readFileSync(new URL('../locales/LN_en.json', import.meta.url), 'utf8'));
+  CE.setToastTranslator((key) => en[key] || key);
+  win.chrome = {
+    runtime: {
+      id: 'test',
+      lastError: undefined,
+      sendMessage(msg, cb) {
+        cb({ ok: false, reason: 'too-large-to-queue' });
+      }
+    }
+  };
+  const res = await CE.exportConversation({
+    platform: 'chatgpt',
+    title: 'Big',
+    messages: [
+      { role: 'user', text: 'hi' },
+      { role: 'assistant', text: 'hello' }
+    ],
+    formats: ['md'],
+    pack: 'file'
+  });
+  assert.equal(res.via, 'downloads');
+  assert.equal(res.reason, 'too-large-to-queue');
+  const toast = win.document.querySelector('.chat-export-toast');
+  assert.ok(toast, 'toast missing');
+  assert.equal(toast.textContent, en['toast.queueFull']);
+});
+
+test('slugTitle cuts long titles by code points, never half an emoji', () => {
+  const { CE } = loadChatExport();
+  const slug = CE.slugTitle('a'.repeat(79) + '😀😀');
+  assert.equal(Array.from(slug).length, 80);
+  assert.ok(slug.endsWith('😀'));
+  assert.ok(!/[\uD800-\uDBFF]$/.test(slug), 'no dangling high surrogate');
+  assert.equal(CE.slugTitle('Тест чат'), 'Тест_чат');
 });

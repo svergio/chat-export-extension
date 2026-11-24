@@ -73,7 +73,7 @@ function savedText(res, name) {
 }
 
 async function finish(name) {
-  const res = await sendBridge('folderPicked').catch(function (e) {
+  const res = await sendBridge('folderPicked', { allQueued: true }).catch(function (e) {
     return { ok: false, error: String((e && e.message) || e) };
   });
   if (res && res.ok) {
@@ -191,7 +191,7 @@ async function init() {
   cancelEl.textContent = t('folderPage.cancel');
   cancelEl.onclick = onCancel;
   chrome.runtime.onMessage.addListener(function (msg) {
-    if (!msg || msg.type !== 'ce-folder-queue' || msg.tabId !== state.tabId) return;
+    if (!msg || msg.type !== 'ce-folder-queue') return;
     state.count = msg.count || 0;
     if (msg.mode) state.mode = msg.mode;
     render();

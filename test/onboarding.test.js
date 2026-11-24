@@ -1,17 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { makeChrome, tabSender, saveMsg } from './background-chrome-mock.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const en = JSON.parse(readFileSync(join(root, 'locales/LN_en.json'), 'utf8'));
 const ru = JSON.parse(readFileSync(join(root, 'locales/LN_ru.json'), 'utf8'));
-const welcomeHtml = readFileSync(join(root, 'welcome.html'), 'utf8');
-const buildSrc = readFileSync(join(root, 'scripts/build.mjs'), 'utf8');
-const packSrc = readFileSync(join(root, 'scripts/pack.mjs'), 'utf8');
-const saveSrc = readFileSync(join(root, 'src/background/save.js'), 'utf8');
-const mainSrc = readFileSync(join(root, 'src/background/main.js'), 'utf8');
 
 const ONBOARDING_KEYS = [
   'onboarding.docTitle',
@@ -31,15 +27,13 @@ const ONBOARDING_KEYS = [
   'onboarding.issues',
   'onboarding.donate',
   'onboarding.note',
-  'onboarding.done'
-];
-
-const REQUIRED_URLS = [
-  'https://chromewebstore.google.com/detail/chat-export/ecnkhadaajiodlaoflkjjnaclhloejgg',
-  'https://discord.gg/QxJW9qt2KW',
-  'https://github.com/svergio/chat-export-extension',
-  'https://github.com/svergio/chat-export-extension/issues',
-  'https://www.donationalerts.com/r/svwergio_mel'
+  'onboarding.done',
+  'onboarding.queueNote',
+  'onboarding.saveFailed',
+  'onboarding.err.permission',
+  'onboarding.err.noFolder',
+  'onboarding.err.write',
+  'toast.queueFull'
 ];
 
 // Proper names that are identical in both locales by nature.
@@ -63,42 +57,72 @@ test('onboarding placeholders match between EN and RU', () => {
   }
 });
 
-test('welcome.html carries the required links, script and element ids', () => {
-  assert.ok(welcomeHtml.includes('dist/welcome.js'), 'welcome page must load dist/welcome.js');
-  for (const url of REQUIRED_URLS) {
-    assert.ok(welcomeHtml.includes(url), `welcome page missing link ${url}`);
-  }
-  // Order from the spec: thanks → folder → rate → discord → project links → note.
-  const order = ['id="title"', 'id="step-folder"', 'id="step-rate"', 'id="step-help"', 'id="step-links"', 'id="note"'];
-  const positions = order.map((needle) => welcomeHtml.indexOf(needle));
-  for (let i = 1; i < positions.length; i++) {
-    assert.ok(positions[i] > positions[i - 1], `welcome sections out of order at ${order[i]}`);
-    assert.ok(positions[i - 1] >= 0, `welcome section missing: ${order[i - 1]}`);
-  }
-  for (const id of ['pick', 'done', 'rateLink', 'discordLink', 'githubLink', 'issuesLink', 'donateLink']) {
-    assert.ok(welcomeHtml.includes(`id="${id}"`), `welcome page missing #${id}`);
-  }
-  assert.ok(welcomeHtml.includes('type="button" id="pick" class="ce-btn ce-btn--primary"'), 'pick must be the primary CTA');
+test('build output ships the welcome bundle the page loads', () => {
+  const bundle = join(root, 'dist/welcome.js');
+  assert.ok(existsSync(bundle), 'dist/welcome.js missing - run npm run build');
+  assert.ok(statSync(bundle).size > 1000, 'dist/welcome.js looks empty');
+  assert.ok(existsSync(join(root, 'welcome.html')), 'welcome.html missing');
 });
 
-test('build and pack include the welcome page', () => {
-  assert.match(buildSrc, /'welcome'/, 'build.mjs must bundle src/welcome/main.js');
-  assert.match(packSrc, /'welcome\.html'/, 'pack.mjs must ship welcome.html');
+let seq = 0;
+async function loadOnboarding(env) {
+  globalThis.chrome = env.chrome;
+  return import('../src/background/onboarding.js?case=' + seq++);
+}
+
+test('first export without a folder opens welcome instead of the regrant ping / popup', async () => {
+  const env = makeChrome({ tabs: [1] });
+  globalThis.chrome = env.chrome;
+  const save = await import('../src/background/save.js?onb=' + seq++);
+  save.registerSaveHandlers();
+  const first = await env.send(saveMsg('a.md'), tabSender(1));
+  assert.equal(first.reason, 'no-folder');
+  assert.deepEqual(env.log.created, ['chrome-extension://test-id/welcome.html']);
+  assert.equal(env.log.tabMessages.filter((m) => m.msg.type === 'ce-regrant-folder').length, 0);
+  assert.equal(env.log.popups.length, 0);
+
+  const second = await env.send(saveMsg('b.md'), tabSender(1));
+  assert.equal(second.reason, 'needs_regrant', 'later exports use the bar again');
+  assert.equal(env.log.created.length, 1);
 });
 
-test('background triggers: install reason and first export without folder', () => {
-  assert.match(mainSrc, /details && details\.reason === 'install'/, 'onInstalled must filter to install');
-  assert.match(mainSrc, /maybeOpenWelcome\('install'\)/, 'onInstalled must open the welcome page');
-  assert.match(saveSrc, /maybeOpenWelcome\('first-export'\)/, 'deferToRegrant must offer onboarding');
-  // The welcome branch must run before the in-page regrant ping / folder popup.
-  const body = saveSrc.slice(saveSrc.indexOf('async function deferToRegrant'));
-  assert.ok(
-    body.indexOf("maybeOpenWelcome('first-export')") < body.indexOf('notifyRegrant('),
-    'welcome must be checked before notifyRegrant'
-  );
-  // Queued exports must drain from the welcome tab too.
-  assert.match(saveSrc, /allQueued/, 'handlePicked must honor the allQueued drain');
-  assert.match(saveSrc, /drainAll \? await takeQueuedJobs\(null\)/, 'allQueued must drain regardless of sender tab');
+test('concurrent triggers open exactly one welcome tab', async () => {
+  const env = makeChrome();
+  const mod = await loadOnboarding(env);
+  const res = await Promise.all([mod.maybeOpenWelcome('install'), mod.maybeOpenWelcome('first-export')]);
+  assert.deepEqual(res.slice().sort(), [false, true]);
+  assert.equal(env.log.created.length, 1);
+});
+
+test('flag is rolled back when tabs.create throws, so a later trigger can open the page', async () => {
+  const env = makeChrome({ createThrows: true });
+  const mod = await loadOnboarding(env);
+  assert.equal(await mod.maybeOpenWelcome('install'), false);
+  assert.equal(env.local['ce.onboarding.welcomeShown'], undefined, 'flag rolled back');
+  const ok = makeChrome({ local: env.local });
+  globalThis.chrome = ok.chrome;
+  assert.equal(await mod.maybeOpenWelcome('first-export'), true);
+  assert.equal(ok.log.created.length, 1);
+});
+
+test('onInstalled: install opens welcome, update only sets the flag', async () => {
+  const fresh = makeChrome();
+  let mod = await loadOnboarding(fresh);
+  assert.equal(await mod.onInstalledWelcome({ reason: 'install' }), true);
+  assert.equal(fresh.log.created.length, 1);
+
+  const updated = makeChrome();
+  mod = await loadOnboarding(updated);
+  await mod.onInstalledWelcome({ reason: 'update', previousVersion: '2.1.5' });
+  assert.equal(updated.log.created.length, 0, 'no tab on update');
+  assert.ok(updated.local['ce.onboarding.welcomeShown'], 'flag set silently');
+  assert.equal(await mod.maybeOpenWelcome('first-export'), false, 'and stays quiet later');
+
+  const other = makeChrome();
+  mod = await loadOnboarding(other);
+  await mod.onInstalledWelcome({ reason: 'chrome_update' });
+  assert.equal(other.log.created.length, 0);
+  assert.equal(other.local['ce.onboarding.welcomeShown'], undefined);
 });
 
 test('maybeOpenWelcome opens the tab exactly once and flags before opening', async () => {

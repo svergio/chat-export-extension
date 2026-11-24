@@ -344,6 +344,18 @@ function ExportBarInner({ options }) {
       if (!msg || typeof msg !== 'object') return;
       if (msg.type === 'ce-folder-changed') {
         setFolderState({ state: msg.state || 'none', name: msg.name || null });
+        if (msg.state === 'granted') setPendingJobId(null);
+        return;
+      }
+      // Saved from another page (welcome / folder popup): leave the pending state.
+      if (msg.type === 'ce-saved') {
+        setPendingJobId((prev) => (!msg.jobId || prev === msg.jobId ? null : prev));
+        refreshFolderStatus();
+        return;
+      }
+      if (msg.type === 'ce-folder-queue' && msg.count === 0) {
+        setPendingJobId(null);
+        refreshFolderStatus();
         return;
       }
       if (msg.type === 'ce-regrant-folder') {

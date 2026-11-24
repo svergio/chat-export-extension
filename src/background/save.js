@@ -2,7 +2,13 @@ import { maybeOpenWelcome } from './onboarding.js';
 
 const MAX_B64 = 8 * 1024 * 1024;
 const JOB_PREFIX = 'ce.job.';
+// folder.html popup only: { windowId, tabId, mode }. Queued jobs live in QUEUE_KEY.
 const FOLDER_WIN_KEY = 'ce.folderWindow';
+// Exports waiting for a folder, from any tab: [{ id, tabId, mode }].
+const QUEUE_KEY = 'ce.folderQueue';
+// chrome.storage.session quota (10 MB since Chrome 112); keep headroom for the rest.
+const SESSION_QUOTA_FALLBACK = 10 * 1024 * 1024;
+const QUEUE_HEADROOM = 0.9;
 const OFFSCREEN_URL = 'offscreen.html';
 const WIN_W = 420;
 const WIN_H = 380;
@@ -55,7 +61,23 @@ function serial(fn) {
 const MODE_RANK = { grant: 0, pick: 1, rebind: 2 };
 
 function strongerMode(a, b) {
+  if (!a) return b || null;
   return (MODE_RANK[b] || 0) > (MODE_RANK[a] || 0) ? b : a;
+}
+
+async function readQueue() {
+  const got = await chrome.storage.session.get(QUEUE_KEY);
+  return Array.isArray(got[QUEUE_KEY]) ? got[QUEUE_KEY] : [];
+}
+
+function writeQueue(q) {
+  return q.length ? chrome.storage.session.set({ [QUEUE_KEY]: q }) : chrome.storage.session.remove(QUEUE_KEY);
+}
+
+function queueMode(q) {
+  let mode = null;
+  for (let i = 0; i < q.length; i++) mode = strongerMode(mode, q[i].mode);
+  return mode;
 }
 
 async function readFolderWindow() {
@@ -72,7 +94,7 @@ async function readFolderWindow() {
       return x.id === rec.tabId && String(x.url || x.pendingUrl || '').indexOf(page) === 0;
     });
   if (!tab) {
-    await dropJobs(rec.jobs);
+    // Only the popup record is stale; queued exports stay for their origin tabs.
     await chrome.storage.session.remove(FOLDER_WIN_KEY);
     return null;
   }
@@ -90,8 +112,24 @@ function dropJobs(ids) {
   return keys.length ? chrome.storage.session.remove(keys) : Promise.resolve();
 }
 
-function notifyQueue(rec) {
-  broadcast({ type: 'ce-folder-queue', tabId: rec.tabId, mode: rec.mode, count: rec.jobs.length });
+// Extension pages (folder popup, welcome) get the total; each origin tab gets its
+// own count so the bar can drop its pending state once the queue is empty.
+function notifyQueue(q, tabIds) {
+  broadcast({ type: 'ce-folder-queue', mode: queueMode(q), count: q.length });
+  const seen = [];
+  for (let i = 0; i < (tabIds || []).length; i++) {
+    const tabId = tabIds[i];
+    if (tabId == null || seen.indexOf(tabId) >= 0) continue;
+    seen.push(tabId);
+    const count = q.filter(function (e) {
+      return e.tabId === tabId;
+    }).length;
+    Promise.resolve()
+      .then(function () {
+        return chrome.tabs.sendMessage(tabId, { type: 'ce-folder-queue', count: count });
+      })
+      .catch(function () {});
+  }
 }
 
 async function createFolderPopup(mode, sender) {
@@ -120,79 +158,137 @@ async function createFolderPopup(mode, sender) {
 
 function openFolderPage(mode, jobId, sender) {
   return serial(async function () {
+    const q = await readQueue();
+    if (jobId && !q.some(function (e) {
+      return e.id === jobId;
+    })) {
+      const tabId = sender && sender.tab && sender.tab.id != null ? sender.tab.id : null;
+      q.push({ id: jobId, tabId: tabId, mode: mode });
+      await writeQueue(q);
+    }
     const open = await readFolderWindow();
     if (open) {
       const rec = open.rec;
-      if (jobId && rec.jobs.indexOf(jobId) < 0) rec.jobs.push(jobId);
       rec.mode = strongerMode(rec.mode, mode);
       await writeFolderRecord(rec);
-      notifyQueue(rec);
+      notifyQueue(q, []);
       await chrome.windows.update(rec.windowId, { focused: true }).catch(function () {});
       return open.win;
     }
     const win = await createFolderPopup(mode, sender);
     const tab = win.tabs && win.tabs[0];
-    await writeFolderRecord({
-      windowId: win.id,
-      tabId: tab ? tab.id : null,
-      mode: mode,
-      jobs: jobId ? [jobId] : []
-    });
+    await writeFolderRecord({ windowId: win.id, tabId: tab ? tab.id : null, mode: mode });
     return win;
   });
 }
 
-function dropWindowJobs(windowId) {
+function dropWindowRecord(windowId) {
   return serial(async function () {
     const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
     const rec = got[FOLDER_WIN_KEY];
     if (!rec || rec.windowId !== windowId) return;
-    await dropJobs(rec.jobs);
     await chrome.storage.session.remove(FOLDER_WIN_KEY);
   });
 }
 
-function takeQueuedJobs(tabId) {
+// Origin tab closed: nobody is waiting for its exports any more.
+function dropTabJobs(tabId) {
   return serial(async function () {
-    const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
-    const rec = got[FOLDER_WIN_KEY];
-    if (!rec || (tabId != null && rec.tabId !== tabId)) return [];
-    const ids = rec.jobs;
-    rec.jobs = [];
-    await writeFolderRecord(rec);
-    return ids;
+    const q = await readQueue();
+    const gone = q.filter(function (e) {
+      return e.tabId === tabId;
+    });
+    if (!gone.length) return;
+    const rest = q.filter(function (e) {
+      return e.tabId !== tabId;
+    });
+    await dropJobs(
+      gone.map(function (e) {
+        return e.id;
+      })
+    );
+    await writeQueue(rest);
+    notifyQueue(rest, []);
   });
 }
 
-function requeue(tabId, ids) {
+// pred(entry) selects entries to take; null takes the whole queue.
+function takeQueuedJobs(pred) {
   return serial(async function () {
-    const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
-    const rec = got[FOLDER_WIN_KEY];
-    // tabId === null: requeue into whichever record exists (the welcome page
-    // drains with allQueued and does not know the origin provider tab).
-    if (!rec || (tabId != null && rec.tabId !== tabId)) return dropJobs(ids);
-    rec.jobs = ids.concat(rec.jobs);
-    await writeFolderRecord(rec);
+    const q = await readQueue();
+    const taken = pred ? q.filter(pred) : q;
+    if (!taken.length) return [];
+    const rest = pred
+      ? q.filter(function (e) {
+          return !pred(e);
+        })
+      : [];
+    await writeQueue(rest);
+    return taken;
   });
 }
 
-async function queueInfo(tabId) {
+async function tabAlive(tabId) {
+  try {
+    return !!(await chrome.tabs.get(tabId));
+  } catch (e) {
+    return false;
+  }
+}
+
+// Failed jobs go back to the front of the queue under their origin tab; jobs
+// whose origin tab is already closed are dropped instead of left orphaned.
+function requeue(entries) {
+  return serial(async function () {
+    const keep = [];
+    const drop = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (e.tabId == null || (await tabAlive(e.tabId))) keep.push(e);
+      else drop.push(e.id);
+    }
+    await dropJobs(drop);
+    const q = await readQueue();
+    const next = keep
+      .filter(function (e) {
+        return !q.some(function (x) {
+          return x.id === e.id;
+        });
+      })
+      .concat(q);
+    await writeQueue(next);
+    notifyQueue(
+      next,
+      entries.map(function (e) {
+        return e.tabId;
+      })
+    );
+  });
+}
+
+async function queueInfo() {
+  const q = await readQueue();
   const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
   const rec = got[FOLDER_WIN_KEY];
-  if (!rec || rec.tabId !== tabId) return { ok: true, mode: null, count: 0 };
-  return { ok: true, mode: rec.mode, count: rec.jobs.length };
+  return { ok: true, mode: strongerMode(queueMode(q), rec ? rec.mode : null), count: q.length };
 }
 
-function cancelQueue(tabId) {
+function cancelQueue() {
   return serial(async function () {
-    const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
-    const rec = got[FOLDER_WIN_KEY];
-    if (!rec || rec.tabId !== tabId) return { ok: true, dropped: 0 };
-    const n = rec.jobs.length;
-    await dropJobs(rec.jobs);
-    rec.jobs = [];
-    await writeFolderRecord(rec);
-    return { ok: true, dropped: n };
+    const q = await readQueue();
+    await dropJobs(
+      q.map(function (e) {
+        return e.id;
+      })
+    );
+    await writeQueue([]);
+    notifyQueue(
+      [],
+      q.map(function (e) {
+        return e.tabId;
+      })
+    );
+    return { ok: true, dropped: q.length };
   });
 }
 
@@ -204,6 +300,18 @@ function normalizeFiles(files) {
     out.push({ name: String(f.name), mime: String(f.mime || 'application/octet-stream'), b64: f.b64 });
   }
   return out.length ? out : null;
+}
+
+async function canQueue(job) {
+  const area = chrome.storage.session;
+  const quota = area.QUOTA_BYTES || SESSION_QUOTA_FALLBACK;
+  let used = 0;
+  try {
+    if (typeof area.getBytesInUse === 'function') used = (await area.getBytesInUse(null)) || 0;
+  } catch (e) {
+    used = 0;
+  }
+  return used + JSON.stringify(job).length + 64 <= quota * QUEUE_HEADROOM;
 }
 
 async function storeJob(job) {
@@ -219,25 +327,15 @@ async function takeJob(id) {
   return got[key] || null;
 }
 
-async function attachJobToSender(jobId, mode, sender) {
-  const tabId = sender && sender.tab ? sender.tab.id : null;
-  if (tabId == null) return false;
+function enqueueJob(jobId, mode, sender) {
+  const tabId = sender && sender.tab && sender.tab.id != null ? sender.tab.id : null;
   return serial(async function () {
-    const got = await chrome.storage.session.get(FOLDER_WIN_KEY);
-    let rec = got[FOLDER_WIN_KEY];
-    if (!rec || rec.tabId !== tabId) {
-      rec = {
-        windowId: sender.tab.windowId != null ? sender.tab.windowId : null,
-        tabId: tabId,
-        mode: mode,
-        jobs: []
-      };
-    }
-    if (rec.jobs.indexOf(jobId) < 0) rec.jobs.push(jobId);
-    rec.mode = strongerMode(rec.mode, mode);
-    await writeFolderRecord(rec);
-    notifyQueue(rec);
-    return true;
+    const q = await readQueue();
+    if (!q.some(function (e) {
+      return e.id === jobId;
+    })) q.push({ id: jobId, tabId: tabId, mode: mode });
+    await writeQueue(q);
+    notifyQueue(q, []);
   });
 }
 
@@ -258,10 +356,21 @@ async function notifyRegrant(sender, jobId, mode) {
 }
 
 async function deferToRegrant(job, mode, sender) {
-  const jobId = await storeJob(job);
-  await attachJobToSender(jobId, mode, sender);
+  // Not enough room in storage.session to hold the export until a folder is
+  // chosen: the caller falls back to Downloads and says why.
+  let jobId = null;
+  if (await canQueue(job)) {
+    jobId = await storeJob(job).catch(function () {
+      return null;
+    });
+  }
+  if (!jobId) {
+    if (mode === 'pick') await maybeOpenWelcome('first-export');
+    return { ok: false, reason: 'too-large-to-queue' };
+  }
+  await enqueueJob(jobId, mode, sender);
   // First export that finds no folder ever = onboarding moment: open the
-  // welcome page (inline folder pick, drains the queued job via allQueued)
+  // welcome page (inline folder pick, drains the queue via allQueued)
   // instead of the blocking folder popup. The bar still gets the pending
   // no-folder response and keeps its own folder button as a fallback.
   if (mode === 'pick' && (await maybeOpenWelcome('first-export'))) {
@@ -312,49 +421,87 @@ async function handleSave(msg, sender) {
   return res;
 }
 
-function notifyOrigin(origin, res) {
+function notifyOrigin(origin, res, jobId) {
   if (!origin || origin.tabId == null) return;
   const opts = origin.frameId != null ? { frameId: origin.frameId } : undefined;
-  chrome.tabs
-    .sendMessage(origin.tabId, { type: 'ce-saved', name: res.name || null, folder: res.folder || null }, opts)
+  Promise.resolve()
+    .then(function () {
+      return chrome.tabs.sendMessage(
+        origin.tabId,
+        { type: 'ce-saved', jobId: jobId || null, name: res.name || null, folder: res.folder || null },
+        opts
+      );
+    })
     .catch(function () {});
 }
 
 async function handlePicked(msg, sender) {
   const tabId = sender && sender.tab ? sender.tab.id : null;
-  // Extension pages (welcome onboarding) may pass allQueued to drain jobs from
-  // any origin tab — they run outside the provider tab whose id would miss them.
+  // Extension pages (welcome, folder popup) pass allQueued to drain exports
+  // queued from every provider tab.
   const fromExtPage = !!(sender && sender.url && sender.url.indexOf(chrome.runtime.getURL('')) === 0);
   const drainAll = !!msg.allQueued && fromExtPage;
-  const ids = drainAll ? await takeQueuedJobs(null) : tabId != null ? await takeQueuedJobs(tabId) : [];
-  if (msg.jobId && ids.indexOf(msg.jobId) < 0) ids.push(msg.jobId);
+  const entries = drainAll
+    ? await takeQueuedJobs(null)
+    : tabId != null
+      ? await takeQueuedJobs(function (e) {
+          return e.tabId === tabId;
+        })
+      : [];
+  function has(id) {
+    return entries.some(function (e) {
+      return e.id === id;
+    });
+  }
+  if (msg.jobId && !has(msg.jobId)) {
+    const one = await takeQueuedJobs(function (e) {
+      return e.id === msg.jobId;
+    });
+    entries.push(one[0] || { id: msg.jobId, tabId: tabId, mode: 'pick' });
+  }
   // Also drain jobs attached to the provider tab (regrant from ExportBar).
   if (!drainAll && msg.originTabId != null && msg.originTabId !== tabId) {
-    const extra = await takeQueuedJobs(msg.originTabId);
+    const extra = await takeQueuedJobs(function (e) {
+      return e.tabId === msg.originTabId;
+    });
     for (let i = 0; i < extra.length; i++) {
-      if (ids.indexOf(extra[i]) < 0) ids.push(extra[i]);
+      if (!has(extra[i].id)) entries.push(extra[i]);
     }
   }
   const written = [];
   let failure = null;
-  for (let i = 0; i < ids.length; i++) {
-    const job = await takeJob(ids[i]);
+  let left = 0;
+  for (let i = 0; i < entries.length; i++) {
+    const job = await takeJob(entries[i].id);
     if (!job) continue;
-    const res = await offscreen('write', job);
+    let res;
+    try {
+      res = await offscreen('write', job);
+    } catch (e) {
+      res = { ok: false, reason: 'error', error: String((e && e.message) || e) };
+    }
     if (res.ok) {
       written.push(res.name);
-      notifyOrigin(job.origin, res);
+      notifyOrigin(job.origin, res, entries[i].id);
       continue;
     }
     failure = res;
-    await chrome.storage.session.set({ [JOB_PREFIX + ids[i]]: job });
-    if (drainAll) await requeue(null, ids.slice(i));
-    else if (tabId != null) await requeue(tabId, ids.slice(i));
+    await chrome.storage.session.set({ [JOB_PREFIX + entries[i].id]: job });
+    left = entries.length - i;
+    await requeue(entries.slice(i));
     break;
+  }
+  if (!failure && entries.length) {
+    notifyQueue(
+      await readQueue(),
+      entries.map(function (e) {
+        return e.tabId;
+      })
+    );
   }
   const st = await broadcastStatus();
   const out = { ok: !failure, state: st.state, name: st.name || null, saved: written.length, written: written };
-  if (failure) Object.assign(out, { reason: failure.reason, error: failure.error });
+  if (failure) Object.assign(out, { reason: failure.reason, error: failure.error, pending: left });
   return out;
 }
 
@@ -386,9 +533,9 @@ async function handleBridge(msg, sender) {
     case 'folderStore':
       return handleStoreHandle(msg, sender);
     case 'folderQueue':
-      return queueInfo(sender && sender.tab ? sender.tab.id : null);
+      return queueInfo();
     case 'folderCancel':
-      return cancelQueue(sender && sender.tab ? sender.tab.id : null);
+      return cancelQueue();
     default:
       return null;
   }
@@ -406,7 +553,10 @@ const BRIDGE_ACTIONS = [
 
 export function registerSaveHandlers() {
   chrome.windows.onRemoved.addListener(function (windowId) {
-    dropWindowJobs(windowId).catch(function () {});
+    dropWindowRecord(windowId).catch(function () {});
+  });
+  chrome.tabs.onRemoved.addListener(function (tabId) {
+    dropTabJobs(tabId).catch(function () {});
   });
   chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     if (!msg || typeof msg !== 'object') return;
