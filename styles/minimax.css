@@ -13,6 +13,7 @@
 }
 
 .chat-export-bar--minimax > .chat-export-fmt,
+.chat-export-bar--minimax > .chat-export-folder,
 .chat-export-bar--minimax > .chat-export-dl {
   box-sizing: border-box !important;
   position: relative !important;
@@ -40,6 +41,7 @@
   padding: 0 8px !important;
 }
 
+.chat-export-bar--minimax > .chat-export-folder,
 .chat-export-bar--minimax > .chat-export-dl {
   width: 30px !important;
   min-width: 30px !important;
@@ -50,12 +52,14 @@
 
 .chat-export-bar--minimax > .chat-export-fmt:hover,
 .chat-export-bar--minimax > .chat-export-fmt.is-open,
+.chat-export-bar--minimax > .chat-export-folder:hover,
 .chat-export-bar--minimax > .chat-export-dl:hover {
   background: var(--bg_interaction_tertiary_hover, #ffffff0a) !important;
   color: var(--text_default_primary, #ededed) !important;
 }
 
 .chat-export-bar--minimax > .chat-export-fmt:focus-visible,
+.chat-export-bar--minimax > .chat-export-folder:focus-visible,
 .chat-export-bar--minimax > .chat-export-dl:focus-visible {
   box-shadow: 0 0 0 2px var(--border_default, #ffffff12) !important;
 }
@@ -132,4 +136,11 @@
   --ce-menu-scale-x-from: 1;
   --ce-menu-scale-y-from: 0.8;
   transform-origin: left var(--ce-menu-origin-y, top);
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+.chat-export-bar--minimax > .chat-export-folder--warn,
+.chat-export-bar--minimax > .chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }

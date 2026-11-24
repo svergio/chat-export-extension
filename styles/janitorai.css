@@ -10,6 +10,7 @@
 }
 
 .chat-export-bar--janitorai > .chat-export-fmt,
+.chat-export-bar--janitorai > .chat-export-folder,
 .chat-export-bar--janitorai > .chat-export-dl {
   box-sizing: border-box !important;
   position: relative !important;
@@ -35,6 +36,7 @@
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease !important;
 }
 
+.chat-export-bar--janitorai > .chat-export-folder,
 .chat-export-bar--janitorai > .chat-export-dl {
   min-width: 32px !important;
   width: 32px !important;
@@ -43,6 +45,7 @@
 
 .chat-export-bar--janitorai > .chat-export-fmt:hover,
 .chat-export-bar--janitorai > .chat-export-fmt.is-open,
+.chat-export-bar--janitorai > .chat-export-folder:hover,
 .chat-export-bar--janitorai > .chat-export-dl:hover {
   background: var(--bg-inverse, rgba(255, 255, 255, 0.05)) !important;
   border-color: var(--jn-border-hover, rgba(255, 255, 255, 0.16)) !important;
@@ -50,6 +53,7 @@
 }
 
 .chat-export-bar--janitorai > .chat-export-fmt:focus-visible,
+.chat-export-bar--janitorai > .chat-export-folder:focus-visible,
 .chat-export-bar--janitorai > .chat-export-dl:focus-visible {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary, #f786f4) 55%, transparent) !important;
 }
@@ -84,6 +88,7 @@
 }
 
 .chat-export-bar--janitorai[data-ce-scheme='light'] > .chat-export-fmt,
+.chat-export-bar--janitorai[data-ce-scheme='light'] > .chat-export-folder,
 .chat-export-bar--janitorai[data-ce-scheme='light'] > .chat-export-dl {
   border-color: rgba(34, 24, 21, 0.12) !important;
   background: transparent !important;
@@ -92,6 +97,7 @@
 
 .chat-export-bar--janitorai[data-ce-scheme='light'] > .chat-export-fmt:hover,
 .chat-export-bar--janitorai[data-ce-scheme='light'] > .chat-export-fmt.is-open,
+.chat-export-bar--janitorai[data-ce-scheme='light'] > .chat-export-folder:hover,
 .chat-export-bar--janitorai[data-ce-scheme='light'] > .chat-export-dl:hover {
   background: rgba(247, 134, 244, 0.1) !important;
   border-color: rgba(247, 134, 244, 0.35) !important;
@@ -154,4 +160,11 @@
   --ce-menu-tx-from: 0px;
   --ce-menu-ty-from: -4px;
   transform-origin: right var(--ce-menu-origin-y, top);
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+.chat-export-bar--janitorai > .chat-export-folder--warn,
+.chat-export-bar--janitorai > .chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }
