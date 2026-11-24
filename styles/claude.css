@@ -14,6 +14,7 @@
   min-height: 0 !important;
 }
 
+.chat-export-bar--claude > .chat-export-folder,
 .chat-export-bar--claude > .chat-export-dl {
   width: var(--cds-h-control, 24px) !important;
   min-width: var(--cds-h-control, 24px) !important;
@@ -111,4 +112,33 @@
   --ce-menu-tx-from: 0px;
   --ce-menu-ty-from: 0px;
   --ce-menu-blur-from: 0px;
+}
+
+/* Folder: base.css leaves color: inherit (host slot colour leaks in). Pin the
+   model chip / attach ink from site-maps/claude.ai.styles.json per scheme. */
+.chat-export-bar--claude > .chat-export-folder {
+  border: 0 !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.93) !important;
+}
+
+.chat-export-bar--claude[data-ce-scheme='light'] > .chat-export-folder {
+  color: #141413 !important;
+}
+
+.chat-export-bar--claude > .chat-export-folder:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent) !important;
+}
+
+.chat-export-bar--claude > .chat-export-folder:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 35%, transparent) !important;
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+/* [data-ce-scheme] + double class: outrank the scheme colour pins and :hover above. */
+.chat-export-bar--claude[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--claude[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }

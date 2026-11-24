@@ -33,11 +33,13 @@
 
 .chat-export-bar--chatgpt > .chat-export-fmt:hover,
 .chat-export-bar--chatgpt > .chat-export-fmt.is-open,
+.chat-export-bar--chatgpt > .chat-export-folder:hover,
 .chat-export-bar--chatgpt > .chat-export-dl:not(.is-super):hover {
   background-color: var(--color-background-secondary-ghost-hover, rgba(127, 127, 127, 0.12)) !important;
 }
 
 .chat-export-bar--chatgpt > .chat-export-fmt:focus-visible,
+.chat-export-bar--chatgpt > .chat-export-folder:focus-visible,
 .chat-export-bar--chatgpt > .chat-export-dl:focus-visible {
   outline: none !important;
   box-shadow: 0 0 0 2px var(--color-ring, #0285ff) !important;
@@ -65,7 +67,8 @@
   color: inherit !important;
 }
 
-/* Download: round attach/dictate icon button (36px, 20px icon in text-primary) */
+/* Download + folder: round attach/dictate icon button (36px, 20px icon in text-primary) */
+.chat-export-bar--chatgpt > .chat-export-folder,
 .chat-export-bar--chatgpt .chat-export-dl {
   width: 36px !important;
   min-width: 36px !important;
@@ -84,6 +87,7 @@
   justify-content: center !important;
 }
 
+.chat-export-bar--chatgpt > .chat-export-folder,
 .chat-export-bar--chatgpt .chat-export-dl:not(.is-super) {
   background: transparent !important;
   background-color: transparent !important;
@@ -97,6 +101,7 @@
   justify-content: center;
 }
 
+.chat-export-bar--chatgpt > .chat-export-folder > .chat-export-folder-icon,
 .chat-export-bar--chatgpt .chat-export-dl svg {
   width: 20px !important;
   height: 20px !important;
@@ -171,4 +176,12 @@
   --ce-menu-tx-from: 0px;
   --ce-menu-ty-from: 0px;
   --ce-menu-blur-from: 0px;
+}
+
+/* Folder state "needs folder / regrant": orange, same as base and other skins. */
+/* [data-ce-scheme] + double class: outrank the scheme colour pins and :hover above. */
+.chat-export-bar--chatgpt[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn,
+.chat-export-bar--chatgpt[data-ce-scheme] > .chat-export-folder.chat-export-folder--warn:hover {
+  border-color: #c45c26 !important;
+  color: #c45c26 !important;
 }
