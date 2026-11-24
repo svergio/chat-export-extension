@@ -35,7 +35,8 @@ test('qwen.css pins the folder button color in both schemes', () => {
   // pin an explicit color, and the warn (rebind) state must stay orange.
   const dark = /\.chat-export-bar--qwen > \.chat-export-folder \{[^}]*color:\s*var\(/;
   const light = /\[data-ce-scheme='light'\] > \.chat-export-folder \{[^}]*color:\s*var\(/;
-  const warn = /\.chat-export-bar--qwen > \.chat-export-folder--warn \{[^}]*color:\s*#c45c26/;
+  // Warn must out-rank the light-scheme folder rule (0,3,0) or it loses in light theme.
+  const warn = /\.chat-export-bar--qwen\[data-ce-scheme\] > \.chat-export-folder\.chat-export-folder--warn:hover \{[^}]*color:\s*#c45c26/;
   assert.match(text, dark, 'dark scheme must pin folder color');
   assert.match(text, light, 'light scheme must pin folder color');
   assert.match(text, warn, 'warn state must stay #c45c26');
