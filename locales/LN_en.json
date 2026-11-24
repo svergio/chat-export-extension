@@ -100,6 +100,8 @@
   "toast.incompleteMissing": "{count} messages could not be loaded",
   "toast.incompleteCap": "the chat is longer than the export limit",
   "toast.incompletePage": "part of the chat could not be loaded",
+  "toast.incompleteGenerating": "the reply that is still being generated is not saved yet",
+  "toast.noteDangling": "{count} message(s) without a reply (generation was cancelled; JanitorAI does not save a partial reply)",
   "toast.downloadedNotFolder": "Saved to Downloads, NOT to your folder: {name}",
   "toast.apiOnlyFailed": "Export failed: the chat API is unavailable (sign in again or reload the page)",
   "bar.folder": "Save folder",

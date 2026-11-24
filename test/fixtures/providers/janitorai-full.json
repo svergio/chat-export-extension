@@ -1,0 +1,38 @@
+{
+  "chat": {
+    "id": 3281735783,
+    "character_id": "f6edc272-25a0-4617-a876-36383b732d39",
+    "user_id": "1ecfc9d8-0000-0000-0000-000000000000",
+    "created_at": "2026-11-22T10:00:00.000Z",
+    "conversation_locale": "ru",
+    "summary": "Snow probe summary",
+    "summary_chat_id": null,
+    "persona_id": null,
+    "is_public": false,
+    "can_publish": true
+  },
+  "fork_source_chat_id": 2479896085,
+  "character": {
+    "id": "f6edc272-25a0-4617-a876-36383b732d39",
+    "name": "Q Cold",
+    "display_name": "Q Cold",
+    "chat_name": "Q",
+    "avatar": "q-cold.webp",
+    "description": "A cold character card.",
+    "first_message": "greet",
+    "first_messages": ["greet"],
+    "is_nsfw": false
+  },
+  "personas": [
+    { "id": "p-profile", "name": "oleg", "type": "profile", "user_name": "Oleg_Tinkoff" },
+    { "id": "p-alt", "name": "alt", "type": "persona", "user_name": "Oleg_Tinkoff" }
+  ],
+  "chatMessages": [
+    { "id": 6, "chat_id": 3281735783, "created_at": "2026-11-22T10:05:00.000Z", "is_bot": true, "is_main": false, "rating": null, "message": "reply-2", "metadata": { "generation_request_ids": ["req_b"] } },
+    { "id": 5, "chat_id": 3281735783, "created_at": "2026-11-22T10:04:00.000Z", "is_bot": false, "is_main": true, "message": "resent", "metadata": { "persona_id": null } },
+    { "id": 4, "chat_id": 3281735783, "created_at": "2026-11-22T10:03:00.000Z", "is_bot": false, "is_main": true, "message": "cancelled-turn", "metadata": { "persona_id": null } },
+    { "id": 3, "chat_id": 3281735783, "created_at": "2026-11-22T10:02:00.000Z", "is_bot": true, "is_main": true, "rating": 1, "message": "reply-1", "metadata": { "generation_request_ids": ["req_a"] } },
+    { "id": 2, "chat_id": 3281735783, "created_at": "2026-11-22T10:01:00.000Z", "is_bot": false, "is_main": true, "message": "hi", "metadata": { "persona_id": null } },
+    { "id": 1, "chat_id": 3281735783, "created_at": "2026-11-22T10:00:00.000Z", "is_bot": true, "is_main": true, "message": "greet", "metadata": {} }
+  ]
+}

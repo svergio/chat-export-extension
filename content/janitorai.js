@@ -320,13 +320,19 @@
     return null;
   }
 
+  // KI-008: while a reply streams, JanitorAI turns the send button into
+  // "Отмена" / "Cancel". "Cancel" alone is only trusted inside the composer:
+  // the inline message editor has its own "Сохранить / Отмена" pair.
   function findStopButton() {
+    var shell = composerShell(findComposerInput());
     var btns = document.querySelectorAll('button, [role="button"]');
     var i;
     for (i = 0; i < btns.length; i++) {
       if (!visible(btns[i])) continue;
       if (btns[i].closest('[data-chat-export], .chat-export-menu')) continue;
-      if (/stop|останов|cancel|прерв|abort/i.test(labelOf(btns[i]))) return btns[i];
+      var blob = labelOf(btns[i]);
+      if (/stop|останов|прерв|abort/i.test(blob)) return btns[i];
+      if (shell && shell.contains(btns[i]) && /cancel|отмен/i.test(blob)) return btns[i];
     }
     return null;
   }
@@ -337,6 +343,26 @@
     var send = findSendButton();
     if (send && (send.disabled || /loading|busy|spin/i.test(String(send.className || '')))) return true;
     return false;
+  }
+
+  // Export-side check (KI-008): only an explicit stop/cancel control or a
+  // busy send button counts. A *disabled* send button is not used here: it is
+  // also disabled when the composer is simply empty, which would make every
+  // export wait for nothing.
+  function isStreaming() {
+    var stop = findStopButton();
+    if (stop && !stop.disabled) return true;
+    var send = findSendButton();
+    return !!(send && /loading|busy|spin/i.test(String(send.className || '')));
+  }
+
+  async function waitForStreamEnd(timeoutMs) {
+    await Ops.waitFor(
+      function () {
+        return isStreaming() ? null : true;
+      },
+      { timeoutMs: timeoutMs, message: 'JanitorAI generation still running' }
+    );
   }
 
   async function waitForIdle(opts) {
@@ -483,6 +509,36 @@
     };
   }
 
+  function present(v) {
+    return v != null && v !== '' && !(Array.isArray(v) && !v.length);
+  }
+
+  function pickFields(src, keys) {
+    var out = {};
+    if (!src || typeof src !== 'object') return out;
+    for (var i = 0; i < keys.length; i++) {
+      if (present(src[keys[i]])) out[keys[i]] = src[keys[i]];
+    }
+    return out;
+  }
+
+  function hasKeys(o) {
+    return !!o && typeof o === 'object' && Object.keys(o).length > 0;
+  }
+
+  // KI-006: keep the REST row metadata (ids, timestamps, commit flag, rating,
+  // persona / generation request ids). Exported as messages[].meta in JSON.
+  function messageMeta(m) {
+    var meta = pickFields(m, ['id', 'created_at', 'rating']);
+    if (typeof m.is_main === 'boolean') meta.is_main = m.is_main;
+    var md = m.metadata && typeof m.metadata === 'object' ? m.metadata : {};
+    if (present(md.persona_id)) meta.persona_id = md.persona_id;
+    if (Array.isArray(md.generation_request_ids) && md.generation_request_ids.length) {
+      meta.generation_request_ids = md.generation_request_ids.slice();
+    }
+    return meta;
+  }
+
   function mapApiMessages(messages) {
     var out = [];
     var i;
@@ -492,21 +548,23 @@
       var text = String(m.message || m.content || m.text || '').trim();
       if (!text) continue;
       var isBot = m.is_bot === true || m.isBot === true || String(m.role || '').toLowerCase() === 'assistant';
-      if (isBot) {
-        out.push({
-          role: 'assistant',
-          roleTag: CE.modelFenceTag ? CE.modelFenceTag('', 'janitorai') : 'janitorai',
-          text: text,
-          links: []
-        });
-      } else {
-        out.push({
-          role: 'user',
-          roleTag: 'user',
-          text: text,
-          links: []
-        });
-      }
+      var row = isBot
+        ? {
+            role: 'assistant',
+            roleTag: CE.modelFenceTag ? CE.modelFenceTag('', 'janitorai') : 'janitorai',
+            text: text,
+            links: []
+          }
+        : {
+            role: 'user',
+            roleTag: 'user',
+            text: text,
+            links: []
+          };
+      var meta = messageMeta(m);
+      if (m.__ceNoReply) meta.no_reply = true;
+      if (hasKeys(meta)) row.meta = meta;
+      out.push(row);
     }
     return out;
   }
@@ -579,7 +637,97 @@
     return out;
   }
 
-  function payloadFromGet(data, chatId) {
+  // KI-006: persona/profile the chat runs under. GET carries personas[] (and
+  // chat.persona_id / user-row metadata.persona_id); a profile entry is the
+  // account's default persona when no explicit persona is selected.
+  function personaFrom(data, chat, messages) {
+    var list = Array.isArray(data && data.personas) ? data.personas : [];
+    if (data && data.profile && typeof data.profile === 'object') list = list.concat([data.profile]);
+    var want = chat.persona_id;
+    for (var i = messages.length - 1; !present(want) && i >= 0; i--) {
+      var md = messages[i] && !isBotRow(messages[i]) && messages[i].metadata;
+      if (md && present(md.persona_id)) want = md.persona_id;
+    }
+    var hit = null;
+    if (present(want)) {
+      hit = list.filter(function (p) {
+        return p && String(p.id) === String(want);
+      })[0];
+    }
+    if (!hit) {
+      hit = list.filter(function (p) {
+        return p && p.type === 'profile';
+      })[0];
+    }
+    if (!hit && list.length === 1) hit = list[0];
+    var out = pickFields(hit, ['id', 'name', 'user_name', 'type']);
+    if (!out.id && present(want)) out.id = want;
+    return out;
+  }
+
+  // KI-006: chat/character/persona context that the export used to drop.
+  // Model and context usage are NOT here: JanitorAI only sends them over the
+  // generateAlpha WebSocket stream and never persists them (provider limit).
+  function contextFrom(data, chat, character, persona) {
+    var ctx = pickFields(chat, ['conversation_locale', 'summary', 'persona_id', 'created_at', 'is_public']);
+    if (ctx.created_at) {
+      ctx.chat_created_at = ctx.created_at;
+      delete ctx.created_at;
+    }
+    var fork = (data && data.fork_source_chat_id) || chat.fork_source_chat_id;
+    if (present(fork)) ctx.fork_source_chat_id = fork;
+    var ch = pickFields(character, [
+      'id',
+      'name',
+      'display_name',
+      'chat_name',
+      'avatar',
+      'description',
+      'first_message',
+      'is_nsfw'
+    ]);
+    if (hasKeys(ch)) ctx.character = ch;
+    if (hasKeys(persona)) ctx.persona = persona;
+    return ctx;
+  }
+
+  // KI-009: "Отмена" aborts the stream after the user row was already saved,
+  // so that turn never gets a reply (provider behavior, nothing to recover).
+  // Mark such user rows: followed by another user row, or last in the chat
+  // while no generation is running. Returns the number of marked rows.
+  function markDanglingTurns(messages, generating) {
+    var n = 0;
+    for (var i = 0; i < messages.length; i++) {
+      var m = messages[i];
+      if (!m || isBotRow(m)) continue;
+      if (!String(m.message || m.content || m.text || '').trim()) continue;
+      var next = null;
+      for (var j = i + 1; j < messages.length; j++) {
+        if (messages[j] && String(messages[j].message || messages[j].content || messages[j].text || '').trim()) {
+          next = messages[j];
+          break;
+        }
+      }
+      var dangling = next ? !isBotRow(next) : !generating;
+      if (dangling) {
+        messages[i] = Object.assign({}, m, { __ceNoReply: true });
+        n++;
+      }
+    }
+    return n;
+  }
+
+  function lastIsUserTurn(messages) {
+    for (var i = messages.length - 1; i >= 0; i--) {
+      var m = messages[i];
+      if (!m || !String(m.message || m.content || m.text || '').trim()) continue;
+      return !isBotRow(m);
+    }
+    return false;
+  }
+
+  function payloadFromGet(data, chatId, opts) {
+    opts = opts || {};
     var chat = (data && data.chat) || {};
     var character = (data && data.character) || {};
     var messages = dropSwipeVariants(
@@ -589,24 +737,75 @@
       String(chat.title || chat.name || character.name || character.char_name || findTitle() || 'chat').trim() ||
       'chat';
     var user = findUserMeta();
+    var persona = personaFrom(data, chat, messages);
+    var warnings = [];
+    var notes = [];
+    // KI-008: the in-flight reply is only in the DOM/WebSocket until the page
+    // POSTs it after "done"; REST has just the persisted rows.
+    if (opts.generating && lastIsUserTurn(messages)) warnings.push('generation-active');
+    var dangling = markDanglingTurns(messages, !!opts.generating);
+    if (dangling) notes.push('dangling-turns:' + dangling);
     return {
       platform: PLATFORM,
       url: chatUrl(chatId),
       title: title,
       chatId: String(chatId),
+      // KI-007: the chat id goes into the file name so two chats with the
+      // same character on the same day do not collide.
+      fileKey: String(chatId),
       model: findModel(),
-      userName: user.userName || '',
-      userHandle: user.userHandle || '',
+      userName: user.userName || persona.name || '',
+      userHandle: user.userHandle || persona.user_name || '',
       userEmail: user.userEmail || '',
+      context: contextFrom(data, chat, character, persona),
+      warnings: warnings,
+      notes: notes,
       messages: mapApiMessages(messages)
     };
   }
 
-  async function loadChatFromApi(chatId) {
+  async function fetchChat(chatId) {
     var res = await apiFetch('/hampter/chats/' + encodeURIComponent(chatId));
     if (res.status === 404) rpcErr('NOT_FOUND', 'conversation not found: ' + chatId);
-    var data = await readJson(res, 'get');
-    return payloadFromGet(data, chatId);
+    return readJson(res, 'get');
+  }
+
+  async function loadChatFromApi(chatId, opts) {
+    return payloadFromGet(await fetchChat(chatId), chatId, opts);
+  }
+
+  var GENERATION_WAIT_MS = 20000;
+  var PERSIST_SETTLE_MS = 1200;
+
+  function pause(ms) {
+    return Ops.sleep ? Ops.sleep(ms) : new Promise(function (r) { setTimeout(r, ms); });
+  }
+
+  // KI-008: export of the open chat while a reply streams. Wait (bounded) for
+  // the stream to finish and for the page to POST the reply, then read REST.
+  // Still generating after the wait -> export what is saved, flagged
+  // 'generation-active' so the bar warns instead of failing silently.
+  async function loadOpenChat(chatId) {
+    var waited = false;
+    if (isStreaming()) {
+      waited = true;
+      try {
+        if (Ops.waitFor) await waitForStreamEnd(GENERATION_WAIT_MS);
+      } catch (e) {}
+      if (!isStreaming()) await pause(PERSIST_SETTLE_MS);
+    }
+    var generating = isStreaming();
+    var data = await fetchChat(chatId);
+    var payload = payloadFromGet(data, chatId, { generating: generating });
+    // The reply POST can land just after the button flips back to "send".
+    if (waited && !generating && payload.notes.length) {
+      var rows = chronologicalMessages((data && data.chatMessages) || []);
+      if (lastIsUserTurn(dropSwipeVariants(rows))) {
+        await pause(PERSIST_SETTLE_MS);
+        payload = await loadChatFromApi(chatId, { generating: isStreaming() });
+      }
+    }
+    return payload;
   }
 
   function listFromDom(query) {
@@ -798,7 +997,7 @@
     var chatId = currentChatId();
     if (!chatId) rpcErr('NOT_FOUND', 'JanitorAI chat id not found in URL', { apiOnly: true });
     try {
-      return await loadChatFromApi(chatId);
+      return await loadOpenChat(chatId);
     } catch (e) {
       var details = Object.assign({}, (e && e.details) || {}, { apiOnly: true, code: (e && e.code) || 'HOST_ERROR' });
       throw new CE.RpcError((e && e.code) || 'HOST_ERROR', (e && e.message) || 'JanitorAI export failed', details);
@@ -868,8 +1067,9 @@
             chatId = currentChatId();
             if (!chatId) rpcErr('BAD_REQUEST', 'chatId required');
           }
-          var payload = await loadChatFromApi(chatId);
-          if (chatId === currentChatId()) payload.url = location.href;
+          var isOpen = chatId === currentChatId();
+          var payload = await loadChatFromApi(chatId, { generating: isOpen && isStreaming() });
+          if (isOpen) payload.url = location.href;
           return payload;
         } catch (err) {
           hostErr(err);

@@ -912,6 +912,11 @@
     for (var i = 0; i < infoKeys.length; i++) {
       payload[infoKeys[i]] = info[infoKeys[i]];
     }
+    // Optional, additive (chat-export/1 stays backward compatible): provider
+    // chat context and per-message metadata, when the platform supplies them.
+    if (meta.context && typeof meta.context === 'object' && Object.keys(meta.context).length) {
+      payload.context = meta.context;
+    }
     payload.messages = (messages || []).map(function (msg) {
       var m = {
         role: msg.role,
@@ -920,6 +925,7 @@
       };
       if (msg.links && msg.links.length) m.links = msg.links;
       if (msg.sources && msg.sources.length) m.sources = msg.sources;
+      if (msg.meta && typeof msg.meta === 'object' && Object.keys(msg.meta).length) m.meta = msg.meta;
       return m;
     });
     return JSON.stringify(payload, null, 2) + '\n';
@@ -1122,6 +1128,16 @@
     return t;
   }
 
+  // Optional per-chat discriminator for the file name (KI-007): platforms whose
+  // title is the character name (JanitorAI) pass the chat id so two chats with
+  // the same character on the same day do not collide.
+  function fileKeyPart(key) {
+    var k = String(key == null ? '' : key)
+      .replace(/[^A-Za-z0-9._-]/g, '')
+      .slice(0, 40);
+    return k ? '-' + k : '';
+  }
+
   function dateStamp(d) {
     var x = d || new Date();
     var y = x.getFullYear();
@@ -1218,8 +1234,21 @@
       else if (w[i] === 'node-cap') details.push(toastText('toast.incompleteCap'));
       else if (w[i] === 'page-cap') details.push(toastText('toast.incompleteCap'));
       else if (w[i] === 'page-error') details.push(toastText('toast.incompletePage'));
+      else if (w[i] === 'generation-active') details.push(toastText('toast.incompleteGenerating'));
     }
     return toastText('toast.incompleteApi', { detail: details.join('; ') || '?' });
+  }
+
+  // Informational notes (not "incomplete"): e.g. JanitorAI user turns whose
+  // reply was cancelled and never saved by the provider (KI-009).
+  function exportNoteText(opts) {
+    var n = (opts && opts.notes) || [];
+    var out = [];
+    for (var i = 0; i < n.length; i++) {
+      var m = /^dangling-turns:(\d+)$/.exec(String(n[i]));
+      if (m) out.push(toastText('toast.noteDangling', { count: m[1] }));
+    }
+    return out.join('; ');
   }
 
   function setExportWarning(text) {
@@ -1716,9 +1745,10 @@
       model: opts.model || '',
       user_name: opts.userName || '',
       user_handle: opts.userHandle || '',
-      user_email: opts.userEmail || ''
+      user_email: opts.userEmail || '',
+      context: opts.context && typeof opts.context === 'object' ? opts.context : null
     };
-    var base = platform + '-' + slugTitle(title) + '-' + dateStamp(now);
+    var base = platform + '-' + slugTitle(title) + fileKeyPart(opts.fileKey) + '-' + dateStamp(now);
     return buildExportFiles(base, metaMd, metaYaml, messages, formats, opts).then(function (files) {
       return { base: base, files: files };
     });
@@ -1727,7 +1757,11 @@
   function exportConversation(opts) {
     var formats = normalizeFormats(opts.formats);
     var pack = resolvePack(formats.length, opts.pack, 0);
-    setExportWarning(exportWarningText(opts));
+    setExportWarning(
+      [exportWarningText(opts), exportNoteText(opts)]
+        .filter(Boolean)
+        .join('; ')
+    );
     return buildExportBundle(opts).then(function (bundle) {
       var base = bundle.base;
       var files = bundle.files;

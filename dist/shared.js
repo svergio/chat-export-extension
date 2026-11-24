@@ -842,6 +842,9 @@
       for (var i3 = 0; i3 < infoKeys.length; i3++) {
         payload[infoKeys[i3]] = info[infoKeys[i3]];
       }
+      if (meta.context && typeof meta.context === "object" && Object.keys(meta.context).length) {
+        payload.context = meta.context;
+      }
       payload.messages = (messages || []).map(function(msg) {
         var m3 = {
           role: msg.role,
@@ -850,6 +853,7 @@
         };
         if (msg.links && msg.links.length) m3.links = msg.links;
         if (msg.sources && msg.sources.length) m3.sources = msg.sources;
+        if (msg.meta && typeof msg.meta === "object" && Object.keys(msg.meta).length) m3.meta = msg.meta;
         return m3;
       });
       return JSON.stringify(payload, null, 2) + "\n";
@@ -1025,6 +1029,10 @@
       if (chars.length > 80) t3 = chars.slice(0, 80).join("");
       return t3;
     }
+    function fileKeyPart(key) {
+      var k3 = String(key == null ? "" : key).replace(/[^A-Za-z0-9._-]/g, "").slice(0, 40);
+      return k3 ? "-" + k3 : "";
+    }
     function dateStamp(d3) {
       var x4 = d3 || /* @__PURE__ */ new Date();
       var y3 = x4.getFullYear();
@@ -1109,8 +1117,18 @@
         else if (w4[i3] === "node-cap") details.push(toastText("toast.incompleteCap"));
         else if (w4[i3] === "page-cap") details.push(toastText("toast.incompleteCap"));
         else if (w4[i3] === "page-error") details.push(toastText("toast.incompletePage"));
+        else if (w4[i3] === "generation-active") details.push(toastText("toast.incompleteGenerating"));
       }
       return toastText("toast.incompleteApi", { detail: details.join("; ") || "?" });
+    }
+    function exportNoteText(opts) {
+      var n2 = opts && opts.notes || [];
+      var out = [];
+      for (var i3 = 0; i3 < n2.length; i3++) {
+        var m3 = /^dangling-turns:(\d+)$/.exec(String(n2[i3]));
+        if (m3) out.push(toastText("toast.noteDangling", { count: m3[1] }));
+      }
+      return out.join("; ");
     }
     function setExportWarning(text) {
       exportWarning = text ? { text, until: Date.now() + EXPORT_WARNING_TTL_MS } : null;
@@ -1578,9 +1596,10 @@
         model: opts.model || "",
         user_name: opts.userName || "",
         user_handle: opts.userHandle || "",
-        user_email: opts.userEmail || ""
+        user_email: opts.userEmail || "",
+        context: opts.context && typeof opts.context === "object" ? opts.context : null
       };
-      var base = platform + "-" + slugTitle(title) + "-" + dateStamp(now);
+      var base = platform + "-" + slugTitle(title) + fileKeyPart(opts.fileKey) + "-" + dateStamp(now);
       return buildExportFiles(base, metaMd, metaYaml, messages, formats, opts).then(function(files) {
         return { base, files };
       });
@@ -1588,7 +1607,9 @@
     function exportConversation(opts) {
       var formats = normalizeFormats(opts.formats);
       var pack = resolvePack(formats.length, opts.pack, 0);
-      setExportWarning(exportWarningText(opts));
+      setExportWarning(
+        [exportWarningText(opts), exportNoteText(opts)].filter(Boolean).join("; ")
+      );
       return buildExportBundle(opts).then(function(bundle) {
         var base = bundle.base;
         var files = bundle.files;
@@ -2778,6 +2799,8 @@
     "toast.incompleteMissing": "{count} messages could not be loaded",
     "toast.incompleteCap": "the chat is longer than the export limit",
     "toast.incompletePage": "part of the chat could not be loaded",
+    "toast.incompleteGenerating": "the reply that is still being generated is not saved yet",
+    "toast.noteDangling": "{count} message(s) without a reply (generation was cancelled; JanitorAI does not save a partial reply)",
     "toast.downloadedNotFolder": "Saved to Downloads, NOT to your folder: {name}",
     "toast.apiOnlyFailed": "Export failed: the chat API is unavailable (sign in again or reload the page)",
     "bar.folder": "Save folder",
@@ -2972,6 +2995,8 @@
     "toast.incompleteMissing": "\u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439: {count}",
     "toast.incompleteCap": "\u0447\u0430\u0442 \u0434\u043B\u0438\u043D\u043D\u0435\u0435 \u043B\u0438\u043C\u0438\u0442\u0430 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
     "toast.incompletePage": "\u0447\u0430\u0441\u0442\u044C \u0447\u0430\u0442\u0430 \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u043B\u0430\u0441\u044C",
+    "toast.incompleteGenerating": "\u043E\u0442\u0432\u0435\u0442 \u0435\u0449\u0451 \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0438 \u043F\u043E\u043A\u0430 \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D",
+    "toast.noteDangling": "\u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439 \u0431\u0435\u0437 \u043E\u0442\u0432\u0435\u0442\u0430: {count} (\u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044E \u043E\u0442\u043C\u0435\u043D\u0438\u043B\u0438, JanitorAI \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0447\u0430\u0441\u0442\u0438\u0447\u043D\u044B\u0439 \u043E\u0442\u0432\u0435\u0442)",
     "toast.downloadedNotFolder": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB, \u0430 \u041D\u0415 \u0432 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u043F\u0430\u043F\u043A\u0443: {name}",
     "toast.apiOnlyFailed": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F: API \u0447\u0430\u0442\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E (\u0432\u043E\u0439\u0434\u0438 \u0437\u0430\u043D\u043E\u0432\u043E \u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443)",
     "bar.folder": "\u041F\u0430\u043F\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
@@ -3796,6 +3821,8 @@
           userHandle: payload.userHandle,
           userEmail: payload.userEmail,
           messages: payload.messages,
+          context: payload.context,
+          fileKey: payload.fileKey,
           formats: selected,
           pack,
           picked,
@@ -3803,7 +3830,8 @@
           exportSchemas: settings && settings.exportSchemas,
           source: payload.source,
           incomplete: payload.incomplete,
-          warnings: payload.warnings
+          warnings: payload.warnings,
+          notes: payload.notes
         });
       }).then((res) => {
         if (res && res.pending) {

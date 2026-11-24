@@ -100,6 +100,8 @@
   "toast.incompleteMissing": "не удалось загрузить сообщений: {count}",
   "toast.incompleteCap": "чат длиннее лимита экспорта",
   "toast.incompletePage": "часть чата не загрузилась",
+  "toast.incompleteGenerating": "ответ ещё генерируется и пока не сохранён",
+  "toast.noteDangling": "сообщений без ответа: {count} (генерацию отменили, JanitorAI не сохраняет частичный ответ)",
   "toast.downloadedNotFolder": "Сохранено в «Загрузки», а НЕ в выбранную папку: {name}",
   "toast.apiOnlyFailed": "Экспорт не удался: API чата недоступно (войди заново или перезагрузи страницу)",
   "bar.folder": "Папка сохранения",

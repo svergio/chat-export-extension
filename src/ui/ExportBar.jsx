@@ -550,6 +550,8 @@ function ExportBarInner({ options }) {
           userHandle: payload.userHandle,
           userEmail: payload.userEmail,
           messages: payload.messages,
+          context: payload.context,
+          fileKey: payload.fileKey,
           formats: selected,
           pack: pack,
           picked: picked,
@@ -557,7 +559,8 @@ function ExportBarInner({ options }) {
           exportSchemas: settings && settings.exportSchemas,
           source: payload.source,
           incomplete: payload.incomplete,
-          warnings: payload.warnings
+          warnings: payload.warnings,
+          notes: payload.notes
         });
       })
       .then((res) => {
